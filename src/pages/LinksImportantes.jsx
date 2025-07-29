@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Search } from "lucide-react";
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -247,11 +248,13 @@ export default function LinksImportantes() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
         <Input
           type="text"
           placeholder="Pesquisar por nome..."
           value={filtroNome}
           onChange={(e) => setFiltroNome(e.target.value)}
+          className="w-full max-w-md"
         />
       </div>
       {/* Header */}
