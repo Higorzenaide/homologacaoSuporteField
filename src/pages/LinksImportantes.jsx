@@ -249,7 +249,7 @@ export default function LinksImportantes() {
     <div className="mb-4 relative w-full max-w-sm">
       {/* Ícone Search dentro do input */}
       <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-        <Search className="w-5 h-5 text-gray-400" />
+        <Search className="w-5 h-5 text-gray-600" />
       </div>
 
       <Input
@@ -257,7 +257,7 @@ export default function LinksImportantes() {
         placeholder="Pesquisar por nome..."
         value={filtroNome}
         onChange={(e) => setFiltroNome(e.target.value)}
-        className="pl-10"
+        className="pl-10 border border-gray-400 bg-white rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
       />
     </div>
 
