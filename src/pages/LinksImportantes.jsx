@@ -270,103 +270,109 @@ export default function LinksImportantes() {
         )}
       </div>
 
-      {/* Grid de Links */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {links.map((link, index) => (
-          <Card 
-            key={link.id} 
-            className={`relative transition-all duration-200 hover:shadow-lg ${
-              !link.ativo && user ? 'opacity-50' : ''
-            }`}
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className={`p-2 rounded-lg text-white ${getCorClass(link.cor)}`}>
-                    {getIcone(link.icone)}
-                  </div>
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{link.titulo}</CardTitle>
-                    {link.descricao && (
-                      <CardDescription className="mt-1">
-                        {link.descricao}
-                      </CardDescription>
-                    )}
-                  </div>
-                </div>
-                {!link.ativo && user && (
-                  <Badge variant="secondary" className="text-xs">
-                    Inativo
-                  </Badge>
+{/* Grid de Links */}
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  {links
+    .filter(link => link.descricao.toLowerCase().includes(filtroNome.toLowerCase()))
+    .map((link, index) => (
+      <Card 
+        key={link.id} 
+        className={`relative transition-all duration-200 hover:shadow-lg ${
+          !link.ativo && user ? 'opacity-50' : ''
+        }`}
+      >
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center space-x-3">
+              <div className={`p-2 rounded-lg text-white ${getCorClass(link.cor)}`}>
+                {getIcone(link.icone)}
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-lg">{link.titulo}</CardTitle>
+                {link.descricao && (
+                  <CardDescription className="mt-1">
+                    {link.descricao}
+                  </CardDescription>
                 )}
               </div>
-            </CardHeader>
-            
-            <CardContent className="pt-0">
-              <div className="flex items-center justify-between">
+            </div>
+            {!link.ativo && user && (
+              <Badge variant="secondary" className="text-xs">
+                Inativo
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+
+        <CardContent className="pt-0">
+          <div className="flex items-center justify-between">
+            <Button
+              onClick={() => abrirLink(link.url)}
+              variant="outline"
+              size="sm"
+              className="flex-1 mr-2"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Acessar
+            </Button>
+
+            {user && (
+              <div className="flex space-x-1">
                 <Button
-                  onClick={() => abrirLink(link.url)}
-                  variant="outline"
+                  onClick={() => abrirModal(link)}
+                  variant="ghost"
                   size="sm"
-                  className="flex-1 mr-2"
+                  className="p-2"
                 >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Acessar
+                  <Edit className="h-4 w-4" />
                 </Button>
-                
-                {user && (
-                  <div className="flex space-x-1">
-                    <Button
-                      onClick={() => abrirModal(link)}
-                      variant="ghost"
-                      size="sm"
-                      className="p-2"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      onClick={() => toggleAtivo(link.id, link.ativo)}
-                      variant="ghost"
-                      size="sm"
-                      className="p-2"
-                    >
-                      {link.ativo ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                    <Button
-                      onClick={() => removerLink(link.id)}
-                      variant="ghost"
-                      size="sm"
-                      className="p-2 text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                    {index > 0 && (
-                      <Button
-                        onClick={() => moverLink(index, 'up')}
-                        variant="ghost"
-                        size="sm"
-                        className="p-2"
-                      >
-                        <ArrowUp className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {index < links.length - 1 && (
-                      <Button
-                        onClick={() => moverLink(index, 'down')}
-                        variant="ghost"
-                        size="sm"
-                        className="p-2"
-                      >
-                        <ArrowDown className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
+                <Button
+                  onClick={() => toggleAtivo(link.id, link.ativo)}
+                  variant="ghost"
+                  size="sm"
+                  className="p-2"
+                >
+                  {link.ativo ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  onClick={() => removerLink(link.id)}
+                  variant="ghost"
+                  size="sm"
+                  className="p-2 text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                {index > 0 && (
+                  <Button
+                    onClick={() => moverLink(index, 'up')}
+                    variant="ghost"
+                    size="sm"
+                    className="p-2"
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                  </Button>
+                )}
+                {index < links.length - 1 && (
+                  <Button
+                    onClick={() => moverLink(index, 'down')}
+                    variant="ghost"
+                    size="sm"
+                    className="p-2"
+                  >
+                    <ArrowDown className="h-4 w-4" />
+                  </Button>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    ))}
+</div>
 
       {links.length === 0 && (
         <div className="text-center py-12">
