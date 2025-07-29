@@ -26,7 +26,7 @@ export const getTreinamentos = async () => {
       logo_url: item.logo_url,
       visualizacoes: item.visualizacoes || 0,
       created_at: item.created_at,
-      tags: item.tags || [] // Agora só usa as tags reais, sem adicionar extras
+      tags: item.tags ? item.tags.split(',').map(tag => tag.trim()) : []
     }));
 
     return { data: processedData, error: null };
@@ -37,7 +37,6 @@ export const getTreinamentos = async () => {
 };
 
 
-// Buscar treinamento por ID
 export const getTreinamentoById = async (id) => {
   try {
     const { data, error } = await supabase
@@ -47,7 +46,14 @@ export const getTreinamentoById = async (id) => {
       .single();
 
     if (error) throw error;
-    return { data, error: null };
+
+    // Converte a string de tags em array
+    const processedData = {
+      ...data,
+      tags: data?.tags ? data.tags.split(',').map(tag => tag.trim()) : []
+    };
+
+    return { data: processedData, error: null };
   } catch (error) {
     console.error('Erro ao buscar treinamento:', error);
     return { data: null, error };
@@ -79,7 +85,8 @@ export const createTreinamento = async (treinamentoData, file) => {
         descricao: treinamentoData.descricao || '',
         tipo: treinamentoData.tipo || 'documento',
         categoria_nome: treinamentoData.categoria,
-        arquivo_url
+        arquivo_url,
+         tags: treinamentoData.tags?.join(', ') || '' // <- converte array para string
       }])
       .select()
       .single();
