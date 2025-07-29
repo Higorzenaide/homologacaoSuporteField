@@ -247,13 +247,11 @@ export default function LinksImportantes() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
         <Input
           type="text"
           placeholder="Pesquisar por nome..."
           value={filtroNome}
           onChange={(e) => setFiltroNome(e.target.value)}
-          className="w-full max-w-md"
         />
       </div>
       {/* Header */}
