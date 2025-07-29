@@ -78,6 +78,7 @@ export default function LinksImportantes() {
   const [links, setLinks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
+  const [filtroNome, setFiltroNome] = useState('');
   const [linkEditando, setLinkEditando] = useState(null);
   const [formData, setFormData] = useState({
     titulo: '',
@@ -245,6 +246,14 @@ export default function LinksImportantes() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <div className="mb-4">
+        <Input
+          type="text"
+          placeholder="Pesquisar por nome..."
+          value={filtroNome}
+          onChange={(e) => setFiltroNome(e.target.value)}
+        />
+      </div>
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
