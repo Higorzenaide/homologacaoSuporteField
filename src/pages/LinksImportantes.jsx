@@ -273,7 +273,7 @@ export default function LinksImportantes() {
 {/* Grid de Links */}
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
   {links
-    .filter(link => link.descricao.toLowerCase().includes(filtroNome.toLowerCase()))
+    .filter(link => link.titulo.toLowerCase().includes(filtroNome.toLowerCase()))
     .map((link, index) => (
       <Card 
         key={link.id} 
