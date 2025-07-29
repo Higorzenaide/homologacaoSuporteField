@@ -178,7 +178,7 @@ const TreinamentoCardAdvanced = ({
         
         {/* Tags coloridas - com fallback para dados de exemplo */}
         {(() => {
-          const tags = treinamento.tags || ['Treinamento', 'Educação']; // Tags de exemplo se não houver
+          const tags = treinamento.tags || ['Treinamento']; // Tags de exemplo se não houver
           return tags && tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-4">
               {tags.slice(0, 4).map((tag, index) => {

@@ -6,12 +6,11 @@ export const getTreinamentos = async () => {
     const { data, error } = await supabase
       .from('treinamentos')
       .select('*')
-      .eq('ativo',true)
+      .eq('ativo', true)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
-    // Processar dados para compatibilidade com o frontend existente
     const processedData = data.map(item => ({
       id: item.id,
       titulo: item.titulo,
@@ -20,20 +19,14 @@ export const getTreinamentos = async () => {
       arquivo: item.arquivo_url,
       arquivo_url: item.arquivo_url,
       tipo: item.tipo,
-      dataUpload: item.created_at ? (() => {
-        const date = new Date(item.created_at);
-        return date.toISOString().split('T')[0];
-      })() : new Date().toISOString().split('T')[0],
+      dataUpload: item.created_at
+        ? new Date(item.created_at).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0],
       descricao: item.descricao,
       logo_url: item.logo_url,
       visualizacoes: item.visualizacoes || 0,
       created_at: item.created_at,
-      // Adicionar tags baseadas na categoria ou tipo para demonstração
-      tags: item.tags || [
-        item.categoria_nome || item.tipo || 'Treinamento',
-        'Educação',
-        'Desenvolvimento'
-      ].filter(Boolean)
+      tags: item.tags || [] // Agora só usa as tags reais, sem adicionar extras
     }));
 
     return { data: processedData, error: null };
@@ -42,6 +35,7 @@ export const getTreinamentos = async () => {
     return { data: [], error };
   }
 };
+
 
 // Buscar treinamento por ID
 export const getTreinamentoById = async (id) => {
