@@ -245,30 +245,37 @@ export default function LinksImportantes() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-4">
-        <Input
-          type="text"
-          placeholder="Pesquisar por nome..."
-          value={filtroNome}
-          onChange={(e) => setFiltroNome(e.target.value)}
-        />
+  <div className="container mx-auto px-4 py-8">
+    <div className="mb-4 relative w-full max-w-sm">
+      {/* Ícone Search dentro do input */}
+      <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+        <Search className="w-5 h-5 text-gray-400" />
       </div>
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Links Importantes</h1>
-          <p className="text-gray-600 mt-2">
-            Acesso rápido aos principais recursos e ferramentas
-          </p>
-        </div>
-        {user && (
-          <Button onClick={() => abrirModal()} className="bg-red-600 hover:bg-red-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Link
-          </Button>
-        )}
+
+      <Input
+        type="text"
+        placeholder="Pesquisar por nome..."
+        value={filtroNome}
+        onChange={(e) => setFiltroNome(e.target.value)}
+        className="pl-10"
+      />
+    </div>
+
+    {/* Header */}
+    <div className="flex justify-between items-center mb-8">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Links Importantes</h1>
+        <p className="text-gray-600 mt-2">
+          Acesso rápido aos principais recursos e ferramentas
+        </p>
       </div>
+      {user && (
+        <Button onClick={() => abrirModal()} className="bg-red-600 hover:bg-red-700">
+          <Plus className="h-4 w-4 mr-2" />
+          Novo Link
+        </Button>
+      )}
+    </div>
 
 {/* Grid de Links */}
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
