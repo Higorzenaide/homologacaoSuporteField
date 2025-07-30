@@ -48,13 +48,21 @@ const NoticiaModal = ({ isOpen, onClose, noticia }) => {
         </div>
 
         {/* Conteúdo */}
-        <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto">
+        <div className="p-8 max-h-[calc(90vh-200px)] overflow-y-auto">
           {/* Conteúdo da notícia */}
           <div className="mb-8">
             <div className="prose max-w-none">
-              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                {noticia.conteudo}
-              </p>
+              <div className="text-gray-700 leading-relaxed text-lg space-y-4">
+                {noticia.conteudo.split('\n').map((paragraph, index) => (
+                  paragraph.trim() ? (
+                    <p key={index} className="mb-4 text-justify">
+                      {paragraph.trim()}
+                    </p>
+                  ) : (
+                    <div key={index} className="h-2"></div>
+                  )
+                ))}
+              </div>
             </div>
           </div>
 

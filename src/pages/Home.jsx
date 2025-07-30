@@ -9,7 +9,7 @@ import { getNoticiasDestaque } from '../services/noticiasService';
 import EditableStatCard from '../components/EditableStatCard';
 import { useAuth } from '../contexts/AuthContext';
 
-const Home = () => {
+const Home = ({ setCurrentPage }) => {
   const { user, isAdmin } = useAuth();
   const [stats, setStats] = useState({
     treinamentos: 0,
@@ -182,7 +182,7 @@ const Home = () => {
             </div>
             <Button 
               variant="outline"
-              onClick={() => window.location.href = '#/treinamentos'}
+              onClick={() => setCurrentPage('treinamentos')}
               className="text-[var(--desktop-red)] border-[var(--desktop-red)] hover:bg-[var(--desktop-red)] hover:text-white"
             >
               Ver Todos
@@ -269,7 +269,7 @@ const Home = () => {
             </div>
             <Button 
               variant="outline"
-              onClick={() => window.location.href = '#/noticias'}
+              onClick={() => setCurrentPage('noticias')}
               className="text-[var(--desktop-red)] border-[var(--desktop-red)] hover:bg-[var(--desktop-red)] hover:text-white"
             >
               Ver Todas

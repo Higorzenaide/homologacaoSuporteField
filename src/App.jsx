@@ -14,7 +14,7 @@ function App() {
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
-        return <Home />;
+        return <Home setCurrentPage={setCurrentPage} />;
       case 'treinamentos':
         return <Treinamentos />;
       case 'noticias':
@@ -24,7 +24,7 @@ function App() {
       case 'usuarios':
         return <Usuarios />;
       default:
-        return <Home />;
+        return <Home setCurrentPage={setCurrentPage} />;
     }
   };
 
