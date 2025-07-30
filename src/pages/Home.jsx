@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, BookOpen, TrendingUp, Target, Download, Calendar, Star, ArrowRight,Eye, Heart, MessageCircle,  } from 'lucide-react';
+import { Users, BookOpen, TrendingUp, Target, Download, Calendar, Star, ArrowRight } from 'lucide-react';
 import { getTreinamentos } from '../services/treinamentosService';
 import { obterEstatisticas } from '../services/estatisticasService';
 import { atualizarEstatistica } from '../services/estatisticasService';
@@ -19,7 +19,6 @@ const Home = ({ setCurrentPage }) => {
   const [ultimosTreinamentos, setUltimosTreinamentos] = useState([]);
   const [noticiasDestaque, setNoticiasDestaque] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedNoticia, setSelectedNoticia] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -311,33 +310,6 @@ const Home = ({ setCurrentPage }) => {
 
                   <div className="text-sm text-gray-500">
                     Publicado por {noticia.autor}
-                  </div>
-                  
-                  {/* ADICIONE ESTA SEÇÃO AQUI */}
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div className="flex items-center space-x-4">
-                      <button className="flex items-center space-x-1 text-gray-500 hover:text-[var(--desktop-red)] transition-colors">
-                        <Heart size={16} />
-                        <span>0</span>
-                      </button>
-                      <button className="flex items-center space-x-1 text-gray-500 hover:text-[var(--desktop-red)] transition-colors">
-                        <MessageCircle size={16} />
-                        <span>0</span>
-                      </button>
-                    </div>
-                    <button 
-                      onClick={() => setSelectedNoticia(noticia)}
-                      className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-                    >
-                        {selectedNoticia && (
-                          <NoticiaModal 
-                            noticia={selectedNoticia} 
-                            onClose={() => setSelectedNoticia(null)} 
-                          />
-                        )}
-                      <Eye size={16} />
-                      <span>Abrir Notícia</span>
-                    </button>
                   </div>
                 </div>
               </div>
