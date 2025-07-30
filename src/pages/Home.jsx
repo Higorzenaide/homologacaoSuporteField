@@ -110,7 +110,7 @@ const Home = ({ setCurrentPage }) => {
             <div className="flex justify-center mb-6">
               <div className="w-24 h-24 rounded-full overflow-hidden bg-white flex items-center justify-center">
                 <img
-                  src="/public/logo.jpeg"
+                  src="/logo.jpeg"
                   alt="Logo"
                   className="w-full h-full object-cover"
                 />
