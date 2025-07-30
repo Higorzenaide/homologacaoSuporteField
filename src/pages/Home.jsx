@@ -108,8 +108,12 @@ const Home = ({ setCurrentPage }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
             <div className="flex justify-center mb-6">
-              <div className="bg-white bg-opacity-20 rounded-full p-4">
-                <Users size={48} className="text-white" />
+              <div className="w-24 h-24 rounded-full overflow-hidden bg-white flex items-center justify-center">
+                <img
+                  src="//public/logo.jpeg"
+                  alt="Logo"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
@@ -120,7 +124,6 @@ const Home = ({ setCurrentPage }) => {
               treinamentos e recursos necessários para garantir a excelência no 
               atendimento e instalação dos serviços Desktop Fibra Internet.
             </p>
-
           </div>
         </div>
       </div>
