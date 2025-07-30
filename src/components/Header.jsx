@@ -28,7 +28,7 @@ const Header = ({ currentPage, setCurrentPage }) => {
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-red-600 rounded-lg overflow-hidden flex items-center justify-center">
                 <img
-                  src="/logo-header.png" // Atualize este nome conforme necessário
+                  src="/logo.jpeg" // Atualize este nome conforme necessário
                   alt="Logo"
                   className="w-full h-full object-cover"
                 />
