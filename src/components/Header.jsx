@@ -26,8 +26,12 @@ const Header = ({ currentPage, setCurrentPage }) => {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">D</span>
+              <div className="w-10 h-10 bg-red-600 rounded-lg overflow-hidden flex items-center justify-center">
+                <img
+                  src="/logo-header.png" // Atualize este nome conforme necessário
+                  alt="Logo"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">Desktop</h1>
