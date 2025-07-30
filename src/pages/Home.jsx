@@ -20,12 +20,7 @@ const Home = ({ setCurrentPage }) => {
   const [noticiasDestaque, setNoticiasDestaque] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedNoticia, setSelectedNoticia] = useState(null);
-  {selectedNoticia && (
-    <NoticiaModal 
-      noticia={selectedNoticia} 
-      onClose={() => setSelectedNoticia(null)} 
-    />
-  )}
+
   useEffect(() => {
     loadData();
   }, []);
@@ -334,6 +329,12 @@ const Home = ({ setCurrentPage }) => {
                       onClick={() => setSelectedNoticia(noticia)}
                       className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
                     >
+                        {selectedNoticia && (
+                          <NoticiaModal 
+                            noticia={selectedNoticia} 
+                            onClose={() => setSelectedNoticia(null)} 
+                          />
+                        )}
                       <Eye size={16} />
                       <span>Abrir Notícia</span>
                     </button>
