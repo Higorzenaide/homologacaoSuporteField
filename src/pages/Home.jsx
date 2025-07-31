@@ -101,6 +101,8 @@ const Home = ({ setCurrentPage }) => {
     );
   }
 
+  console.log(user);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
