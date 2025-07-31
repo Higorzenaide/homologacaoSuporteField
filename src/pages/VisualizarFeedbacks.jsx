@@ -52,8 +52,8 @@ const VisualizarFeedbacks = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
 
   const [filtros, setFiltros] = useState({
-    usuario_id: '',
-    categoria_id: '',
+    usuario_id: 'all',
+    categoria_id: 'all',
     data_inicio: '',
     data_fim: '',
     nome_avaliador: ''
@@ -143,7 +143,14 @@ const VisualizarFeedbacks = () => {
   const aplicarFiltros = async () => {
     setLoading(true);
     try {
-      const { data, error } = await feedbackService.listarFeedbacks(filtros);
+      // Converter valores "all" para string vazia para a API
+      const filtrosParaAPI = {
+        ...filtros,
+        usuario_id: filtros.usuario_id === 'all' ? '' : filtros.usuario_id,
+        categoria_id: filtros.categoria_id === 'all' ? '' : filtros.categoria_id
+      };
+
+      const { data, error } = await feedbackService.listarFeedbacks(filtrosParaAPI);
       if (error) {
         setMessage({ type: 'error', text: error });
       } else {
@@ -160,8 +167,8 @@ const VisualizarFeedbacks = () => {
 
   const limparFiltros = async () => {
     setFiltros({
-      usuario_id: '',
-      categoria_id: '',
+      usuario_id: 'all',
+      categoria_id: 'all',
       data_inicio: '',
       data_fim: '',
       nome_avaliador: ''
@@ -186,7 +193,14 @@ const VisualizarFeedbacks = () => {
 
   const exportarCSV = async () => {
     try {
-      const { data, error } = await feedbackService.exportarCSV(filtros);
+      // Converter valores "all" para string vazia para a API
+      const filtrosParaAPI = {
+        ...filtros,
+        usuario_id: filtros.usuario_id === 'all' ? '' : filtros.usuario_id,
+        categoria_id: filtros.categoria_id === 'all' ? '' : filtros.categoria_id
+      };
+
+      const { data, error } = await feedbackService.exportarCSV(filtrosParaAPI);
       if (error) {
         setMessage({ type: 'error', text: error });
         return;
@@ -278,7 +292,7 @@ const VisualizarFeedbacks = () => {
                   <SelectValue placeholder="Todos os colaboradores" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os colaboradores</SelectItem>
+                  <SelectItem value="all">Todos os colaboradores</SelectItem>
                   {usuarios.map((usuario) => (
                     <SelectItem key={usuario.id} value={usuario.id.toString()}>
                       {usuario.nome}
@@ -296,7 +310,7 @@ const VisualizarFeedbacks = () => {
                   <SelectValue placeholder="Todas as categorias" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas as categorias</SelectItem>
+                  <SelectItem value="all">Todas as categorias</SelectItem>
                   {categorias.map((categoria) => (
                     <SelectItem key={categoria.id} value={categoria.id.toString()}>
                       <div className="flex items-center space-x-2">
@@ -459,184 +473,153 @@ const VisualizarFeedbacks = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <RechartsPieChart>
-                    <Pie
-                      data={dadosGraficoCategoria}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {dadosGraficoCategoria.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </RechartsPieChart>
-                </ResponsiveContainer>
+                {dadosGraficoCategoria.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <RechartsPieChart>
+                      <Pie
+                        data={dadosGraficoCategoria}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {dadosGraficoCategoria.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </RechartsPieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[300px] text-gray-500">
+                    Nenhum dado disponível para exibir
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            {/* Gráfico de barras - Feedbacks por categoria */}
+            {/* Gráfico de barras - Feedbacks por mês */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <BarChart3 className="h-5 w-5" />
-                  <span>Quantidade por Categoria</span>
+                  <span>Feedbacks por Mês</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={dadosGraficoCategoria}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="value" fill="#8884d8">
-                      {dadosGraficoCategoria.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            {/* Gráfico de linha - Evolução mensal */}
-            {dadosGraficoMensal.length > 0 && (
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Calendar className="h-5 w-5" />
-                    <span>Evolução Mensal de Feedbacks</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+                {dadosGraficoMensal.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={dadosGraficoMensal}>
+                    <BarChart data={dadosGraficoMensal}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="mes" />
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Line type="monotone" dataKey="total" stroke="#8884d8" name="Total" />
-                      <Line type="monotone" dataKey="positivos" stroke="#10B981" name="Positivos" />
-                      <Line type="monotone" dataKey="negativos" stroke="#EF4444" name="Negativos" />
-                      <Line type="monotone" dataKey="construtivos" stroke="#F59E0B" name="Construtivos" />
-                    </LineChart>
+                      <Bar dataKey="total" fill="#8884d8" name="Total" />
+                      <Bar dataKey="positivos" fill="#82ca9d" name="Positivos" />
+                      <Bar dataKey="negativos" fill="#ffc658" name="Negativos" />
+                      <Bar dataKey="construtivos" fill="#ff7300" name="Construtivos" />
+                    </BarChart>
                   </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            )}
+                ) : (
+                  <div className="flex items-center justify-center h-[300px] text-gray-500">
+                    Nenhum dado disponível para exibir
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
         {/* Estatísticas */}
         <TabsContent value="estatisticas">
-          <div className="space-y-6">
-            {/* Cards de resumo */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total de Feedbacks</p>
-                      <p className="text-2xl font-bold text-gray-900">{feedbacks.length}</p>
-                    </div>
-                    <MessageSquare className="h-8 w-8 text-blue-600" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Estatísticas por usuário */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Users className="h-5 w-5" />
+                  <span>Estatísticas por Colaborador</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {estatisticas && estatisticas.length > 0 ? (
+                  <div className="space-y-4">
+                    {estatisticas.map((stat, index) => (
+                      <div key={index} className="border-b pb-4 last:border-b-0">
+                        <h4 className="font-semibold text-gray-900">{stat.usuario_nome}</h4>
+                        <div className="grid grid-cols-3 gap-4 mt-2">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-blue-600">{stat.total_feedbacks}</div>
+                            <div className="text-sm text-gray-500">Total</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-green-600">{stat.total_positivos}</div>
+                            <div className="text-sm text-gray-500">Positivos</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-orange-600">{stat.total_construtivos}</div>
+                            <div className="text-sm text-gray-500">Construtivos</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Colaboradores</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {new Set(feedbacks.map(f => f.usuario_id)).size}
-                      </p>
-                    </div>
-                    <Users className="h-8 w-8 text-green-600" />
+                ) : (
+                  <div className="flex items-center justify-center h-[300px] text-gray-500">
+                    Nenhuma estatística disponível
                   </div>
-                </CardContent>
-              </Card>
+                )}
+              </CardContent>
+            </Card>
 
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Feedbacks Positivos</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {feedbacks.filter(f => f.categoria_nome === 'Positivo').length}
-                      </p>
-                    </div>
-                    <div className="w-8 h-8 rounded-full bg-green-600" />
+            {/* Resumo geral */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <BarChart3 className="h-5 w-5" />
+                  <span>Resumo Geral</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-blue-600 mb-2">{feedbacks.length}</div>
+                    <div className="text-gray-600">Total de Feedbacks</div>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">% Positivos</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {feedbacks.length > 0 ? 
-                          Math.round((feedbacks.filter(f => f.categoria_nome === 'Positivo').length / feedbacks.length) * 100) 
-                          : 0}%
-                      </p>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-800">{usuarios.length}</div>
+                      <div className="text-sm text-gray-500">Colaboradores</div>
                     </div>
-                    <PieChart className="h-8 w-8 text-purple-600" />
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-800">{categorias.length}</div>
+                      <div className="text-sm text-gray-500">Categorias</div>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
 
-            {/* Tabela de estatísticas por usuário */}
-            {estatisticas && estatisticas.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Estatísticas por Colaborador</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-2">Colaborador</th>
-                          <th className="text-left py-2">Setor</th>
-                          <th className="text-center py-2">Total</th>
-                          <th className="text-center py-2">Positivos</th>
-                          <th className="text-center py-2">Negativos</th>
-                          <th className="text-center py-2">Construtivos</th>
-                          <th className="text-center py-2">% Positivos</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {estatisticas.map((stat) => (
-                          <tr key={stat.usuario_id} className="border-b">
-                            <td className="py-2 font-medium">{stat.usuario_nome}</td>
-                            <td className="py-2 text-gray-600">{stat.usuario_setor || '-'}</td>
-                            <td className="py-2 text-center">{stat.total_feedbacks}</td>
-                            <td className="py-2 text-center text-green-600">{stat.feedbacks_positivos}</td>
-                            <td className="py-2 text-center text-red-600">{stat.feedbacks_negativos}</td>
-                            <td className="py-2 text-center text-yellow-600">{stat.feedbacks_construtivos}</td>
-                            <td className="py-2 text-center font-medium">
-                              {stat.percentual_positivos || 0}%
-                            </td>
-                          </tr>
+                  {estatisticasGerais.length > 0 && (
+                    <div className="border-t pt-4">
+                      <h5 className="font-semibold text-gray-900 mb-3">Últimos Meses</h5>
+                      <div className="space-y-2">
+                        {estatisticasGerais.slice(-3).map((stat, index) => (
+                          <div key={index} className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">
+                              {new Date(stat.mes).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                            </span>
+                            <span className="font-semibold">{stat.total_feedbacks}</span>
+                          </div>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>
@@ -645,4 +628,3 @@ const VisualizarFeedbacks = () => {
 };
 
 export default VisualizarFeedbacks;
-
