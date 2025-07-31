@@ -119,12 +119,16 @@ export const AuthProvider = ({ children }) => {
   // Verificar se usuário pode editar conteúdo
   const canEdit = isAdmin;
 
+  // Verificar se usuário pode ver feedbacks
+  const canViewFeedbacks = isAdmin && user?.pode_ver_feedbacks;
+
   const value = {
     user,
     isAuthenticated,
     loading,
     isAdmin,
     canEdit,
+    canViewFeedbacks,
     login,
     logout,
     signOut: logout, // Alias para logout

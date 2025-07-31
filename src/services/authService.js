@@ -73,6 +73,7 @@ export class AuthService {
             tipo_usuario: user.tipo_usuario,
             ativo: user.ativo,
             isAdmin: user.tipo_usuario === 'admin',
+            pode_ver_feedbacks: user.pode_ver_feedbacks, // Adicionado
             loginTime: new Date().toISOString()
           };
 
@@ -155,7 +156,8 @@ export class AuthService {
           cargo: user.cargo,
           tipo_usuario: user.tipo_usuario,
           ativo: user.ativo,
-          isAdmin: user.tipo_usuario === 'admin'
+          isAdmin: user.tipo_usuario === 'admin',
+          pode_ver_feedbacks: user.pode_ver_feedbacks, // Adicionado
         };
 
         this.saveUserToStorage(userData);

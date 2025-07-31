@@ -4,7 +4,7 @@ import LoginModal from './LoginModal';
 import UserMenu from './UserMenu';
 
 const Header = ({ currentPage, setCurrentPage }) => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, canViewFeedbacks } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const navItems = [
@@ -17,6 +17,13 @@ const Header = ({ currentPage, setCurrentPage }) => {
   // Adicionar página de usuários apenas para admins
   if (isAdmin) {
     navItems.push({ id: 'usuarios', label: 'Usuários', icon: '👤' });
+    
+    // Adicionar abas de feedback para admins
+    navItems.push({ id: 'inserir-feedback', label: 'Inserir Feedback', icon: '📝' });
+    
+    if (canViewFeedbacks) {
+      navItems.push({ id: 'visualizar-feedbacks', label: 'Visualizar Feedbacks', icon: '📊' });
+    }
   }
 
   return (
