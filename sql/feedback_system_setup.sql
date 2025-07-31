@@ -28,11 +28,19 @@ ON CONFLICT (nome) DO NOTHING;
 -- =====================================================
 CREATE TABLE IF NOT EXISTS feedbacks (
     id SERIAL PRIMARY KEY,
+<<<<<<< HEAD
     usuario_id UUID NOT NULL REFERENCES public.usuarios(id) ON DELETE CASCADE,
     categoria_id INTEGER NOT NULL REFERENCES categorias_feedback(id) ON DELETE RESTRICT,
     relato TEXT NOT NULL,
     nome_avaliador VARCHAR(255) NOT NULL,
     admin_id UUID NOT NULL REFERENCES public.usuarios(id) ON DELETE CASCADE,
+=======
+    usuario_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    categoria_id INTEGER NOT NULL REFERENCES categorias_feedback(id) ON DELETE RESTRICT,
+    relato TEXT NOT NULL,
+    nome_avaliador VARCHAR(255) NOT NULL,
+    admin_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+>>>>>>> f46a3abba14baba441740400f76ebcb9c885d616
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -48,7 +56,11 @@ BEGIN
 END $$;
 
 -- Dar permissão para todos os admins existentes
+<<<<<<< HEAD
 UPDATE usuarios SET pode_ver_feedbacks = true WHERE tipo_usuario = 'admin';
+=======
+UPDATE usuarios SET pode_ver_feedbacks = true WHERE role = 'admin';
+>>>>>>> f46a3abba14baba441740400f76ebcb9c885d616
 
 -- 4. CRIAR ÍNDICES PARA MELHOR PERFORMANCE
 -- =====================================================
@@ -95,7 +107,11 @@ CREATE POLICY "Administradores podem gerenciar categorias de feedback" ON catego
         EXISTS (
             SELECT 1 FROM public.usuarios 
             WHERE public.usuarios.id = auth.uid() 
+<<<<<<< HEAD
             AND public.usuarios.tipo_usuario = 'admin'
+=======
+            AND public.usuarios.role = 'admin'
+>>>>>>> f46a3abba14baba441740400f76ebcb9c885d616
         )
     );
 
@@ -122,7 +138,11 @@ CREATE POLICY "Administradores podem inserir feedbacks" ON feedbacks
         EXISTS (
             SELECT 1 FROM public.usuarios 
             WHERE public.usuarios.id = auth.uid() 
+<<<<<<< HEAD
             AND public.usuarios.tipo_usuario = 'admin'
+=======
+            AND public.usuarios.role = 'admin'
+>>>>>>> f46a3abba14baba441740400f76ebcb9c885d616
         )
     );
 
@@ -133,7 +153,11 @@ CREATE POLICY "Administradores podem atualizar feedbacks" ON feedbacks
         EXISTS (
             SELECT 1 FROM public.usuarios 
             WHERE public.usuarios.id = auth.uid() 
+<<<<<<< HEAD
             AND public.usuarios.tipo_usuario = 'admin'
+=======
+            AND public.usuarios.role = 'admin'
+>>>>>>> f46a3abba14baba441740400f76ebcb9c885d616
         )
     );
 
@@ -144,7 +168,11 @@ CREATE POLICY "Administradores podem deletar feedbacks" ON feedbacks
         EXISTS (
             SELECT 1 FROM public.usuarios 
             WHERE public.usuarios.id = auth.uid() 
+<<<<<<< HEAD
             AND public.usuarios.tipo_usuario = 'admin'
+=======
+            AND public.usuarios.role = 'admin'
+>>>>>>> f46a3abba14baba441740400f76ebcb9c885d616
         )
     );
 
