@@ -7,6 +7,7 @@ import AdminModal from '../components/AdminModal';
 import TreinamentoCardAdvanced from '../components/TreinamentoCardAdvanced';
 import TreinamentoModal from '../components/TreinamentoModal';
 import GerenciadorCategorias from '../components/GerenciadorCategorias';
+import GerenciadorCategoriasFeedback from '../components/GerenciadorCategoriasFeedback';
 import AnimatedBackground from '../components/AnimatedBackground';
 import { FullPageLoader, InlineLoader } from '../components/LoadingSpinner';
 import PDFViewer from '../components/PDFViewer';
@@ -26,6 +27,7 @@ const Treinamentos = () => {
   const [showTreinamentoModal, setShowTreinamentoModal] = useState(false);
   const [selectedTreinamento, setSelectedTreinamento] = useState(null);
   const [showGerenciadorCategorias, setShowGerenciadorCategorias] = useState(false);
+  const [showGerenciadorCategoriasFeedback, setShowGerenciadorCategoriasFeedback] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -241,6 +243,17 @@ const Treinamentos = () => {
                 </button>
                 
                 <button
+                  onClick={() => setShowGerenciadorCategoriasFeedback(true)}
+                  className="group relative bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-4 rounded-2xl hover:from-purple-600 hover:to-purple-700 transition-all duration-300 font-semibold flex items-center space-x-3 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white to-transparent opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                  <svg className="w-6 h-6 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                  <span className="relative z-10">Categorias Feedback</span>
+                </button>
+                
+                <button
                   onClick={() => setShowModal(true)}
                   className="group relative bg-gradient-to-r from-red-500 to-red-600 text-white px-8 py-4 rounded-2xl hover:from-red-600 hover:to-red-700 transition-all duration-300 font-semibold flex items-center space-x-3 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 overflow-hidden"
                 >
@@ -433,6 +446,15 @@ const Treinamentos = () => {
           onClose={() => {
             setShowGerenciadorCategorias(false);
             carregarDados(); // Recarregar dados após fechar o gerenciador
+          }}
+        />
+      )}
+
+      {showGerenciadorCategoriasFeedback && (
+        <GerenciadorCategoriasFeedback
+          isOpen={showGerenciadorCategoriasFeedback}
+          onClose={() => {
+            setShowGerenciadorCategoriasFeedback(false);
           }}
         />
       )}

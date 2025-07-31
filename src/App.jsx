@@ -6,6 +6,8 @@ import Treinamentos from './pages/Treinamentos';
 import Noticias from './pages/Noticias';
 import LinksImportantes from './pages/LinksImportantes';
 import Usuarios from './pages/Usuarios';
+import InserirFeedback from './pages/InserirFeedback';
+import VisualizarFeedbacks from './pages/VisualizarFeedbacks';
 import './App.css';
 
 function App() {
@@ -23,6 +25,10 @@ function App() {
         return <LinksImportantes />;
       case 'usuarios':
         return <Usuarios />;
+      case 'inserir-feedback':
+        return <InserirFeedback />;
+      case 'visualizar-feedbacks':
+        return <VisualizarFeedbacks />;
       default:
         return <Home setCurrentPage={setCurrentPage} />;
     }

@@ -13,11 +13,6 @@ Portfólio completo para a equipe de Suporte Field da Desktop Fibra Internet, co
 
 ## 🔐 **SISTEMA DE AUTENTICAÇÃO**
 
-### **Credenciais Padrão:**
-- **Admin:** admin@desktop.com.br / admin123
-- **Supervisor:** supervisor@desktop.com.br / super123  
-- **Técnico 1:** tecnico1@desktop.com.br / tecnico123
-- **Técnico 2:** tecnico2@desktop.com.br / tecnico123
 
 ### **Tipos de Usuário:**
 - **Administrador:** Acesso completo (criar, editar, excluir)
@@ -183,8 +178,6 @@ Para dúvidas ou modificações futuras, consulte:
 - Documentação técnica no projeto
 - Scripts SQL fornecidos
 - Código fonte comentado
-
-**URL Final:** https://hopqmemr.manus.space
 
 ---
 
