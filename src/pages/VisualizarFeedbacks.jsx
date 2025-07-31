@@ -36,6 +36,7 @@ import {
   Cell,
   ResponsiveContainer,
   LineChart,
+  Pie,
   Line
 } from 'recharts';
 
