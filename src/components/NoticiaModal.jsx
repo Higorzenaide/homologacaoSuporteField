@@ -21,63 +21,59 @@ const NoticiaModal = ({ isOpen, onClose, noticia }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden">
-        {/* Header Moderno */}
-        <div className="relative bg-gradient-to-r from-red-600 via-red-500 to-red-400 text-white">
-          {/* Padrão geométrico de fundo */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-4 left-8 w-20 h-20 border-2 border-white rounded-full"></div>
-            <div className="absolute top-12 right-16 w-16 h-16 border border-white rounded-full"></div>
-            <div className="absolute bottom-6 left-20 w-12 h-12 border border-white rounded-full"></div>
-            <div className="absolute top-8 left-1/2 w-8 h-8 border border-white rounded-full"></div>
-          </div>
-          
-          <div className="relative p-8">
-            <div className="flex justify-between items-start">
-              <div className="flex-1 pr-6">
-                {/* Badges */}
-                <div className="flex items-center gap-3 mb-4">
-                  {noticia.destaque && (
-                    <span className="bg-yellow-400 text-red-800 text-xs px-3 py-1.5 rounded-full font-bold shadow-lg">
-                      ⭐ DESTAQUE
-                    </span>
-                  )}
-                  <span className="bg-white bg-opacity-20 backdrop-blur-sm text-white text-sm px-4 py-1.5 rounded-full border border-white border-opacity-30">
-                    📂 {noticia.categoria_nome}
+        {/* Header Limpo e Moderno */}
+        <div className="bg-gradient-to-r from-red-600 to-red-500 text-white p-8">
+          <div className="flex justify-between items-start">
+            <div className="flex-1 pr-6">
+              {/* Badges */}
+              <div className="flex items-center gap-3 mb-4">
+                {noticia.destaque && (
+                  <span className="bg-yellow-400 text-red-800 text-xs px-3 py-1.5 rounded-full font-bold flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    DESTAQUE
                   </span>
-                </div>
-                
-                {/* Título */}
-                <h1 className="text-3xl font-bold mb-4 leading-tight">
-                  {noticia.titulo}
-                </h1>
-                
-                {/* Metadados */}
-                <div className="flex items-center text-white text-opacity-90 text-sm bg-white bg-opacity-10 backdrop-blur-sm rounded-lg px-4 py-2 inline-flex">
-                  <div className="flex items-center mr-6">
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    <span className="font-medium">{noticia.autor}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6m-6 0l-1 12a2 2 0 002 2h6a2 2 0 002-2L16 7" />
-                    </svg>
-                    <span>{formatarData(noticia.data_publicacao)}</span>
-                  </div>
-                </div>
+                )}
+                <span className="bg-white bg-opacity-20 backdrop-blur-sm text-white text-sm px-4 py-1.5 rounded-full border border-white border-opacity-30 flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                  {noticia.categoria_nome}
+                </span>
               </div>
               
-              {/* Botão fechar */}
-              <button
-                onClick={onClose}
-                className="text-white hover:text-red-200 transition-colors p-3 hover:bg-white hover:bg-opacity-20 rounded-full"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              {/* Título */}
+              <h1 className="text-3xl font-bold mb-4 leading-tight">
+                {noticia.titulo}
+              </h1>
+              
+              {/* Metadados */}
+              <div className="flex items-center text-white text-opacity-90 text-sm">
+                <div className="flex items-center mr-6 bg-white bg-opacity-10 backdrop-blur-sm rounded-lg px-3 py-2">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span className="font-medium">{noticia.autor}</span>
+                </div>
+                <div className="flex items-center bg-white bg-opacity-10 backdrop-blur-sm rounded-lg px-3 py-2">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6m-6 0l-1 12a2 2 0 002 2h6a2 2 0 002-2L16 7" />
+                  </svg>
+                  <span>{formatarData(noticia.data_publicacao)}</span>
+                </div>
+              </div>
             </div>
+            
+            {/* Botão fechar */}
+            <button
+              onClick={onClose}
+              className="text-white hover:text-red-200 transition-colors p-3 hover:bg-white hover:bg-opacity-20 rounded-full"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         </div>
 
