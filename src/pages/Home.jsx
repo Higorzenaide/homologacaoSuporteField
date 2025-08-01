@@ -15,7 +15,7 @@ import { getNoticiasDestaque } from '../services/noticiasService';
 import EditableStatCard from '../components/EditableStatCard';
 import { useAuth } from '../contexts/AuthContext';
 
-// Componente das bolinhas interativas - VERSÃO CORRIGIDA COM BRANCO
+// Componente das bolinhas interativas - VERSÃO COM LEGIBILIDADE MELHORADA
 const InteractiveBackground = () => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -42,19 +42,20 @@ const InteractiveBackground = () => {
       }
     };
     
-    // Criar partículas (bolinhas)
+    // Criar partículas (bolinhas) - OTIMIZADO PARA LEGIBILIDADE
     const createParticles = () => {
       const particles = [];
-      const particleCount = Math.max(8, Math.floor((canvas.width * canvas.height) / 20000));
+      // Reduzir quantidade de partículas
+      const particleCount = Math.max(5, Math.floor((canvas.width * canvas.height) / 30000));
       
       for (let i = 0; i < particleCount; i++) {
         particles.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 1.5, // Velocidade mais perceptível
-          vy: (Math.random() - 0.5) * 1.5,
-          radius: Math.random() * 25 + 15, // Tamanho menor para melhor performance
-          opacity: Math.random() * 0.4 + 0.3, // Mais visível
+          vx: (Math.random() - 0.5) * 1.2, // Velocidade ligeiramente reduzida
+          vy: (Math.random() - 0.5) * 1.2,
+          radius: Math.random() * 20 + 10, // Tamanho menor (10-30px)
+          opacity: Math.random() * 0.2 + 0.1, // Opacidade muito reduzida (0.1-0.3)
         });
       }
       
@@ -107,27 +108,27 @@ const InteractiveBackground = () => {
         const dx = mouseRef.current.x - particle.x;
         const dy = mouseRef.current.y - particle.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        const repulsionRadius = 120;
+        const repulsionRadius = 100; // Raio menor
         
         if (distance < repulsionRadius && distance > 0) {
           const force = (repulsionRadius - distance) / repulsionRadius;
           const angle = Math.atan2(dy, dx);
           
           // Aplicar força de repulsão
-          particle.x -= Math.cos(angle) * force * 8;
-          particle.y -= Math.sin(angle) * force * 8;
+          particle.x -= Math.cos(angle) * force * 6;
+          particle.y -= Math.sin(angle) * force * 6;
         }
         
-        // Desenhar partícula BRANCA com gradiente
+        // Desenhar partícula BRANCA com gradiente MAIS SUTIL
         const gradient = ctx.createRadialGradient(
           particle.x, particle.y, 0,
           particle.x, particle.y, particle.radius
         );
         
-        // Gradiente branco com transparência
+        // Gradiente branco com transparência MUITO REDUZIDA
         gradient.addColorStop(0, `rgba(255, 255, 255, ${particle.opacity})`);
-        gradient.addColorStop(0.4, `rgba(255, 255, 255, ${particle.opacity * 0.6})`);
-        gradient.addColorStop(0.8, `rgba(255, 255, 255, ${particle.opacity * 0.2})`);
+        gradient.addColorStop(0.5, `rgba(255, 255, 255, ${particle.opacity * 0.4})`);
+        gradient.addColorStop(0.8, `rgba(255, 255, 255, ${particle.opacity * 0.1})`);
         gradient.addColorStop(1, `rgba(255, 255, 255, 0)`);
         
         ctx.fillStyle = gradient;
@@ -157,7 +158,7 @@ const InteractiveBackground = () => {
         ref={canvasRef}
         className="absolute inset-0 w-full h-full pointer-events-none"
         style={{ 
-          opacity: 0.8,
+          opacity: 0.5, // Opacidade geral reduzida
           zIndex: 1
         }}
       />
@@ -270,7 +271,7 @@ const Home = ({ setCurrentPage }) => {
       {/* Hero Section com fundo interativo */}
       <div className="relative overflow-hidden min-h-[600px]">
         <div className="absolute inset-0 bg-gradient-to-r from-[var(--desktop-red)] to-[var(--desktop-red-dark)]">
-          {/* Fundo interativo com bolinhas BRANCAS */}
+          {/* Fundo interativo com bolinhas SUTIS */}
           <InteractiveBackground />
         </div>
 
@@ -286,51 +287,56 @@ const Home = ({ setCurrentPage }) => {
               </div>
             </div>
 
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white to-red-100 bg-clip-text text-transparent">
+            {/* Título com sombra para melhor legibilidade */}
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white to-red-100 bg-clip-text text-transparent drop-shadow-lg">
               Suporte Field
             </h1>
             
-            <p className="text-xl md:text-2xl mb-12 text-red-100 max-w-4xl mx-auto leading-relaxed">
-              Equipe especializada em apoio ao técnico de campo, fornecendo suporte, 
-              treinamentos e recursos necessários para garantir a excelência no 
-              atendimento e instalação dos serviços Desktop Fibra Internet.
-            </p>
+            {/* Parágrafo com sombra e backdrop-filter para melhor legibilidade */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-black/10 backdrop-blur-sm rounded-2xl"></div>
+              <p className="relative text-xl md:text-2xl mb-12 text-white max-w-4xl mx-auto leading-relaxed p-6 drop-shadow-md">
+                Equipe especializada em apoio ao técnico de campo, fornecendo suporte, 
+                treinamentos e recursos necessários para garantir a excelência no 
+                atendimento e instalação dos serviços Desktop Fibra Internet.
+              </p>
+            </div>
 
             {/* Cards de acesso rápido condicionais */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               {/* Treinamentos - sempre visível */}
               <Card 
-                className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 transition-all duration-300 cursor-pointer transform hover:scale-105"
+                className="bg-white/15 backdrop-blur-md border-white/30 text-white hover:bg-white/25 transition-all duration-300 cursor-pointer transform hover:scale-105 shadow-xl"
                 onClick={() => setCurrentPage('treinamentos')}
               >
                 <CardContent className="p-6 text-center">
-                  <BookOpen className="w-12 h-12 mx-auto mb-4 text-red-200" />
-                  <h3 className="text-xl font-semibold mb-2">Treinamentos</h3>
-                  <p className="text-red-100 text-sm">Acesse materiais e recursos</p>
+                  <BookOpen className="w-12 h-12 mx-auto mb-4 text-red-200 drop-shadow-md" />
+                  <h3 className="text-xl font-semibold mb-2 drop-shadow-md">Treinamentos</h3>
+                  <p className="text-red-100 text-sm drop-shadow-sm">Acesse materiais e recursos</p>
                 </CardContent>
               </Card>
 
               {/* Card condicional - Equipe (admin) ou Notícias (usuário) */}
               {isAdmin ? (
                 <Card 
-                  className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 transition-all duration-300 cursor-pointer transform hover:scale-105"
+                  className="bg-white/15 backdrop-blur-md border-white/30 text-white hover:bg-white/25 transition-all duration-300 cursor-pointer transform hover:scale-105 shadow-xl"
                   onClick={() => setCurrentPage('usuarios')}
                 >
                   <CardContent className="p-6 text-center">
-                    <Users className="w-12 h-12 mx-auto mb-4 text-red-200" />
-                    <h3 className="text-xl font-semibold mb-2">Equipe</h3>
-                    <p className="text-red-100 text-sm">Gerencie colaboradores</p>
+                    <Users className="w-12 h-12 mx-auto mb-4 text-red-200 drop-shadow-md" />
+                    <h3 className="text-xl font-semibold mb-2 drop-shadow-md">Equipe</h3>
+                    <p className="text-red-100 text-sm drop-shadow-sm">Gerencie colaboradores</p>
                   </CardContent>
                 </Card>
               ) : (
                 <Card 
-                  className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 transition-all duration-300 cursor-pointer transform hover:scale-105"
+                  className="bg-white/15 backdrop-blur-md border-white/30 text-white hover:bg-white/25 transition-all duration-300 cursor-pointer transform hover:scale-105 shadow-xl"
                   onClick={() => setCurrentPage('noticias')}
                 >
                   <CardContent className="p-6 text-center">
-                    <Newspaper className="w-12 h-12 mx-auto mb-4 text-red-200" />
-                    <h3 className="text-xl font-semibold mb-2">Notícias</h3>
-                    <p className="text-red-100 text-sm">Atualizações e avisos</p>
+                    <Newspaper className="w-12 h-12 mx-auto mb-4 text-red-200 drop-shadow-md" />
+                    <h3 className="text-xl font-semibold mb-2 drop-shadow-md">Notícias</h3>
+                    <p className="text-red-100 text-sm drop-shadow-sm">Atualizações e avisos</p>
                   </CardContent>
                 </Card>
               )}
@@ -338,24 +344,24 @@ const Home = ({ setCurrentPage }) => {
               {/* Card condicional - Analytics (admin) ou Links Importantes (usuário) */}
               {isAdmin ? (
                 <Card 
-                  className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 transition-all duration-300 cursor-pointer transform hover:scale-105"
+                  className="bg-white/15 backdrop-blur-md border-white/30 text-white hover:bg-white/25 transition-all duration-300 cursor-pointer transform hover:scale-105 shadow-xl"
                   onClick={() => setCurrentPage('visualizar-feedbacks')}
                 >
                   <CardContent className="p-6 text-center">
-                    <BarChart3 className="w-12 h-12 mx-auto mb-4 text-red-200" />
-                    <h3 className="text-xl font-semibold mb-2">Analytics</h3>
-                    <p className="text-red-100 text-sm">Visualize feedbacks</p>
+                    <BarChart3 className="w-12 h-12 mx-auto mb-4 text-red-200 drop-shadow-md" />
+                    <h3 className="text-xl font-semibold mb-2 drop-shadow-md">Analytics</h3>
+                    <p className="text-red-100 text-sm drop-shadow-sm">Visualize feedbacks</p>
                   </CardContent>
                 </Card>
               ) : (
                 <Card 
-                  className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 transition-all duration-300 cursor-pointer transform hover:scale-105"
+                  className="bg-white/15 backdrop-blur-md border-white/30 text-white hover:bg-white/25 transition-all duration-300 cursor-pointer transform hover:scale-105 shadow-xl"
                   onClick={() => setCurrentPage('links-importantes')}
                 >
                   <CardContent className="p-6 text-center">
-                    <Bookmark className="w-12 h-12 mx-auto mb-4 text-red-200" />
-                    <h3 className="text-xl font-semibold mb-2">Links Úteis</h3>
-                    <p className="text-red-100 text-sm">Recursos importantes</p>
+                    <Bookmark className="w-12 h-12 mx-auto mb-4 text-red-200 drop-shadow-md" />
+                    <h3 className="text-xl font-semibold mb-2 drop-shadow-md">Links Úteis</h3>
+                    <p className="text-red-100 text-sm drop-shadow-sm">Recursos importantes</p>
                   </CardContent>
                 </Card>
               )}
@@ -592,10 +598,6 @@ const Home = ({ setCurrentPage }) => {
                 <div className="flex items-center text-sm text-gray-500">
                   <Calendar className="w-4 h-4 mr-1" />
                   {new Date(noticiaModal.dataPublicacao).toLocaleDateString('pt-BR')}
-                </div>
-                <div className="text-sm text-gray-500 flex items-center">
-                        <Users size={14} className="mr-1" />
-                        {noticiaModal.autor}
                 </div>
               </div>
               <DialogTitle className="text-2xl font-bold text-gray-900 mb-4">
