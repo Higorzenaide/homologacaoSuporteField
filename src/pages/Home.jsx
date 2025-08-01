@@ -687,7 +687,7 @@ const Home = ({ setCurrentPage }) => {
                 <li>
                   <button 
                     onClick={() => setCurrentPage('treinamentos')}
-                    className="text-gray-300 hover:text-white transition-colors duration-200"
+                    className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer"
                   >
                     Treinamentos
                   </button>
@@ -695,7 +695,7 @@ const Home = ({ setCurrentPage }) => {
                 <li>
                   <button 
                     onClick={() => setCurrentPage('noticias')}
-                    className="text-gray-300 hover:text-white transition-colors duration-200"
+                    className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer"
                   >
                     Notícias
                   </button>
@@ -703,7 +703,7 @@ const Home = ({ setCurrentPage }) => {
                 <li>
                   <button 
                     onClick={() => setCurrentPage('links-importantes')}
-                    className="text-gray-300 hover:text-white transition-colors duration-200"
+                    className="text-gray-300 hover:text-white transition-colors duration-200 cursor-pointer"
                   >
                     Links Importantes
                   </button>
