@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   Users, BookOpen, TrendingUp, Target, Download, Calendar, Star, ArrowRight, 
   Eye, Play, FileText, Award, Clock, Zap, Activity, BarChart3, 
-  MessageCircle, Heart, Bookmark, ChevronRight, Sparkles
+  MessageCircle, Heart, Bookmark, ChevronRight, Sparkles, Newspaper
 } from 'lucide-react';
 import { getTreinamentos } from '../services/treinamentosService';
 import { obterEstatisticas } from '../services/estatisticasService';
@@ -95,7 +95,7 @@ const Home = ({ setCurrentPage }) => {
         </div>
       </div>
     );
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -132,8 +132,9 @@ const Home = ({ setCurrentPage }) => {
               atendimento e instalação dos serviços Desktop Fibra Internet.
             </p>
 
-            {/* Cards de acesso rápido com cores padrão */}
+            {/* Cards de acesso rápido condicionais */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+              {/* Treinamentos - sempre visível */}
               <Card 
                 className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 transition-all duration-300 cursor-pointer transform hover:scale-105"
                 onClick={() => setCurrentPage('treinamentos')}
@@ -145,27 +146,55 @@ const Home = ({ setCurrentPage }) => {
                 </CardContent>
               </Card>
 
-              <Card 
-                className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 transition-all duration-300 cursor-pointer transform hover:scale-105"
-                onClick={() => setCurrentPage('usuarios')}
-              >
-                <CardContent className="p-6 text-center">
-                  <Users className="w-12 h-12 mx-auto mb-4 text-red-200" />
-                  <h3 className="text-xl font-semibold mb-2">Equipe</h3>
-                  <p className="text-red-100 text-sm">Gerencie colaboradores</p>
-                </CardContent>
-              </Card>
+              {/* Card condicional - Equipe (admin) ou Notícias (usuário) */}
+              {isAdmin ? (
+                <Card 
+                  className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 transition-all duration-300 cursor-pointer transform hover:scale-105"
+                  onClick={() => setCurrentPage('usuarios')}
+                >
+                  <CardContent className="p-6 text-center">
+                    <Users className="w-12 h-12 mx-auto mb-4 text-red-200" />
+                    <h3 className="text-xl font-semibold mb-2">Equipe</h3>
+                    <p className="text-red-100 text-sm">Gerencie colaboradores</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card 
+                  className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 transition-all duration-300 cursor-pointer transform hover:scale-105"
+                  onClick={() => setCurrentPage('noticias')}
+                >
+                  <CardContent className="p-6 text-center">
+                    <Newspaper className="w-12 h-12 mx-auto mb-4 text-red-200" />
+                    <h3 className="text-xl font-semibold mb-2">Notícias</h3>
+                    <p className="text-red-100 text-sm">Atualizações e avisos</p>
+                  </CardContent>
+                </Card>
+              )}
 
-              <Card 
-                className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 transition-all duration-300 cursor-pointer transform hover:scale-105"
-                onClick={() => setCurrentPage('visualizar-feedbacks')}
-              >
-                <CardContent className="p-6 text-center">
-                  <BarChart3 className="w-12 h-12 mx-auto mb-4 text-red-200" />
-                  <h3 className="text-xl font-semibold mb-2">Analytics</h3>
-                  <p className="text-red-100 text-sm">Visualize feedbacks</p>
-                </CardContent>
-              </Card>
+              {/* Card condicional - Analytics (admin) ou Links Importantes (usuário) */}
+              {isAdmin ? (
+                <Card 
+                  className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 transition-all duration-300 cursor-pointer transform hover:scale-105"
+                  onClick={() => setCurrentPage('visualizar-feedbacks')}
+                >
+                  <CardContent className="p-6 text-center">
+                    <BarChart3 className="w-12 h-12 mx-auto mb-4 text-red-200" />
+                    <h3 className="text-xl font-semibold mb-2">Analytics</h3>
+                    <p className="text-red-100 text-sm">Visualize feedbacks</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card 
+                  className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 transition-all duration-300 cursor-pointer transform hover:scale-105"
+                  onClick={() => setCurrentPage('links-importantes')}
+                >
+                  <CardContent className="p-6 text-center">
+                    <Bookmark className="w-12 h-12 mx-auto mb-4 text-red-200" />
+                    <h3 className="text-xl font-semibold mb-2">Links Úteis</h3>
+                    <p className="text-red-100 text-sm">Recursos importantes</p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </div>
