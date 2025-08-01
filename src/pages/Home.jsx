@@ -295,7 +295,7 @@ const Home = ({ setCurrentPage }) => {
             {/* Parágrafo com sombra e backdrop-filter para melhor legibilidade */}
             <div className="relative">
               <div className="absolute inset-0 bg-black/10 backdrop-blur-sm rounded-2xl"></div>
-              <p className="relative text-xl md:text-2xl mb-12 text-white max-w-4xl mx-auto leading-relaxed p-6 drop-shadow-md">
+              <p className="relative text-xl md:text-2xl mb-12 text-white max-w-4xl mx-auto leading-relaxed p-6 drop-shadow-sm">
                 Equipe especializada em apoio ao técnico de campo, fornecendo suporte, 
                 treinamentos e recursos necessários para garantir a excelência no 
                 atendimento e instalação dos serviços Desktop Fibra Internet.
