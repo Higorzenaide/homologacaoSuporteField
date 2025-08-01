@@ -550,6 +550,10 @@ const Home = ({ setCurrentPage }) => {
                         <Calendar className="w-4 h-4 mr-1" />
                         {new Date(noticia.dataPublicacao).toLocaleDateString('pt-BR')}
                       </div>
+                      <div className="text-sm text-gray-500 flex items-center">
+                        <Users size={14} className="mr-1" />
+                        {noticiaModal.autor}
+                      </div>
                     </div>
                     
                     <h3 className="font-bold text-2xl mb-4 text-gray-900 group-hover:text-[var(--desktop-red)] transition-colors duration-300 line-clamp-2">
@@ -598,6 +602,10 @@ const Home = ({ setCurrentPage }) => {
                 <div className="flex items-center text-sm text-gray-500">
                   <Calendar className="w-4 h-4 mr-1" />
                   {new Date(noticiaModal.dataPublicacao).toLocaleDateString('pt-BR')}
+                </div>
+                <div className="text-sm text-gray-500 flex items-center">
+                        <Users size={14} className="mr-1" />
+                        {noticiaModal.autor}
                 </div>
               </div>
               <DialogTitle className="text-2xl font-bold text-gray-900 mb-4">
