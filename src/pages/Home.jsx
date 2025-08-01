@@ -15,105 +15,120 @@ import { getNoticiasDestaque } from '../services/noticiasService';
 import EditableStatCard from '../components/EditableStatCard';
 import { useAuth } from '../contexts/AuthContext';
 
-// Componente das bolinhas interativas - VERSÃO COMPLETAMENTE REESCRITA
+// Componente das bolinhas interativas - VERSÃO CORRIGIDA COM BRANCO
 const InteractiveBackground = () => {
   const canvasRef = useRef(null);
-  const animationRef = useRef(null);
-  const particlesRef = useRef([]);
+  const containerRef = useRef(null);
   const mouseRef = useRef({ x: 0, y: 0 });
+  const particlesRef = useRef([]);
+  const animationRef = useRef();
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
 
     const ctx = canvas.getContext('2d');
-    let isAnimating = false;
-
-    // Função para configurar o canvas
-    const setupCanvas = () => {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
+    
+    // Configurar canvas
+    const resizeCanvas = () => {
+      const rect = container.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
       
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      
-      ctx.scale(dpr, dpr);
-      
-      canvas.style.width = rect.width + 'px';
-      canvas.style.height = rect.height + 'px';
-      
-      return { width: rect.width, height: rect.height };
+      // Recriar partículas quando redimensionar
+      if (canvas.width > 0 && canvas.height > 0) {
+        particlesRef.current = createParticles();
+      }
     };
-
-    // Função para criar partículas
-    const createParticles = (width, height) => {
+    
+    // Criar partículas (bolinhas)
+    const createParticles = () => {
       const particles = [];
-      const count = Math.min(15, Math.max(5, Math.floor((width * height) / 25000)));
+      const particleCount = Math.max(8, Math.floor((canvas.width * canvas.height) / 20000));
       
-      for (let i = 0; i < count; i++) {
+      for (let i = 0; i < particleCount; i++) {
         particles.push({
-          x: Math.random() * width,
-          y: Math.random() * height,
-          vx: (Math.random() - 0.5) * 2,
-          vy: (Math.random() - 0.5) * 2,
-          radius: Math.random() * 30 + 15,
-          opacity: Math.random() * 0.5 + 0.3,
-          hue: Math.random() * 60 + 200, // Tons de azul/roxo
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 1.5, // Velocidade mais perceptível
+          vy: (Math.random() - 0.5) * 1.5,
+          radius: Math.random() * 25 + 15, // Tamanho menor para melhor performance
+          opacity: Math.random() * 0.4 + 0.3, // Mais visível
         });
       }
       
       return particles;
     };
 
-    // Função de animação
+    // Configuração inicial
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Rastrear mouse no container
+    const handleMouseMove = (e) => {
+      const rect = container.getBoundingClientRect();
+      mouseRef.current = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      };
+    };
+
+    // Adicionar listener ao container (não ao canvas)
+    container.addEventListener('mousemove', handleMouseMove);
+
+    // Animação
     const animate = () => {
-      if (!isAnimating) return;
+      if (!canvas.width || !canvas.height) {
+        animationRef.current = requestAnimationFrame(animate);
+        return;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      const { width, height } = setupCanvas();
-      
-      // Limpar canvas
-      ctx.clearRect(0, 0, width, height);
-      
-      // Atualizar e desenhar partículas
       particlesRef.current.forEach(particle => {
-        // Movimento
+        // Movimento natural
         particle.x += particle.vx;
         particle.y += particle.vy;
         
         // Bounce nas bordas
-        if (particle.x <= particle.radius || particle.x >= width - particle.radius) {
+        if (particle.x <= particle.radius || particle.x >= canvas.width - particle.radius) {
           particle.vx *= -1;
         }
-        if (particle.y <= particle.radius || particle.y >= height - particle.radius) {
+        if (particle.y <= particle.radius || particle.y >= canvas.height - particle.radius) {
           particle.vy *= -1;
         }
         
         // Manter dentro dos limites
-        particle.x = Math.max(particle.radius, Math.min(width - particle.radius, particle.x));
-        particle.y = Math.max(particle.radius, Math.min(height - particle.radius, particle.y));
+        particle.x = Math.max(particle.radius, Math.min(canvas.width - particle.radius, particle.x));
+        particle.y = Math.max(particle.radius, Math.min(canvas.height - particle.radius, particle.y));
         
-        // Interação com mouse
+        // Efeito de repulsão do mouse
         const dx = mouseRef.current.x - particle.x;
         const dy = mouseRef.current.y - particle.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        const maxDistance = 100;
+        const repulsionRadius = 120;
         
-        if (distance < maxDistance) {
-          const force = (maxDistance - distance) / maxDistance;
+        if (distance < repulsionRadius && distance > 0) {
+          const force = (repulsionRadius - distance) / repulsionRadius;
           const angle = Math.atan2(dy, dx);
-          particle.x -= Math.cos(angle) * force * 3;
-          particle.y -= Math.sin(angle) * force * 3;
+          
+          // Aplicar força de repulsão
+          particle.x -= Math.cos(angle) * force * 8;
+          particle.y -= Math.sin(angle) * force * 8;
         }
         
-        // Desenhar partícula
+        // Desenhar partícula BRANCA com gradiente
         const gradient = ctx.createRadialGradient(
           particle.x, particle.y, 0,
           particle.x, particle.y, particle.radius
         );
         
-        gradient.addColorStop(0, `hsla(${particle.hue}, 70%, 80%, ${particle.opacity})`);
-        gradient.addColorStop(0.7, `hsla(${particle.hue}, 70%, 60%, ${particle.opacity * 0.5})`);
-        gradient.addColorStop(1, `hsla(${particle.hue}, 70%, 40%, 0)`);
+        // Gradiente branco com transparência
+        gradient.addColorStop(0, `rgba(255, 255, 255, ${particle.opacity})`);
+        gradient.addColorStop(0.4, `rgba(255, 255, 255, ${particle.opacity * 0.6})`);
+        gradient.addColorStop(0.8, `rgba(255, 255, 255, ${particle.opacity * 0.2})`);
+        gradient.addColorStop(1, `rgba(255, 255, 255, 0)`);
         
         ctx.fillStyle = gradient;
         ctx.beginPath();
@@ -124,38 +139,12 @@ const InteractiveBackground = () => {
       animationRef.current = requestAnimationFrame(animate);
     };
 
-    // Função para lidar com movimento do mouse
-    const handleMouseMove = (e) => {
-      const rect = canvas.getBoundingClientRect();
-      mouseRef.current = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-      };
-    };
-
-    // Função para lidar com redimensionamento
-    const handleResize = () => {
-      const { width, height } = setupCanvas();
-      particlesRef.current = createParticles(width, height);
-    };
-
-    // Inicialização
-    const { width, height } = setupCanvas();
-    particlesRef.current = createParticles(width, height);
-    
-    // Event listeners
-    canvas.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('resize', handleResize);
-    
     // Iniciar animação
-    isAnimating = true;
     animate();
 
-    // Cleanup
     return () => {
-      isAnimating = false;
-      canvas.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', resizeCanvas);
+      container.removeEventListener('mousemove', handleMouseMove);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -163,15 +152,16 @@ const InteractiveBackground = () => {
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 w-full h-full"
-      style={{
-        pointerEvents: 'none',
-        opacity: 0.8,
-        zIndex: 1
-      }}
-    />
+    <div ref={containerRef} className="absolute inset-0 w-full h-full">
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full pointer-events-none"
+        style={{ 
+          opacity: 0.8,
+          zIndex: 1
+        }}
+      />
+    </div>
   );
 };
 
@@ -280,7 +270,7 @@ const Home = ({ setCurrentPage }) => {
       {/* Hero Section com fundo interativo */}
       <div className="relative overflow-hidden min-h-[600px]">
         <div className="absolute inset-0 bg-gradient-to-r from-[var(--desktop-red)] to-[var(--desktop-red-dark)]">
-          {/* Fundo interativo com bolinhas */}
+          {/* Fundo interativo com bolinhas BRANCAS */}
           <InteractiveBackground />
         </div>
 
