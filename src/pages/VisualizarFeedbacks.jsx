@@ -43,12 +43,13 @@ import {
 const VisualizarFeedbacks = () => {
   const { user, isAdmin } = useAuth();
   const [feedbacks, setFeedbacks] = useState([]);
-  const [feedbacksOriginais, setFeedbacksOriginais] = useState([]); // Dados originais para reset
+  const [feedbacksOriginais, setFeedbacksOriginais] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [buscaColaborador, setBuscaColaborador] = useState('');
 
   const [filtros, setFiltros] = useState({
     usuario_id: 'all',
@@ -60,6 +61,20 @@ const VisualizarFeedbacks = () => {
 
   // Verificar permissões
   const podeVerFeedbacks = isAdmin && user?.pode_ver_feedbacks;
+
+  // Filtrar colaboradores baseado na busca
+  const colaboradoresFiltrados = useMemo(() => {
+    if (!buscaColaborador.trim()) {
+      return usuarios;
+    }
+
+    const termoBusca = buscaColaborador.toLowerCase().trim();
+    return usuarios.filter(usuario => 
+      usuario.nome.toLowerCase().includes(termoBusca) ||
+      usuario.email.toLowerCase().includes(termoBusca) ||
+      (usuario.setor && usuario.setor.toLowerCase().includes(termoBusca))
+    );
+  }, [usuarios, buscaColaborador]);
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -74,7 +89,7 @@ const VisualizarFeedbacks = () => {
           console.error('Erro ao carregar feedbacks:', feedbacksError);
         } else {
           setFeedbacks(feedbacksData || []);
-          setFeedbacksOriginais(feedbacksData || []); // Guardar dados originais
+          setFeedbacksOriginais(feedbacksData || []);
         }
 
         // Carregar usuários
@@ -127,7 +142,6 @@ const VisualizarFeedbacks = () => {
   const aplicarFiltros = async () => {
     setLoading(true);
     try {
-      // Converter valores "all" para string vazia para a API
       const filtrosParaAPI = {
         ...filtros,
         usuario_id: filtros.usuario_id === 'all' ? '' : filtros.usuario_id,
@@ -157,15 +171,14 @@ const VisualizarFeedbacks = () => {
       data_fim: '',
       nome_avaliador: ''
     });
+    setBuscaColaborador('');
     
-    // Restaurar dados originais sem fazer nova consulta
     setFeedbacks(feedbacksOriginais);
     setMessage({ type: '', text: '' });
   };
 
   const exportarCSV = async () => {
     try {
-      // Converter valores "all" para string vazia para a API
       const filtrosParaAPI = {
         ...filtros,
         usuario_id: filtros.usuario_id === 'all' ? '' : filtros.usuario_id,
@@ -178,7 +191,6 @@ const VisualizarFeedbacks = () => {
         return;
       }
 
-      // Criar e baixar arquivo
       const blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
@@ -196,114 +208,122 @@ const VisualizarFeedbacks = () => {
     }
   };
 
-  // ===== DADOS CALCULADOS COM BASE NOS FEEDBACKS FILTRADOS =====
+  // ===== DADOS CALCULADOS COM CATEGORIAS REAIS =====
   
-  // Preparar dados para gráficos baseados nos feedbacks filtrados
+  // Gráfico de pizza - usar categorias reais
   const dadosGraficoCategoria = useMemo(() => {
-    return categorias.map(categoria => {
-      const count = feedbacks.filter(f => f.categoria_nome === categoria.nome).length;
+    const categoriaCount = {};
+    
+    feedbacks.forEach(feedback => {
+      const categoriaNome = feedback.categoria_nome;
+      if (categoriaNome) {
+        categoriaCount[categoriaNome] = (categoriaCount[categoriaNome] || 0) + 1;
+      }
+    });
+
+    return Object.entries(categoriaCount).map(([nome, count]) => {
+      const categoria = categorias.find(c => c.nome === nome);
       return {
-        name: categoria.nome,
+        name: nome,
         value: count,
-        color: categoria.cor
+        color: categoria?.cor || '#8884d8'
       };
-    }).filter(item => item.value > 0);
+    }).sort((a, b) => b.value - a.value);
   }, [feedbacks, categorias]);
 
-  // Estatísticas mensais baseadas nos feedbacks filtrados
+  // CORRIGIDO: Gráfico mensal - usar categorias reais, não tipos artificiais
   const dadosGraficoMensal = useMemo(() => {
-    // Agrupar feedbacks por mês
     const feedbacksPorMes = {};
     
     feedbacks.forEach(feedback => {
       const data = new Date(feedback.created_at);
       const chave = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+      const categoriaNome = feedback.categoria_nome;
       
       if (!feedbacksPorMes[chave]) {
         feedbacksPorMes[chave] = {
           mes: chave,
           total: 0,
-          positivos: 0,
-          negativos: 0,
-          construtivos: 0
+          categorias: {}
         };
       }
       
       feedbacksPorMes[chave].total++;
       
-      // Categorizar por tipo (baseado no nome da categoria)
-      const categoria = feedback.categoria_nome?.toLowerCase() || '';
-      if (categoria.includes('positiv') || categoria.includes('elogio')) {
-        feedbacksPorMes[chave].positivos++;
-      } else if (categoria.includes('negativ') || categoria.includes('reclamação')) {
-        feedbacksPorMes[chave].negativos++;
-      } else {
-        feedbacksPorMes[chave].construtivos++;
+      // Contar por categoria real
+      if (categoriaNome) {
+        feedbacksPorMes[chave].categorias[categoriaNome] = 
+          (feedbacksPorMes[chave].categorias[categoriaNome] || 0) + 1;
       }
     });
 
-    // Converter para array e formatar
+    // Converter para formato do gráfico
     return Object.values(feedbacksPorMes)
       .sort((a, b) => a.mes.localeCompare(b.mes))
-      .map(stat => ({
-        mes: new Date(stat.mes + '-01').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }),
-        total: stat.total,
-        positivos: stat.positivos,
-        negativos: stat.negativos,
-        construtivos: stat.construtivos
-      }));
+      .map(stat => {
+        const resultado = {
+          mes: new Date(stat.mes + '-01').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }),
+          total: stat.total
+        };
+        
+        // Adicionar cada categoria como uma propriedade
+        Object.entries(stat.categorias).forEach(([categoria, count]) => {
+          resultado[categoria] = count;
+        });
+        
+        return resultado;
+      });
   }, [feedbacks]);
 
-  // Estatísticas por usuário baseadas nos feedbacks filtrados
+  // Cores para o gráfico mensal baseadas nas categorias reais
+  const coresGraficoMensal = useMemo(() => {
+    const cores = {};
+    categorias.forEach(categoria => {
+      cores[categoria.nome] = categoria.cor;
+    });
+    return cores;
+  }, [categorias]);
+
+  // Estatísticas por usuário - usar categorias reais
   const estatisticasPorUsuario = useMemo(() => {
     const estatisticas = {};
     
     feedbacks.forEach(feedback => {
       const userId = feedback.usuario_id;
       const userName = feedback.usuario_nome;
+      const categoriaNome = feedback.categoria_nome;
       
       if (!estatisticas[userId]) {
         estatisticas[userId] = {
           usuario_nome: userName,
           total_feedbacks: 0,
-          total_positivos: 0,
-          total_negativos: 0,
-          total_construtivos: 0
+          categorias: {}
         };
       }
       
       estatisticas[userId].total_feedbacks++;
       
-      // Categorizar por tipo
-      const categoria = feedback.categoria_nome?.toLowerCase() || '';
-      if (categoria.includes('positiv') || categoria.includes('elogio')) {
-        estatisticas[userId].total_positivos++;
-      } else if (categoria.includes('negativ') || categoria.includes('reclamação')) {
-        estatisticas[userId].total_negativos++;
-      } else {
-        estatisticas[userId].total_construtivos++;
+      // Contar por categoria real
+      if (categoriaNome) {
+        estatisticas[userId].categorias[categoriaNome] = 
+          (estatisticas[userId].categorias[categoriaNome] || 0) + 1;
       }
     });
 
     return Object.values(estatisticas).sort((a, b) => b.total_feedbacks - a.total_feedbacks);
   }, [feedbacks]);
 
-  // Resumo geral baseado nos feedbacks filtrados
+  // Resumo geral - usar categorias reais
   const resumoGeral = useMemo(() => {
     const total = feedbacks.length;
     const colaboradoresComFeedback = new Set(feedbacks.map(f => f.usuario_id)).size;
     const categoriasUsadas = new Set(feedbacks.map(f => f.categoria_id)).size;
     
-    let positivos = 0, negativos = 0, construtivos = 0;
-    
+    const categoriaCount = {};
     feedbacks.forEach(feedback => {
-      const categoria = feedback.categoria_nome?.toLowerCase() || '';
-      if (categoria.includes('positiv') || categoria.includes('elogio')) {
-        positivos++;
-      } else if (categoria.includes('negativ') || categoria.includes('reclamação')) {
-        negativos++;
-      } else {
-        construtivos++;
+      const categoriaNome = feedback.categoria_nome;
+      if (categoriaNome) {
+        categoriaCount[categoriaNome] = (categoriaCount[categoriaNome] || 0) + 1;
       }
     });
 
@@ -311,9 +331,7 @@ const VisualizarFeedbacks = () => {
       total,
       colaboradoresComFeedback,
       categoriasUsadas,
-      positivos,
-      negativos,
-      construtivos
+      categoriaCount
     };
   }, [feedbacks]);
 
@@ -364,22 +382,52 @@ const VisualizarFeedbacks = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-            {/* Filtro por usuário */}
+            {/* Filtro por usuário com busca */}
             <div className="space-y-2">
               <Label>Colaborador</Label>
+              
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Buscar colaborador..."
+                  value={buscaColaborador}
+                  onChange={(e) => setBuscaColaborador(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
               <Select value={filtros.usuario_id} onValueChange={(value) => handleFiltroChange('usuario_id', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos os colaboradores" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-60">
                   <SelectItem value="all">Todos os colaboradores</SelectItem>
-                  {usuarios.map((usuario) => (
-                    <SelectItem key={usuario.id} value={usuario.id.toString()}>
-                      {usuario.nome}
-                    </SelectItem>
-                  ))}
+                  {colaboradoresFiltrados.length === 0 && buscaColaborador ? (
+                    <div className="p-4 text-center text-gray-500 text-sm">
+                      Nenhum colaborador encontrado
+                    </div>
+                  ) : (
+                    colaboradoresFiltrados.map((usuario) => (
+                      <SelectItem key={usuario.id} value={usuario.id.toString()}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{usuario.nome}</span>
+                          <span className="text-sm text-gray-500">{usuario.email}</span>
+                          {usuario.setor && (
+                            <span className="text-xs text-gray-400">{usuario.setor}</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
+              
+              {buscaColaborador && (
+                <div className="text-sm text-gray-500">
+                  {colaboradoresFiltrados.length} colaborador(es) encontrado(s)
+                </div>
+              )}
             </div>
 
             {/* Filtro por categoria */}
@@ -465,7 +513,7 @@ const VisualizarFeedbacks = () => {
         </CardContent>
       </Card>
 
-      {/* Resumo rápido */}
+      {/* Resumo rápido - usar categorias reais */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardContent className="pt-6">
@@ -475,30 +523,24 @@ const VisualizarFeedbacks = () => {
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{resumoGeral.positivos}</div>
-              <div className="text-sm text-gray-500">Positivos</div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">{resumoGeral.construtivos}</div>
-              <div className="text-sm text-gray-500">Construtivos</div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">{resumoGeral.negativos}</div>
-              <div className="text-sm text-gray-500">Negativos</div>
-            </div>
-          </CardContent>
-        </Card>
+        {Object.entries(resumoGeral.categoriaCount).slice(0, 3).map(([categoria, count], index) => {
+          const categoriaInfo = categorias.find(c => c.nome === categoria);
+          return (
+            <Card key={categoria}>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <div 
+                    className="text-2xl font-bold mb-1" 
+                    style={{ color: categoriaInfo?.cor || '#6b7280' }}
+                  >
+                    {count}
+                  </div>
+                  <div className="text-sm text-gray-500">{categoria}</div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Tabs principais */}
@@ -580,7 +622,7 @@ const VisualizarFeedbacks = () => {
         {/* Gráficos */}
         <TabsContent value="graficos">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Gráfico de pizza - Feedbacks por categoria */}
+            {/* Gráfico de pizza - categorias reais */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -602,7 +644,7 @@ const VisualizarFeedbacks = () => {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(1)}%)`}
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"
@@ -611,7 +653,7 @@ const VisualizarFeedbacks = () => {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <Tooltip formatter={(value, name) => [value, name]} />
                     </RechartsPieChart>
                   </ResponsiveContainer>
                 ) : (
@@ -622,7 +664,7 @@ const VisualizarFeedbacks = () => {
               </CardContent>
             </Card>
 
-            {/* Gráfico de barras - Feedbacks por mês */}
+            {/* CORRIGIDO: Gráfico mensal - categorias reais */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -641,13 +683,19 @@ const VisualizarFeedbacks = () => {
                     <BarChart data={dadosGraficoMensal}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="mes" />
-                      <YAxis />
+                      <YAxis allowDecimals={false} domain={[0, 'dataMax']} />
                       <Tooltip />
                       <Legend />
                       <Bar dataKey="total" fill="#8884d8" name="Total" />
-                      <Bar dataKey="positivos" fill="#82ca9d" name="Positivos" />
-                      <Bar dataKey="negativos" fill="#ffc658" name="Negativos" />
-                      <Bar dataKey="construtivos" fill="#ff7300" name="Construtivos" />
+                      {/* Barras dinâmicas para cada categoria */}
+                      {categorias.map((categoria) => (
+                        <Bar 
+                          key={categoria.nome}
+                          dataKey={categoria.nome} 
+                          fill={categoria.cor} 
+                          name={categoria.nome} 
+                        />
+                      ))}
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -663,7 +711,7 @@ const VisualizarFeedbacks = () => {
         {/* Estatísticas */}
         <TabsContent value="estatisticas">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Estatísticas por usuário */}
+            {/* Estatísticas por usuário - categorias reais */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -681,24 +729,26 @@ const VisualizarFeedbacks = () => {
                   <div className="space-y-4 max-h-[400px] overflow-y-auto">
                     {estatisticasPorUsuario.map((stat, index) => (
                       <div key={index} className="border-b pb-4 last:border-b-0">
-                        <h4 className="font-semibold text-gray-900">{stat.usuario_nome}</h4>
-                        <div className="grid grid-cols-4 gap-2 mt-2">
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-blue-600">{stat.total_feedbacks}</div>
-                            <div className="text-xs text-gray-500">Total</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-green-600">{stat.total_positivos}</div>
-                            <div className="text-xs text-gray-500">Positivos</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-orange-600">{stat.total_construtivos}</div>
-                            <div className="text-xs text-gray-500">Construtivos</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-lg font-bold text-red-600">{stat.total_negativos}</div>
-                            <div className="text-xs text-gray-500">Negativos</div>
-                          </div>
+                        <h4 className="font-semibold text-gray-900 mb-2">{stat.usuario_nome}</h4>
+                        <div className="text-center mb-2">
+                          <div className="text-lg font-bold text-blue-600">{stat.total_feedbacks}</div>
+                          <div className="text-xs text-gray-500">Total de Feedbacks</div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {Object.entries(stat.categorias).map(([categoria, count]) => {
+                            const categoriaInfo = categorias.find(c => c.nome === categoria);
+                            return (
+                              <div key={categoria} className="text-center">
+                                <div 
+                                  className="text-sm font-bold"
+                                  style={{ color: categoriaInfo?.cor || '#6b7280' }}
+                                >
+                                  {count}
+                                </div>
+                                <div className="text-xs text-gray-500">{categoria}</div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     ))}
@@ -711,7 +761,7 @@ const VisualizarFeedbacks = () => {
               </CardContent>
             </Card>
 
-            {/* Resumo detalhado */}
+            {/* Resumo detalhado - categorias reais */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -743,35 +793,32 @@ const VisualizarFeedbacks = () => {
                   </div>
 
                   <div className="border-t pt-4">
-                    <h5 className="font-semibold text-gray-900 mb-3">Distribuição por Tipo</h5>
+                    <h5 className="font-semibold text-gray-900 mb-3">Distribuição por Categoria</h5>
                     <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Feedbacks Positivos</span>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-semibold text-green-600">{resumoGeral.positivos}</span>
-                          <span className="text-xs text-gray-500">
-                            ({resumoGeral.total > 0 ? ((resumoGeral.positivos / resumoGeral.total) * 100).toFixed(1) : 0}%)
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Feedbacks Construtivos</span>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-semibold text-orange-600">{resumoGeral.construtivos}</span>
-                          <span className="text-xs text-gray-500">
-                            ({resumoGeral.total > 0 ? ((resumoGeral.construtivos / resumoGeral.total) * 100).toFixed(1) : 0}%)
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Feedbacks Negativos</span>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-semibold text-red-600">{resumoGeral.negativos}</span>
-                          <span className="text-xs text-gray-500">
-                            ({resumoGeral.total > 0 ? ((resumoGeral.negativos / resumoGeral.total) * 100).toFixed(1) : 0}%)
-                          </span>
-                        </div>
-                      </div>
+                      {Object.entries(resumoGeral.categoriaCount).map(([categoria, count]) => {
+                        const categoriaInfo = categorias.find(c => c.nome === categoria);
+                        const percentual = resumoGeral.total > 0 ? ((count / resumoGeral.total) * 100).toFixed(1) : 0;
+                        return (
+                          <div key={categoria} className="flex justify-between items-center">
+                            <div className="flex items-center space-x-2">
+                              <div 
+                                className="w-3 h-3 rounded-full" 
+                                style={{ backgroundColor: categoriaInfo?.cor || '#6b7280' }}
+                              />
+                              <span className="text-sm text-gray-600">{categoria}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span 
+                                className="font-semibold"
+                                style={{ color: categoriaInfo?.cor || '#6b7280' }}
+                              >
+                                {count}
+                              </span>
+                              <span className="text-xs text-gray-500">({percentual}%)</span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
