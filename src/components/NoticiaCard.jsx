@@ -44,7 +44,7 @@ const NoticiaCard = ({
   // Função para extrair texto simples do HTML para preview
   const extrairTextoSimples = (html) => {
     if (!html) return '';
-    // Remove tags HTML e retorna apenas o texto
+    // Criar elemento temporário para extrair texto
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
     return tempDiv.textContent || tempDiv.innerText || '';
@@ -82,9 +82,9 @@ const NoticiaCard = ({
             {noticia.titulo}
           </h3>
           
-          <p className="text-gray-700 mb-4 line-clamp-3">
+          <div className="text-gray-700 mb-4 line-clamp-3">
             {truncarTexto(extrairTextoSimples(noticia.conteudo), 200)}
-          </p>
+          </div>
           
           <div className="flex justify-between items-center text-sm text-gray-600 mb-4">
             <span>Por: {noticia.autor}</span>
@@ -108,7 +108,7 @@ const NoticiaCard = ({
                 <span className="font-medium">{comentariosCount}</span>
               </button>
 
-              {/* Botão Abrir Notícia */}
+              {/* Botão Ler mais */}
               <button
                 onClick={() => onOpenComments(noticia)}
                 className="flex items-center space-x-1 px-3 py-1.5 rounded-md bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 hover:shadow-sm transition-all duration-200 text-sm font-medium"
@@ -147,9 +147,9 @@ const NoticiaCard = ({
           {noticia.titulo}
         </h3>
         
-        <p className="text-gray-600 mb-4 line-clamp-2">
+        <div className="text-gray-600 mb-4 line-clamp-2">
           {truncarTexto(extrairTextoSimples(noticia.conteudo), 120)}
-        </p>
+        </div>
         
         <div className="flex justify-between items-center text-sm text-gray-500 mb-4">
           <span>Por: {noticia.autor}</span>
@@ -173,7 +173,7 @@ const NoticiaCard = ({
               <span className="font-medium">{comentariosCount}</span>
             </button>
 
-            {/* Botão Abrir Notícia */}
+            {/* Botão Ler mais */}
             <button
               onClick={() => onOpenComments(noticia)}
               className="flex items-center space-x-1 px-3 py-1.5 rounded-md bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 hover:shadow-sm transition-all duration-200 text-sm font-medium"

@@ -12,22 +12,9 @@ const NoticiaModal = ({ isOpen, onClose, noticia }) => {
     });
   };
 
-  // Função para sanitizar HTML (básica - para produção, use uma biblioteca como DOMPurify)
+  // Função para sanitizar HTML básica
   const sanitizeHTML = (html) => {
     if (!html) return '';
-    
-    // Lista básica de tags permitidas
-    const allowedTags = [
-      'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'strike',
-      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-      'ul', 'ol', 'li',
-      'blockquote',
-      'a', 'img',
-      'span', 'div'
-    ];
-    
-    // Para uma implementação mais robusta, use DOMPurify
-    // Por enquanto, retornamos o HTML como está
     return html;
   };
 
@@ -73,15 +60,9 @@ const NoticiaModal = ({ isOpen, onClose, noticia }) => {
             <div className="prose prose-lg max-w-none">
               {/* Renderizar HTML formatado */}
               <div 
-                className="text-gray-700 leading-relaxed space-y-4 ql-editor"
+                className="text-gray-700 leading-relaxed space-y-4 formatted-content"
                 dangerouslySetInnerHTML={{ 
                   __html: sanitizeHTML(noticia.conteudo) 
-                }}
-                style={{
-                  // Estilos para compatibilidade com ReactQuill
-                  fontSize: '16px',
-                  lineHeight: '1.6',
-                  fontFamily: 'inherit'
                 }}
               />
             </div>
@@ -97,58 +78,67 @@ const NoticiaModal = ({ isOpen, onClose, noticia }) => {
 
       {/* Estilos CSS para o conteúdo formatado */}
       <style jsx>{`
-        .ql-editor {
-          padding: 0;
-          border: none;
+        .formatted-content {
+          font-size: 16px;
+          line-height: 1.6;
+          font-family: inherit;
         }
         
-        .ql-editor h1, .ql-editor h2, .ql-editor h3, 
-        .ql-editor h4, .ql-editor h5, .ql-editor h6 {
+        .formatted-content h1, 
+        .formatted-content h2, 
+        .formatted-content h3, 
+        .formatted-content h4, 
+        .formatted-content h5, 
+        .formatted-content h6 {
           margin-top: 1.5em;
           margin-bottom: 0.5em;
           font-weight: 600;
           line-height: 1.25;
         }
         
-        .ql-editor h1 { font-size: 2em; color: #1f2937; }
-        .ql-editor h2 { font-size: 1.5em; color: #1f2937; }
-        .ql-editor h3 { font-size: 1.25em; color: #374151; }
-        .ql-editor h4 { font-size: 1.125em; color: #374151; }
-        .ql-editor h5 { font-size: 1em; color: #4b5563; }
-        .ql-editor h6 { font-size: 0.875em; color: #4b5563; }
+        .formatted-content h1 { font-size: 2em; color: #1f2937; }
+        .formatted-content h2 { font-size: 1.5em; color: #1f2937; }
+        .formatted-content h3 { font-size: 1.25em; color: #374151; }
+        .formatted-content h4 { font-size: 1.125em; color: #374151; }
+        .formatted-content h5 { font-size: 1em; color: #4b5563; }
+        .formatted-content h6 { font-size: 0.875em; color: #4b5563; }
         
-        .ql-editor p {
+        .formatted-content p {
           margin-bottom: 1em;
           text-align: justify;
         }
         
-        .ql-editor strong, .ql-editor b {
-          font-weight: 600;
+        .formatted-content strong, 
+        .formatted-content b {
+          font-weight: 600 !important;
           color: #1f2937;
         }
         
-        .ql-editor em, .ql-editor i {
+        .formatted-content em, 
+        .formatted-content i {
           font-style: italic;
         }
         
-        .ql-editor u {
+        .formatted-content u {
           text-decoration: underline;
         }
         
-        .ql-editor s, .ql-editor strike {
+        .formatted-content s, 
+        .formatted-content strike {
           text-decoration: line-through;
         }
         
-        .ql-editor ul, .ql-editor ol {
+        .formatted-content ul, 
+        .formatted-content ol {
           margin: 1em 0;
           padding-left: 1.5em;
         }
         
-        .ql-editor li {
+        .formatted-content li {
           margin-bottom: 0.5em;
         }
         
-        .ql-editor blockquote {
+        .formatted-content blockquote {
           border-left: 4px solid #dc2626;
           padding-left: 1em;
           margin: 1.5em 0;
@@ -159,23 +149,23 @@ const NoticiaModal = ({ isOpen, onClose, noticia }) => {
           border-radius: 0.375rem;
         }
         
-        .ql-editor a {
+        .formatted-content a {
           color: #dc2626;
           text-decoration: underline;
         }
         
-        .ql-editor a:hover {
+        .formatted-content a:hover {
           color: #b91c1c;
         }
         
-        .ql-editor img {
+        .formatted-content img {
           max-width: 100%;
           height: auto;
           border-radius: 0.375rem;
           margin: 1em 0;
         }
         
-        .ql-editor code {
+        .formatted-content code {
           background-color: #f3f4f6;
           padding: 0.2em 0.4em;
           border-radius: 0.25rem;
@@ -183,7 +173,7 @@ const NoticiaModal = ({ isOpen, onClose, noticia }) => {
           font-size: 0.875em;
         }
         
-        .ql-editor pre {
+        .formatted-content pre {
           background-color: #1f2937;
           color: #f9fafb;
           padding: 1em;
@@ -192,10 +182,44 @@ const NoticiaModal = ({ isOpen, onClose, noticia }) => {
           margin: 1em 0;
         }
         
-        .ql-editor pre code {
+        .formatted-content pre code {
           background: none;
           color: inherit;
           padding: 0;
+        }
+
+        /* Cores personalizadas do editor */
+        .formatted-content [style*="color: rgb(220, 38, 38)"] {
+          color: #dc2626 !important;
+        }
+        
+        .formatted-content [style*="color: rgb(5, 150, 105)"] {
+          color: #059669 !important;
+        }
+        
+        .formatted-content [style*="color: rgb(37, 99, 235)"] {
+          color: #2563eb !important;
+        }
+        
+        .formatted-content [style*="color: rgb(0, 0, 0)"] {
+          color: #000000 !important;
+        }
+
+        /* Tamanhos de fonte */
+        .formatted-content font[size="1"] {
+          font-size: 0.75em;
+        }
+        
+        .formatted-content font[size="3"] {
+          font-size: 1em;
+        }
+        
+        .formatted-content font[size="5"] {
+          font-size: 1.25em;
+        }
+        
+        .formatted-content font[size="7"] {
+          font-size: 1.5em;
         }
       `}</style>
     </div>
