@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,149 @@ import { atualizarEstatistica } from '../services/estatisticasService';
 import { getNoticiasDestaque } from '../services/noticiasService';
 import EditableStatCard from '../components/EditableStatCard';
 import { useAuth } from '../contexts/AuthContext';
+
+// Componente das bolinhas interativas
+const InteractiveBackground = () => {
+  const canvasRef = useRef(null);
+  const mouseRef = useRef({ x: 0, y: 0 });
+  const particlesRef = useRef([]);
+  const animationRef = useRef();
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    
+    // Configurar canvas
+    const resizeCanvas = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Criar partículas (bolinhas)
+    const createParticles = () => {
+      const particles = [];
+      const particleCount = Math.floor((canvas.width * canvas.height) / 15000);
+      
+      for (let i = 0; i < particleCount; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          originalX: 0,
+          originalY: 0,
+          size: Math.random() * 60 + 40,
+          opacity: Math.random() * 0.3 + 0.1,
+          speedX: (Math.random() - 0.5) * 0.5,
+          speedY: (Math.random() - 0.5) * 0.5,
+          angle: Math.random() * Math.PI * 2,
+          rotationSpeed: (Math.random() - 0.5) * 0.02
+        });
+      }
+      
+      // Definir posições originais
+      particles.forEach(particle => {
+        particle.originalX = particle.x;
+        particle.originalY = particle.y;
+      });
+      
+      return particles;
+    };
+
+    particlesRef.current = createParticles();
+
+    // Rastrear mouse
+    const handleMouseMove = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseRef.current = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      };
+    };
+
+    canvas.addEventListener('mousemove', handleMouseMove);
+
+    // Animação
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      particlesRef.current.forEach(particle => {
+        // Movimento natural
+        particle.x += particle.speedX;
+        particle.y += particle.speedY;
+        particle.angle += particle.rotationSpeed;
+        
+        // Manter dentro dos limites
+        if (particle.x < -particle.size) particle.x = canvas.width + particle.size;
+        if (particle.x > canvas.width + particle.size) particle.x = -particle.size;
+        if (particle.y < -particle.size) particle.y = canvas.height + particle.size;
+        if (particle.y > canvas.height + particle.size) particle.y = -particle.size;
+        
+        // Efeito de repulsão do mouse
+        const mouseDistance = Math.sqrt(
+          Math.pow(particle.x - mouseRef.current.x, 2) + 
+          Math.pow(particle.y - mouseRef.current.y, 2)
+        );
+        
+        const repulsionRadius = 150;
+        const repulsionForce = 0.3;
+        
+        if (mouseDistance < repulsionRadius) {
+          const angle = Math.atan2(
+            particle.y - mouseRef.current.y,
+            particle.x - mouseRef.current.x
+          );
+          const force = (repulsionRadius - mouseDistance) / repulsionRadius * repulsionForce;
+          
+          particle.x += Math.cos(angle) * force * 5;
+          particle.y += Math.sin(angle) * force * 5;
+        }
+        
+        // Desenhar partícula com gradiente
+        const gradient = ctx.createRadialGradient(
+          particle.x, particle.y, 0,
+          particle.x, particle.y, particle.size
+        );
+        
+        gradient.addColorStop(0, `rgba(255, 255, 255, ${particle.opacity * 0.8})`);
+        gradient.addColorStop(0.5, `rgba(255, 255, 255, ${particle.opacity * 0.4})`);
+        gradient.addColorStop(1, `rgba(255, 255, 255, 0)`);
+        
+        ctx.save();
+        ctx.translate(particle.x, particle.y);
+        ctx.rotate(particle.angle);
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, particle.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+      
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      style={{ opacity: 0.6 }}
+    />
+  );
+};
 
 const Home = ({ setCurrentPage }) => {
   const { user, isAdmin } = useAuth();
@@ -117,15 +260,11 @@ const Home = ({ setCurrentPage }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section com cores padrão */}
+      {/* Hero Section com fundo interativo */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-[var(--desktop-red)] to-[var(--desktop-red-dark)]">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full -mr-48 -mt-48"></div>
-            <div className="absolute top-20 right-20 w-64 h-64 bg-white rounded-full opacity-60"></div>
-            <div className="absolute bottom-0 left-0 w-80 h-80 bg-white rounded-full -ml-40 -mb-40"></div>
-            <div className="absolute bottom-20 left-20 w-48 h-48 bg-white rounded-full opacity-40"></div>
-          </div>
+          {/* Fundo interativo com bolinhas */}
+          <InteractiveBackground />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
