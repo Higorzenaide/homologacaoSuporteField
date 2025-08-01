@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { usuariosService } from '../services/usuariosService';
 import { categoriasFeedbackService } from '../services/categoriasFeedbackService';
@@ -10,7 +10,7 @@ import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Alert, AlertDescription } from '../components/ui/alert';
-import { Loader2, Send, User, MessageSquare, Tag, UserCheck } from 'lucide-react';
+import { Loader2, Send, User, MessageSquare, Tag, UserCheck, Search } from 'lucide-react';
 
 const InserirFeedback = () => {
   const { user, isAdmin } = useAuth();
@@ -19,6 +19,7 @@ const InserirFeedback = () => {
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [buscaColaborador, setBuscaColaborador] = useState('');
 
   const [formData, setFormData] = useState({
     usuario_id: '',
@@ -26,6 +27,20 @@ const InserirFeedback = () => {
     relato: '',
     nome_avaliador: ''
   });
+
+  // Filtrar colaboradores baseado na busca
+  const colaboradoresFiltrados = useMemo(() => {
+    if (!buscaColaborador.trim()) {
+      return usuarios;
+    }
+
+    const termoBusca = buscaColaborador.toLowerCase().trim();
+    return usuarios.filter(usuario => 
+      usuario.nome.toLowerCase().includes(termoBusca) ||
+      usuario.email.toLowerCase().includes(termoBusca) ||
+      (usuario.setor && usuario.setor.toLowerCase().includes(termoBusca))
+    );
+  }, [usuarios, buscaColaborador]);
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -122,6 +137,7 @@ const InserirFeedback = () => {
           relato: '',
           nome_avaliador: ''
         });
+        setBuscaColaborador('');
       }
     } catch (error) {
       console.error('Erro ao inserir feedback:', error);
@@ -174,12 +190,26 @@ const InserirFeedback = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Seleção de Usuário */}
+              {/* Seleção de Usuário com Busca */}
               <div className="space-y-2">
                 <Label htmlFor="usuario" className="flex items-center space-x-2">
                   <User className="h-4 w-4" />
                   <span>Colaborador *</span>
                 </Label>
+                
+                {/* Campo de busca */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Buscar colaborador por nome, email ou setor..."
+                    value={buscaColaborador}
+                    onChange={(e) => setBuscaColaborador(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                {/* Select de colaboradores */}
                 <Select 
                   value={formData.usuario_id} 
                   onValueChange={(value) => handleInputChange('usuario_id', value)}
@@ -187,23 +217,36 @@ const InserirFeedback = () => {
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o colaborador" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {usuarios.map((usuario) => (
-                      <SelectItem key={usuario.id} value={usuario.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{usuario.nome}</span>
-                          <span className="text-sm text-gray-500">{usuario.email}</span>
-                          {usuario.setor && (
-                            <span className="text-xs text-gray-400">{usuario.setor}</span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
+                  <SelectContent className="max-h-60">
+                    {colaboradoresFiltrados.length === 0 ? (
+                      <div className="p-4 text-center text-gray-500">
+                        {buscaColaborador ? 'Nenhum colaborador encontrado' : 'Carregando colaboradores...'}
+                      </div>
+                    ) : (
+                      colaboradoresFiltrados.map((usuario) => (
+                        <SelectItem key={usuario.id} value={usuario.id.toString()}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{usuario.nome}</span>
+                            <span className="text-sm text-gray-500">{usuario.email}</span>
+                            {usuario.setor && (
+                              <span className="text-xs text-gray-400">{usuario.setor}</span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
+                
+                {/* Contador de resultados */}
+                {buscaColaborador && (
+                  <div className="text-sm text-gray-500">
+                    {colaboradoresFiltrados.length} colaborador(es) encontrado(s)
+                  </div>
+                )}
               </div>
 
-              {/* Seleção de Categoria */}
+              {/* Seleção de Categoria - CORRIGIDO */}
               <div className="space-y-2">
                 <Label htmlFor="categoria" className="flex items-center space-x-2">
                   <Tag className="h-4 w-4" />
@@ -218,7 +261,7 @@ const InserirFeedback = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {categorias.map((categoria) => (
-                      <SelectItem key={categoria.id} value={categoria.id}>
+                      <SelectItem key={categoria.id} value={categoria.id.toString()}>
                         <div className="flex items-center space-x-2">
                           <div 
                             className="w-3 h-3 rounded-full" 
@@ -280,6 +323,7 @@ const InserirFeedback = () => {
                       relato: '',
                       nome_avaliador: ''
                     });
+                    setBuscaColaborador('');
                     setMessage({ type: '', text: '' });
                   }}
                   disabled={loading}
@@ -330,10 +374,32 @@ const InserirFeedback = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Dicas de uso */}
+        <Card className="mt-6">
+          <CardContent className="pt-6">
+            <h3 className="font-semibold text-gray-900 mb-3">💡 Dicas de Uso</h3>
+            <div className="space-y-2 text-sm text-gray-600">
+              <div className="flex items-start space-x-2">
+                <span className="text-red-600 font-bold">•</span>
+                <span>Use o campo de busca para encontrar rapidamente um colaborador específico</span>
+              </div>
+              <div className="flex items-start space-x-2">
+                <span className="text-red-600 font-bold">•</span>
+                <span>Você pode buscar por nome, email ou setor do colaborador</span>
+              </div>
+              <div className="flex items-start space-x-2">
+                <span className="text-red-600 font-bold">•</span>
+                <span>Selecione a categoria que melhor representa o tipo de feedback</span>
+              </div>
+              <div className="flex items-start space-x-2">
+                <span className="text-red-600 font-bold">•</span>
+                <span>Seja específico e detalhado no relato do feedback</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
 };
-
-export default InserirFeedback;
-
