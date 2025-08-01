@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { 
   Users, BookOpen, TrendingUp, Target, Download, Calendar, Star, ArrowRight, 
   Eye, Play, FileText, Award, Clock, Zap, Activity, BarChart3, 
-  MessageCircle, Heart, Bookmark, ChevronRight, Sparkles, Newspaper, X
+  MessageCircle, Heart, Bookmark, ChevronRight, Sparkles, Newspaper, X, User
 } from 'lucide-react';
 import { getTreinamentos } from '../services/treinamentosService';
 import { obterEstatisticas } from '../services/estatisticasService';
@@ -509,7 +509,7 @@ const Home = ({ setCurrentPage }) => {
         </div>
       </div>
 
-      {/* Seção de Notícias em Destaque */}
+      {/* Seção de Notícias em Destaque - COM AUTOR */}
       {noticiasDestaque.length > 0 && (
         <div className="bg-gray-50 py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -556,6 +556,14 @@ const Home = ({ setCurrentPage }) => {
                       {noticia.titulo}
                     </h3>
                     
+                    {/* AUTOR ADICIONADO */}
+                    {noticia.autor && (
+                      <div className="flex items-center mb-4 text-sm text-gray-600">
+                        <User className="w-4 h-4 mr-2" />
+                        <span className="font-medium">Por {noticia.autor}</span>
+                      </div>
+                    )}
+                    
                     <p className="text-gray-600 mb-6 line-clamp-3 leading-relaxed">
                       {extrairTextoSimples(noticia.conteudo)}
                     </p>
@@ -586,7 +594,7 @@ const Home = ({ setCurrentPage }) => {
         </div>
       )}
 
-      {/* Modal de Notícia */}
+      {/* Modal de Notícia - COM AUTOR */}
       {noticiaModal && (
         <Dialog open={!!noticiaModal} onOpenChange={fecharModalNoticia}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -603,6 +611,14 @@ const Home = ({ setCurrentPage }) => {
               <DialogTitle className="text-2xl font-bold text-gray-900 mb-4">
                 {noticiaModal.titulo}
               </DialogTitle>
+              
+              {/* AUTOR NO MODAL */}
+              {noticiaModal.autor && (
+                <div className="flex items-center mb-6 text-gray-600">
+                  <User className="w-5 h-5 mr-2" />
+                  <span className="font-medium text-lg">Por {noticiaModal.autor}</span>
+                </div>
+              )}
             </DialogHeader>
             
             <div className="prose max-w-none">
