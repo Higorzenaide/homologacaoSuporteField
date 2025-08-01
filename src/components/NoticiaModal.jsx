@@ -49,7 +49,7 @@ const NoticiaModal = ({ isOpen, onClose, noticia }) => {
               </h1>
               
               {/* Metadados */}
-              <div className="flex items-center text-black text-opacity-90 text-sm">
+              <div className="flex items-center text-wite text-opacity-90 text-sm">
                 <div className="flex items-center mr-6 bg-white bg-opacity-10 backdrop-blur-sm rounded-lg px-3 py-2">
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
