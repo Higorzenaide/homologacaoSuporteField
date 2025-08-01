@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { usuariosService } from '../services/usuariosService';
 import { categoriasFeedbackService } from '../services/categoriasFeedbackService';
@@ -43,10 +43,9 @@ import {
 const VisualizarFeedbacks = () => {
   const { user, isAdmin } = useAuth();
   const [feedbacks, setFeedbacks] = useState([]);
+  const [feedbacksOriginais, setFeedbacksOriginais] = useState([]); // Dados originais para reset
   const [usuarios, setUsuarios] = useState([]);
   const [categorias, setCategorias] = useState([]);
-  const [estatisticas, setEstatisticas] = useState(null);
-  const [estatisticasGerais, setEstatisticasGerais] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -75,6 +74,7 @@ const VisualizarFeedbacks = () => {
           console.error('Erro ao carregar feedbacks:', feedbacksError);
         } else {
           setFeedbacks(feedbacksData || []);
+          setFeedbacksOriginais(feedbacksData || []); // Guardar dados originais
         }
 
         // Carregar usuários
@@ -91,22 +91,6 @@ const VisualizarFeedbacks = () => {
           console.error('Erro ao carregar categorias:', categoriasError);
         } else {
           setCategorias(categoriasData || []);
-        }
-
-        // Carregar estatísticas por usuário
-        const { data: estatisticasData, error: estatisticasError } = await feedbackService.obterEstatisticasUsuario();
-        if (estatisticasError) {
-          console.error('Erro ao carregar estatísticas:', estatisticasError);
-        } else {
-          setEstatisticas(estatisticasData || []);
-        }
-
-        // Carregar estatísticas gerais
-        const { data: estatisticasGeraisData, error: estatisticasGeraisError } = await feedbackService.obterEstatisticasGerais();
-        if (estatisticasGeraisError) {
-          console.error('Erro ao carregar estatísticas gerais:', estatisticasGeraisError);
-        } else {
-          setEstatisticasGerais(estatisticasGeraisData || []);
         }
 
       } catch (error) {
@@ -174,21 +158,9 @@ const VisualizarFeedbacks = () => {
       nome_avaliador: ''
     });
     
-    setLoading(true);
-    try {
-      const { data, error } = await feedbackService.listarFeedbacks();
-      if (error) {
-        setMessage({ type: 'error', text: error });
-      } else {
-        setFeedbacks(data || []);
-        setMessage({ type: '', text: '' });
-      }
-    } catch (error) {
-      console.error('Erro ao limpar filtros:', error);
-      setMessage({ type: 'error', text: 'Erro ao limpar filtros' });
-    } finally {
-      setLoading(false);
-    }
+    // Restaurar dados originais sem fazer nova consulta
+    setFeedbacks(feedbacksOriginais);
+    setMessage({ type: '', text: '' });
   };
 
   const exportarCSV = async () => {
@@ -224,23 +196,126 @@ const VisualizarFeedbacks = () => {
     }
   };
 
-  // Preparar dados para gráficos
-  const dadosGraficoCategoria = categorias.map(categoria => {
-    const count = feedbacks.filter(f => f.categoria_nome === categoria.nome).length;
-    return {
-      name: categoria.nome,
-      value: count,
-      color: categoria.cor
-    };
-  }).filter(item => item.value > 0);
+  // ===== DADOS CALCULADOS COM BASE NOS FEEDBACKS FILTRADOS =====
+  
+  // Preparar dados para gráficos baseados nos feedbacks filtrados
+  const dadosGraficoCategoria = useMemo(() => {
+    return categorias.map(categoria => {
+      const count = feedbacks.filter(f => f.categoria_nome === categoria.nome).length;
+      return {
+        name: categoria.nome,
+        value: count,
+        color: categoria.cor
+      };
+    }).filter(item => item.value > 0);
+  }, [feedbacks, categorias]);
 
-  const dadosGraficoMensal = estatisticasGerais.map(stat => ({
-    mes: new Date(stat.mes).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }),
-    total: stat.total_feedbacks,
-    positivos: stat.total_positivos,
-    negativos: stat.total_negativos,
-    construtivos: stat.total_construtivos
-  }));
+  // Estatísticas mensais baseadas nos feedbacks filtrados
+  const dadosGraficoMensal = useMemo(() => {
+    // Agrupar feedbacks por mês
+    const feedbacksPorMes = {};
+    
+    feedbacks.forEach(feedback => {
+      const data = new Date(feedback.created_at);
+      const chave = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!feedbacksPorMes[chave]) {
+        feedbacksPorMes[chave] = {
+          mes: chave,
+          total: 0,
+          positivos: 0,
+          negativos: 0,
+          construtivos: 0
+        };
+      }
+      
+      feedbacksPorMes[chave].total++;
+      
+      // Categorizar por tipo (baseado no nome da categoria)
+      const categoria = feedback.categoria_nome?.toLowerCase() || '';
+      if (categoria.includes('positiv') || categoria.includes('elogio')) {
+        feedbacksPorMes[chave].positivos++;
+      } else if (categoria.includes('negativ') || categoria.includes('reclamação')) {
+        feedbacksPorMes[chave].negativos++;
+      } else {
+        feedbacksPorMes[chave].construtivos++;
+      }
+    });
+
+    // Converter para array e formatar
+    return Object.values(feedbacksPorMes)
+      .sort((a, b) => a.mes.localeCompare(b.mes))
+      .map(stat => ({
+        mes: new Date(stat.mes + '-01').toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }),
+        total: stat.total,
+        positivos: stat.positivos,
+        negativos: stat.negativos,
+        construtivos: stat.construtivos
+      }));
+  }, [feedbacks]);
+
+  // Estatísticas por usuário baseadas nos feedbacks filtrados
+  const estatisticasPorUsuario = useMemo(() => {
+    const estatisticas = {};
+    
+    feedbacks.forEach(feedback => {
+      const userId = feedback.usuario_id;
+      const userName = feedback.usuario_nome;
+      
+      if (!estatisticas[userId]) {
+        estatisticas[userId] = {
+          usuario_nome: userName,
+          total_feedbacks: 0,
+          total_positivos: 0,
+          total_negativos: 0,
+          total_construtivos: 0
+        };
+      }
+      
+      estatisticas[userId].total_feedbacks++;
+      
+      // Categorizar por tipo
+      const categoria = feedback.categoria_nome?.toLowerCase() || '';
+      if (categoria.includes('positiv') || categoria.includes('elogio')) {
+        estatisticas[userId].total_positivos++;
+      } else if (categoria.includes('negativ') || categoria.includes('reclamação')) {
+        estatisticas[userId].total_negativos++;
+      } else {
+        estatisticas[userId].total_construtivos++;
+      }
+    });
+
+    return Object.values(estatisticas).sort((a, b) => b.total_feedbacks - a.total_feedbacks);
+  }, [feedbacks]);
+
+  // Resumo geral baseado nos feedbacks filtrados
+  const resumoGeral = useMemo(() => {
+    const total = feedbacks.length;
+    const colaboradoresComFeedback = new Set(feedbacks.map(f => f.usuario_id)).size;
+    const categoriasUsadas = new Set(feedbacks.map(f => f.categoria_id)).size;
+    
+    let positivos = 0, negativos = 0, construtivos = 0;
+    
+    feedbacks.forEach(feedback => {
+      const categoria = feedback.categoria_nome?.toLowerCase() || '';
+      if (categoria.includes('positiv') || categoria.includes('elogio')) {
+        positivos++;
+      } else if (categoria.includes('negativ') || categoria.includes('reclamação')) {
+        negativos++;
+      } else {
+        construtivos++;
+      }
+    });
+
+    return {
+      total,
+      colaboradoresComFeedback,
+      categoriasUsadas,
+      positivos,
+      negativos,
+      construtivos
+    };
+  }, [feedbacks]);
 
   if (loadingData) {
     return (
@@ -280,6 +355,11 @@ const VisualizarFeedbacks = () => {
           <CardTitle className="flex items-center space-x-2">
             <Filter className="h-5 w-5" />
             <span>Filtros</span>
+            {(filtros.usuario_id !== 'all' || filtros.categoria_id !== 'all' || filtros.data_inicio || filtros.data_fim || filtros.nome_avaliador) && (
+              <Badge variant="secondary" className="ml-2">
+                Filtros ativos
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -385,6 +465,42 @@ const VisualizarFeedbacks = () => {
         </CardContent>
       </Card>
 
+      {/* Resumo rápido */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{resumoGeral.total}</div>
+              <div className="text-sm text-gray-500">Total de Feedbacks</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{resumoGeral.positivos}</div>
+              <div className="text-sm text-gray-500">Positivos</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">{resumoGeral.construtivos}</div>
+              <div className="text-sm text-gray-500">Construtivos</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-red-600">{resumoGeral.negativos}</div>
+              <div className="text-sm text-gray-500">Negativos</div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Tabs principais */}
       <Tabs defaultValue="lista" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
@@ -470,6 +586,11 @@ const VisualizarFeedbacks = () => {
                 <CardTitle className="flex items-center space-x-2">
                   <PieChart className="h-5 w-5" />
                   <span>Feedbacks por Categoria</span>
+                  {(filtros.usuario_id !== 'all' || filtros.categoria_id !== 'all' || filtros.data_inicio || filtros.data_fim || filtros.nome_avaliador) && (
+                    <Badge variant="outline" className="ml-2 text-xs">
+                      Filtrado
+                    </Badge>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -507,6 +628,11 @@ const VisualizarFeedbacks = () => {
                 <CardTitle className="flex items-center space-x-2">
                   <BarChart3 className="h-5 w-5" />
                   <span>Feedbacks por Mês</span>
+                  {(filtros.usuario_id !== 'all' || filtros.categoria_id !== 'all' || filtros.data_inicio || filtros.data_fim || filtros.nome_avaliador) && (
+                    <Badge variant="outline" className="ml-2 text-xs">
+                      Filtrado
+                    </Badge>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -543,26 +669,35 @@ const VisualizarFeedbacks = () => {
                 <CardTitle className="flex items-center space-x-2">
                   <Users className="h-5 w-5" />
                   <span>Estatísticas por Colaborador</span>
+                  {(filtros.usuario_id !== 'all' || filtros.categoria_id !== 'all' || filtros.data_inicio || filtros.data_fim || filtros.nome_avaliador) && (
+                    <Badge variant="outline" className="ml-2 text-xs">
+                      Filtrado
+                    </Badge>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {estatisticas && estatisticas.length > 0 ? (
-                  <div className="space-y-4">
-                    {estatisticas.map((stat, index) => (
+                {estatisticasPorUsuario.length > 0 ? (
+                  <div className="space-y-4 max-h-[400px] overflow-y-auto">
+                    {estatisticasPorUsuario.map((stat, index) => (
                       <div key={index} className="border-b pb-4 last:border-b-0">
                         <h4 className="font-semibold text-gray-900">{stat.usuario_nome}</h4>
-                        <div className="grid grid-cols-3 gap-4 mt-2">
+                        <div className="grid grid-cols-4 gap-2 mt-2">
                           <div className="text-center">
-                            <div className="text-2xl font-bold text-blue-600">{stat.total_feedbacks}</div>
-                            <div className="text-sm text-gray-500">Total</div>
+                            <div className="text-lg font-bold text-blue-600">{stat.total_feedbacks}</div>
+                            <div className="text-xs text-gray-500">Total</div>
                           </div>
                           <div className="text-center">
-                            <div className="text-2xl font-bold text-green-600">{stat.total_positivos}</div>
-                            <div className="text-sm text-gray-500">Positivos</div>
+                            <div className="text-lg font-bold text-green-600">{stat.total_positivos}</div>
+                            <div className="text-xs text-gray-500">Positivos</div>
                           </div>
                           <div className="text-center">
-                            <div className="text-2xl font-bold text-orange-600">{stat.total_construtivos}</div>
-                            <div className="text-sm text-gray-500">Construtivos</div>
+                            <div className="text-lg font-bold text-orange-600">{stat.total_construtivos}</div>
+                            <div className="text-xs text-gray-500">Construtivos</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-lg font-bold text-red-600">{stat.total_negativos}</div>
+                            <div className="text-xs text-gray-500">Negativos</div>
                           </div>
                         </div>
                       </div>
@@ -576,42 +711,78 @@ const VisualizarFeedbacks = () => {
               </CardContent>
             </Card>
 
-            {/* Resumo geral */}
+            {/* Resumo detalhado */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <BarChart3 className="h-5 w-5" />
-                  <span>Resumo Geral</span>
+                  <span>Resumo Detalhado</span>
+                  {(filtros.usuario_id !== 'all' || filtros.categoria_id !== 'all' || filtros.data_inicio || filtros.data_fim || filtros.nome_avaliador) && (
+                    <Badge variant="outline" className="ml-2 text-xs">
+                      Filtrado
+                    </Badge>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
                   <div className="text-center">
-                    <div className="text-4xl font-bold text-blue-600 mb-2">{feedbacks.length}</div>
+                    <div className="text-4xl font-bold text-blue-600 mb-2">{resumoGeral.total}</div>
                     <div className="text-gray-600">Total de Feedbacks</div>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-800">{usuarios.length}</div>
-                      <div className="text-sm text-gray-500">Colaboradores</div>
+                      <div className="text-2xl font-bold text-gray-800">{resumoGeral.colaboradoresComFeedback}</div>
+                      <div className="text-sm text-gray-500">Colaboradores com Feedback</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-800">{categorias.length}</div>
-                      <div className="text-sm text-gray-500">Categorias</div>
+                      <div className="text-2xl font-bold text-gray-800">{resumoGeral.categoriasUsadas}</div>
+                      <div className="text-sm text-gray-500">Categorias Utilizadas</div>
                     </div>
                   </div>
 
-                  {estatisticasGerais.length > 0 && (
+                  <div className="border-t pt-4">
+                    <h5 className="font-semibold text-gray-900 mb-3">Distribuição por Tipo</h5>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Feedbacks Positivos</span>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-semibold text-green-600">{resumoGeral.positivos}</span>
+                          <span className="text-xs text-gray-500">
+                            ({resumoGeral.total > 0 ? ((resumoGeral.positivos / resumoGeral.total) * 100).toFixed(1) : 0}%)
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Feedbacks Construtivos</span>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-semibold text-orange-600">{resumoGeral.construtivos}</span>
+                          <span className="text-xs text-gray-500">
+                            ({resumoGeral.total > 0 ? ((resumoGeral.construtivos / resumoGeral.total) * 100).toFixed(1) : 0}%)
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Feedbacks Negativos</span>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-semibold text-red-600">{resumoGeral.negativos}</span>
+                          <span className="text-xs text-gray-500">
+                            ({resumoGeral.total > 0 ? ((resumoGeral.negativos / resumoGeral.total) * 100).toFixed(1) : 0}%)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {dadosGraficoMensal.length > 0 && (
                     <div className="border-t pt-4">
                       <h5 className="font-semibold text-gray-900 mb-3">Últimos Meses</h5>
                       <div className="space-y-2">
-                        {estatisticasGerais.slice(-3).map((stat, index) => (
+                        {dadosGraficoMensal.slice(-3).map((stat, index) => (
                           <div key={index} className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">
-                              {new Date(stat.mes).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
-                            </span>
-                            <span className="font-semibold">{stat.total_feedbacks}</span>
+                            <span className="text-sm text-gray-600">{stat.mes}</span>
+                            <span className="font-semibold">{stat.total}</span>
                           </div>
                         ))}
                       </div>
