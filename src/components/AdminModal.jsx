@@ -1,8 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import CategoriaSelector from './CategoriaSelector';
-
-// Importação dinâmica do ReactQuill para evitar problemas de SSR
-const ReactQuill = React.lazy(() => import('react-quill'));
 
 const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [] }) => {
   const [formData, setFormData] = useState({
@@ -20,40 +17,7 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
   const [tagInput, setTagInput] = useState('');
   const [fileValidation, setFileValidation] = useState({ isValid: true, errors: [] });
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Configuração do ReactQuill
-  const quillModules = useMemo(() => ({
-    toolbar: [
-      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-      [{ 'font': [] }],
-      [{ 'size': ['small', false, 'large', 'huge'] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'script': 'sub'}, { 'script': 'super' }],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'indent': '-1'}, { 'indent': '+1' }],
-      [{ 'direction': 'rtl' }],
-      [{ 'align': [] }],
-      ['link', 'image', 'video'],
-      ['blockquote', 'code-block'],
-      ['clean']
-    ],
-    clipboard: {
-      matchVisual: false,
-    }
-  }), []);
-
-  const quillFormats = [
-    'header', 'font', 'size',
-    'bold', 'italic', 'underline', 'strike',
-    'color', 'background',
-    'script',
-    'list', 'bullet',
-    'indent',
-    'direction', 'align',
-    'link', 'image', 'video',
-    'blockquote', 'code-block'
-  ];
+  const editorRef = useRef(null);
 
   // Carregar dados do item em edição
   useEffect(() => {
@@ -86,20 +50,6 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
     setFileValidation({ isValid: true, errors: [] });
   }, [editingItem, isOpen]);
 
-  // Carregar CSS do Quill dinamicamente
-  useEffect(() => {
-    if (isOpen && type === 'noticia') {
-      // Carregar CSS do Quill dinamicamente
-      if (!document.querySelector('#quill-snow-css')) {
-        const link = document.createElement('link');
-        link.id = 'quill-snow-css';
-        link.rel = 'stylesheet';
-        link.href = 'https://cdn.quilljs.com/1.3.6/quill.snow.css';
-        document.head.appendChild(link);
-      }
-    }
-  }, [isOpen, type]);
-
   if (!isOpen) return null;
 
   const handleInputChange = (field, value) => {
@@ -107,6 +57,33 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
       ...prev,
       [field]: value
     }));
+  };
+
+  // Funções do editor rico
+  const formatText = (command, value = null) => {
+    document.execCommand(command, false, value);
+    editorRef.current.focus();
+  };
+
+  const handleEditorInput = () => {
+    if (editorRef.current) {
+      handleInputChange('conteudo', editorRef.current.innerHTML);
+    }
+  };
+
+  const insertLink = () => {
+    const url = prompt('Digite a URL do link:');
+    if (url) {
+      formatText('createLink', url);
+    }
+  };
+
+  const changeTextColor = (color) => {
+    formatText('foreColor', color);
+  };
+
+  const changeFontSize = (size) => {
+    formatText('fontSize', size);
   };
 
   const handleFileChange = (e) => {
@@ -241,7 +218,7 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
               value={formData.categoria}
               onChange={(categoria) => handleInputChange('categoria', categoria)}
               tipo={isTraining ? 'treinamentos' : 'noticias'}
-              allowCreate={isTraining} // Apenas treinamentos podem criar novas categorias
+              allowCreate={isTraining}
               required={true}
               className="w-full"
             />
@@ -325,26 +302,132 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
                 required
               />
             ) : (
-              // Para notícias, usar editor rico
+              // Para notícias, usar editor rico simples
               <div className="border border-gray-300 rounded-md">
-                <React.Suspense fallback={
-                  <div className="h-64 flex items-center justify-center bg-gray-50 rounded-md">
-                    <div className="text-gray-500">Carregando editor...</div>
-                  </div>
-                }>
-                  <ReactQuill
-                    theme="snow"
-                    value={formData.conteudo}
-                    onChange={(content) => handleInputChange('conteudo', content)}
-                    modules={quillModules}
-                    formats={quillFormats}
-                    placeholder="Digite o conteúdo da notícia..."
-                    style={{
-                      height: '300px',
-                      marginBottom: '50px'
-                    }}
-                  />
-                </React.Suspense>
+                {/* Toolbar do editor */}
+                <div className="border-b border-gray-300 p-2 bg-gray-50 flex flex-wrap gap-1">
+                  {/* Formatação básica */}
+                  <button
+                    type="button"
+                    onClick={() => formatText('bold')}
+                    className="p-2 hover:bg-gray-200 rounded border"
+                    title="Negrito"
+                  >
+                    <strong>B</strong>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => formatText('italic')}
+                    className="p-2 hover:bg-gray-200 rounded border"
+                    title="Itálico"
+                  >
+                    <em>I</em>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => formatText('underline')}
+                    className="p-2 hover:bg-gray-200 rounded border"
+                    title="Sublinhado"
+                  >
+                    <u>U</u>
+                  </button>
+                  
+                  <div className="w-px bg-gray-300 mx-1"></div>
+                  
+                  {/* Tamanhos de fonte */}
+                  <select
+                    onChange={(e) => changeFontSize(e.target.value)}
+                    className="p-1 border rounded text-sm"
+                    defaultValue=""
+                  >
+                    <option value="">Tamanho</option>
+                    <option value="1">Pequeno</option>
+                    <option value="3">Normal</option>
+                    <option value="5">Grande</option>
+                    <option value="7">Muito Grande</option>
+                  </select>
+                  
+                  <div className="w-px bg-gray-300 mx-1"></div>
+                  
+                  {/* Cores */}
+                  <button
+                    type="button"
+                    onClick={() => changeTextColor('#dc2626')}
+                    className="w-8 h-8 bg-red-600 rounded border hover:opacity-80"
+                    title="Vermelho"
+                  ></button>
+                  <button
+                    type="button"
+                    onClick={() => changeTextColor('#059669')}
+                    className="w-8 h-8 bg-green-600 rounded border hover:opacity-80"
+                    title="Verde"
+                  ></button>
+                  <button
+                    type="button"
+                    onClick={() => changeTextColor('#2563eb')}
+                    className="w-8 h-8 bg-blue-600 rounded border hover:opacity-80"
+                    title="Azul"
+                  ></button>
+                  <button
+                    type="button"
+                    onClick={() => changeTextColor('#000000')}
+                    className="w-8 h-8 bg-black rounded border hover:opacity-80"
+                    title="Preto"
+                  ></button>
+                  
+                  <div className="w-px bg-gray-300 mx-1"></div>
+                  
+                  {/* Listas */}
+                  <button
+                    type="button"
+                    onClick={() => formatText('insertUnorderedList')}
+                    className="p-2 hover:bg-gray-200 rounded border text-sm"
+                    title="Lista com marcadores"
+                  >
+                    • Lista
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => formatText('insertOrderedList')}
+                    className="p-2 hover:bg-gray-200 rounded border text-sm"
+                    title="Lista numerada"
+                  >
+                    1. Lista
+                  </button>
+                  
+                  <div className="w-px bg-gray-300 mx-1"></div>
+                  
+                  {/* Link */}
+                  <button
+                    type="button"
+                    onClick={insertLink}
+                    className="p-2 hover:bg-gray-200 rounded border text-sm"
+                    title="Inserir link"
+                  >
+                    🔗 Link
+                  </button>
+                  
+                  {/* Limpar formatação */}
+                  <button
+                    type="button"
+                    onClick={() => formatText('removeFormat')}
+                    className="p-2 hover:bg-gray-200 rounded border text-sm"
+                    title="Limpar formatação"
+                  >
+                    🧹 Limpar
+                  </button>
+                </div>
+                
+                {/* Área de edição */}
+                <div
+                  ref={editorRef}
+                  contentEditable
+                  onInput={handleEditorInput}
+                  className="p-3 min-h-[200px] focus:outline-none"
+                  style={{ minHeight: '200px' }}
+                  dangerouslySetInnerHTML={{ __html: formData.conteudo }}
+                  placeholder="Digite o conteúdo da notícia..."
+                />
               </div>
             )}
           </div>
