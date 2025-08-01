@@ -134,16 +134,13 @@ export class AuthService {
 
   // Atualizar dados do usuário atual
 async refreshUserData() {
-  console.log('🔍 DEBUG: Iniciando refreshUserData()');
-  console.log('🔍 DEBUG: currentUser antes:', this.currentUser);
+
   
   if (!this.currentUser || !this.currentUser.id) {
-    console.log('❌ DEBUG: Usuário não logado');
     return { success: false, error: 'Usuário não logado' };
   }
 
   try {
-    console.log('🔍 DEBUG: Tentando função RPC get_user_by_id...');
     
     // Tentar usar a função RPC primeiro
     try {
@@ -152,14 +149,12 @@ async refreshUserData() {
           user_id: this.currentUser.id
         });
 
-      console.log('🔍 DEBUG: Resultado RPC:', { data, error });
 
       if (error) throw error;
 
       if (data && data.length > 0) {
         const user = data[0];
-        console.log('🔍 DEBUG: Dados do usuário via RPC:', user);
-        console.log('🔍 DEBUG: pode_ver_feedbacks via RPC:', user.pode_ver_feedbacks);
+
         
         const userData = {
           ...this.currentUser,
@@ -171,7 +166,6 @@ async refreshUserData() {
           pode_ver_feedbacks: user.pode_ver_feedbacks,
         };
 
-        console.log('🔍 DEBUG: userData final (RPC):', userData);
         this.saveUserToStorage(userData);
 
         return {
@@ -180,7 +174,6 @@ async refreshUserData() {
           error: null
         };
       } else {
-        console.log('❌ DEBUG: RPC não retornou dados');
         this.logout();
         return {
           success: false,
@@ -188,7 +181,6 @@ async refreshUserData() {
         };
       }
     } catch (rpcError) {
-      console.log('⚠️ DEBUG: Erro na RPC, usando consulta direta:', rpcError);
       
       // Fallback: consulta direta à tabela usuarios
       const { data, error } = await supabase
@@ -198,11 +190,7 @@ async refreshUserData() {
         .eq('ativo', true)
         .single();
 
-      console.log('🔍 DEBUG: Resultado consulta direta:', { data, error });
-      console.log('🔍 DEBUG: pode_ver_feedbacks via consulta direta:', data?.pode_ver_feedbacks);
-
       if (error) {
-        console.log('❌ DEBUG: Erro na consulta direta:', error);
         if (error.code === 'PGRST116') {
           this.logout();
           return {
@@ -224,7 +212,6 @@ async refreshUserData() {
         setor: data.setor
       };
 
-      console.log('🔍 DEBUG: userData final (consulta direta):', userData);
       this.saveUserToStorage(userData);
 
       return {
