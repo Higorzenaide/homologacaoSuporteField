@@ -41,6 +41,22 @@ const NoticiaCard = ({
     });
   };
 
+  // Função para extrair texto simples do HTML para preview
+  const extrairTextoSimples = (html) => {
+    if (!html) return '';
+    // Remove tags HTML e retorna apenas o texto
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    return tempDiv.textContent || tempDiv.innerText || '';
+  };
+
+  // Função para truncar texto para preview
+  const truncarTexto = (texto, limite = 150) => {
+    if (!texto) return '';
+    if (texto.length <= limite) return texto;
+    return texto.substring(0, limite).trim() + '...';
+  };
+
   if (isDestaque) {
     return (
       <div className="bg-gradient-to-r from-red-50 to-yellow-50 rounded-lg shadow-md overflow-hidden border-l-4 border-red-600">
@@ -67,7 +83,7 @@ const NoticiaCard = ({
           </h3>
           
           <p className="text-gray-700 mb-4 line-clamp-3">
-            {noticia.conteudo}
+            {truncarTexto(extrairTextoSimples(noticia.conteudo), 200)}
           </p>
           
           <div className="flex justify-between items-center text-sm text-gray-600 mb-4">
@@ -101,7 +117,7 @@ const NoticiaCard = ({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
-                <span>Abrir Notícia</span>
+                <span>Ler mais</span>
               </button>
             </div>
           </div>
@@ -132,7 +148,7 @@ const NoticiaCard = ({
         </h3>
         
         <p className="text-gray-600 mb-4 line-clamp-2">
-          {noticia.conteudo}
+          {truncarTexto(extrairTextoSimples(noticia.conteudo), 120)}
         </p>
         
         <div className="flex justify-between items-center text-sm text-gray-500 mb-4">
@@ -166,7 +182,7 @@ const NoticiaCard = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
-              <span>Abrir Notícia</span>
+              <span>Ler mais</span>
             </button>
           </div>
         </div>
@@ -176,4 +192,3 @@ const NoticiaCard = ({
 };
 
 export default NoticiaCard;
-

@@ -1,5 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import CategoriaSelector from './CategoriaSelector';
+
+// Importação dinâmica do ReactQuill para evitar problemas de SSR
+const ReactQuill = React.lazy(() => import('react-quill'));
+import 'react-quill/dist/quill.snow.css';
 
 const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [] }) => {
   const [formData, setFormData] = useState({
@@ -17,6 +21,71 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
   const [tagInput, setTagInput] = useState('');
   const [fileValidation, setFileValidation] = useState({ isValid: true, errors: [] });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Configuração do ReactQuill
+  const quillModules = useMemo(() => ({
+    toolbar: [
+      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+      [{ 'font': [] }],
+      [{ 'size': ['small', false, 'large', 'huge'] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'script': 'sub'}, { 'script': 'super' }],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'indent': '-1'}, { 'indent': '+1' }],
+      [{ 'direction': 'rtl' }],
+      [{ 'align': [] }],
+      ['link', 'image', 'video'],
+      ['blockquote', 'code-block'],
+      ['clean']
+    ],
+    clipboard: {
+      matchVisual: false,
+    }
+  }), []);
+
+  const quillFormats = [
+    'header', 'font', 'size',
+    'bold', 'italic', 'underline', 'strike',
+    'color', 'background',
+    'script',
+    'list', 'bullet',
+    'indent',
+    'direction', 'align',
+    'link', 'image', 'video',
+    'blockquote', 'code-block'
+  ];
+
+  // Carregar dados do item em edição
+  useEffect(() => {
+    if (editingItem) {
+      setFormData({
+        titulo: editingItem.titulo || '',
+        categoria: editingItem.categoria_nome || editingItem.categoria || '',
+        descricao: editingItem.descricao || '',
+        conteudo: editingItem.conteudo || '',
+        autor: editingItem.autor || 'Administrador',
+        destaque: editingItem.destaque || false,
+        tags: editingItem.tags || [],
+        logo_url: editingItem.logo_url || ''
+      });
+    } else {
+      // Reset form para novo item
+      setFormData({
+        titulo: '',
+        categoria: '',
+        descricao: '',
+        conteudo: '',
+        autor: 'Administrador',
+        destaque: false,
+        tags: [],
+        logo_url: ''
+      });
+    }
+    setFile(null);
+    setTagInput('');
+    setFileValidation({ isValid: true, errors: [] });
+  }, [editingItem, isOpen]);
 
   if (!isOpen) return null;
 
@@ -75,7 +144,7 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (type === 'treinamento' && !file) {
+    if (type === 'treinamento' && !file && !editingItem) {
       alert('Por favor, selecione um arquivo para o treinamento.');
       return;
     }
@@ -115,10 +184,13 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-2xl font-bold text-gray-900">
-            {isTraining ? 'Adicionar Treinamento' : 'Adicionar Notícia'}
+            {editingItem 
+              ? (isTraining ? 'Editar Treinamento' : 'Editar Notícia')
+              : (isTraining ? 'Adicionar Treinamento' : 'Adicionar Notícia')
+            }
           </h2>
           <button 
             type="button"
@@ -166,7 +238,7 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
           {isTraining && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Arquivo (PPT/PDF) *
+                Arquivo (PPT/PDF) {!editingItem && '*'}
               </label>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                 <input
@@ -186,6 +258,11 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
                   <p className="text-xs text-gray-500 mt-1">
                     Formatos aceitos: PDF, PPT, PPTX (máx. 10MB)
                   </p>
+                  {editingItem && (
+                    <p className="text-xs text-blue-600 mt-1">
+                      Deixe vazio para manter o arquivo atual
+                    </p>
+                  )}
                 </label>
               </div>
 
@@ -219,18 +296,44 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
             </div>
           )}
 
-          {/* Descrição/Conteúdo */}
+          {/* Descrição (para treinamentos) ou Conteúdo (para notícias) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {isTraining ? 'Descrição' : 'Conteúdo'} *
             </label>
-            <textarea
-              value={isTraining ? formData.descricao : formData.conteudo}
-              onChange={(e) => handleInputChange(isTraining ? 'descricao' : 'conteudo', e.target.value)}
-              placeholder={isTraining ? 'Descrição do treinamento' : 'Conteúdo da notícia'}
-              className="w-full p-3 border border-gray-300 rounded-md resize-none h-32"
-              required
-            />
+            
+            {isTraining ? (
+              // Para treinamentos, manter textarea simples
+              <textarea
+                value={formData.descricao}
+                onChange={(e) => handleInputChange('descricao', e.target.value)}
+                placeholder="Descrição do treinamento"
+                className="w-full p-3 border border-gray-300 rounded-md resize-none h-32 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                required
+              />
+            ) : (
+              // Para notícias, usar editor rico
+              <div className="border border-gray-300 rounded-md">
+                <React.Suspense fallback={
+                  <div className="h-64 flex items-center justify-center bg-gray-50 rounded-md">
+                    <div className="text-gray-500">Carregando editor...</div>
+                  </div>
+                }>
+                  <ReactQuill
+                    theme="snow"
+                    value={formData.conteudo}
+                    onChange={(content) => handleInputChange('conteudo', content)}
+                    modules={quillModules}
+                    formats={quillFormats}
+                    placeholder="Digite o conteúdo da notícia..."
+                    style={{
+                      height: '300px',
+                      marginBottom: '50px'
+                    }}
+                  />
+                </React.Suspense>
+              </div>
+            )}
           </div>
 
           {/* Tags (apenas para treinamentos) */}
@@ -299,7 +402,7 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
                 id="destaque"
                 checked={formData.destaque}
                 onChange={(e) => handleInputChange('destaque', e.target.checked)}
-                className="rounded border-gray-300"
+                className="rounded border-gray-300 text-red-600 focus:ring-red-500"
               />
               <label htmlFor="destaque" className="text-sm font-medium text-gray-700">
                 Marcar como destaque
@@ -311,10 +414,10 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
-              disabled={isSubmitting || (isTraining && !fileValidation.isValid)}
+              disabled={isSubmitting || (isTraining && !editingItem && !fileValidation.isValid)}
               className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isSubmitting ? 'Salvando...' : 'Salvar'}
+              {isSubmitting ? 'Salvando...' : (editingItem ? 'Atualizar' : 'Salvar')}
             </button>
             <button 
               type="button" 
@@ -331,4 +434,3 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
 };
 
 export default AdminModal;
-
