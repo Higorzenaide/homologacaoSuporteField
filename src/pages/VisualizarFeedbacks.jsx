@@ -43,13 +43,12 @@ import {
 const VisualizarFeedbacks = () => {
   const { user, isAdmin } = useAuth();
   const [feedbacks, setFeedbacks] = useState([]);
-  const [feedbacksOriginais, setFeedbacksOriginais] = useState([]);
+  const [feedbacksOriginais, setFeedbacksOriginais] = useState([]); // Dados originais para reset
   const [usuarios, setUsuarios] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [message, setMessage] = useState({ type: '', text: '' });
-  const [buscaColaborador, setBuscaColaborador] = useState(''); // NOVO: busca de colaborador
 
   const [filtros, setFiltros] = useState({
     usuario_id: 'all',
@@ -61,20 +60,6 @@ const VisualizarFeedbacks = () => {
 
   // Verificar permissões
   const podeVerFeedbacks = isAdmin && user?.pode_ver_feedbacks;
-
-  // NOVO: Filtrar colaboradores baseado na busca
-  const colaboradoresFiltrados = useMemo(() => {
-    if (!buscaColaborador.trim()) {
-      return usuarios;
-    }
-
-    const termoBusca = buscaColaborador.toLowerCase().trim();
-    return usuarios.filter(usuario => 
-      usuario.nome.toLowerCase().includes(termoBusca) ||
-      usuario.email.toLowerCase().includes(termoBusca) ||
-      (usuario.setor && usuario.setor.toLowerCase().includes(termoBusca))
-    );
-  }, [usuarios, buscaColaborador]);
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -89,7 +74,7 @@ const VisualizarFeedbacks = () => {
           console.error('Erro ao carregar feedbacks:', feedbacksError);
         } else {
           setFeedbacks(feedbacksData || []);
-          setFeedbacksOriginais(feedbacksData || []);
+          setFeedbacksOriginais(feedbacksData || []); // Guardar dados originais
         }
 
         // Carregar usuários
@@ -172,15 +157,15 @@ const VisualizarFeedbacks = () => {
       data_fim: '',
       nome_avaliador: ''
     });
-    setBuscaColaborador(''); // NOVO: limpar busca também
     
-    // Restaurar dados originais
+    // Restaurar dados originais sem fazer nova consulta
     setFeedbacks(feedbacksOriginais);
     setMessage({ type: '', text: '' });
   };
 
   const exportarCSV = async () => {
     try {
+      // Converter valores "all" para string vazia para a API
       const filtrosParaAPI = {
         ...filtros,
         usuario_id: filtros.usuario_id === 'all' ? '' : filtros.usuario_id,
@@ -193,6 +178,7 @@ const VisualizarFeedbacks = () => {
         return;
       }
 
+      // Criar e baixar arquivo
       const blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
@@ -210,33 +196,23 @@ const VisualizarFeedbacks = () => {
     }
   };
 
-  // ===== DADOS CALCULADOS CORRIGIDOS =====
+  // ===== DADOS CALCULADOS COM BASE NOS FEEDBACKS FILTRADOS =====
   
-  // CORRIGIDO: Gráfico de pizza - mostrar todas as categorias proporcionalmente
+  // Preparar dados para gráficos baseados nos feedbacks filtrados
   const dadosGraficoCategoria = useMemo(() => {
-    const categoriaCount = {};
-    
-    // Contar feedbacks por categoria
-    feedbacks.forEach(feedback => {
-      const categoriaNome = feedback.categoria_nome;
-      if (categoriaNome) {
-        categoriaCount[categoriaNome] = (categoriaCount[categoriaNome] || 0) + 1;
-      }
-    });
-
-    // Converter para formato do gráfico
-    return Object.entries(categoriaCount).map(([nome, count]) => {
-      const categoria = categorias.find(c => c.nome === nome);
+    return categorias.map(categoria => {
+      const count = feedbacks.filter(f => f.categoria_nome === categoria.nome).length;
       return {
-        name: nome,
+        name: categoria.nome,
         value: count,
-        color: categoria?.cor || '#8884d8'
+        color: categoria.cor
       };
-    }).sort((a, b) => b.value - a.value); // Ordenar por quantidade
+    }).filter(item => item.value > 0);
   }, [feedbacks, categorias]);
 
-  // CORRIGIDO: Gráfico mensal - valores inteiros corretos
+  // Estatísticas mensais baseadas nos feedbacks filtrados
   const dadosGraficoMensal = useMemo(() => {
+    // Agrupar feedbacks por mês
     const feedbacksPorMes = {};
     
     feedbacks.forEach(feedback => {
@@ -255,11 +231,11 @@ const VisualizarFeedbacks = () => {
       
       feedbacksPorMes[chave].total++;
       
-      // Categorizar por tipo baseado no nome da categoria
+      // Categorizar por tipo (baseado no nome da categoria)
       const categoria = feedback.categoria_nome?.toLowerCase() || '';
-      if (categoria.includes('positiv') || categoria.includes('elogio') || categoria.includes('reconhecimento')) {
+      if (categoria.includes('positiv') || categoria.includes('elogio')) {
         feedbacksPorMes[chave].positivos++;
-      } else if (categoria.includes('negativ') || categoria.includes('reclamação') || categoria.includes('crítica')) {
+      } else if (categoria.includes('negativ') || categoria.includes('reclamação')) {
         feedbacksPorMes[chave].negativos++;
       } else {
         feedbacksPorMes[chave].construtivos++;
@@ -278,7 +254,7 @@ const VisualizarFeedbacks = () => {
       }));
   }, [feedbacks]);
 
-  // Estatísticas por usuário
+  // Estatísticas por usuário baseadas nos feedbacks filtrados
   const estatisticasPorUsuario = useMemo(() => {
     const estatisticas = {};
     
@@ -298,10 +274,11 @@ const VisualizarFeedbacks = () => {
       
       estatisticas[userId].total_feedbacks++;
       
+      // Categorizar por tipo
       const categoria = feedback.categoria_nome?.toLowerCase() || '';
-      if (categoria.includes('positiv') || categoria.includes('elogio') || categoria.includes('reconhecimento')) {
+      if (categoria.includes('positiv') || categoria.includes('elogio')) {
         estatisticas[userId].total_positivos++;
-      } else if (categoria.includes('negativ') || categoria.includes('reclamação') || categoria.includes('crítica')) {
+      } else if (categoria.includes('negativ') || categoria.includes('reclamação')) {
         estatisticas[userId].total_negativos++;
       } else {
         estatisticas[userId].total_construtivos++;
@@ -311,7 +288,7 @@ const VisualizarFeedbacks = () => {
     return Object.values(estatisticas).sort((a, b) => b.total_feedbacks - a.total_feedbacks);
   }, [feedbacks]);
 
-  // Resumo geral
+  // Resumo geral baseado nos feedbacks filtrados
   const resumoGeral = useMemo(() => {
     const total = feedbacks.length;
     const colaboradoresComFeedback = new Set(feedbacks.map(f => f.usuario_id)).size;
@@ -321,9 +298,9 @@ const VisualizarFeedbacks = () => {
     
     feedbacks.forEach(feedback => {
       const categoria = feedback.categoria_nome?.toLowerCase() || '';
-      if (categoria.includes('positiv') || categoria.includes('elogio') || categoria.includes('reconhecimento')) {
+      if (categoria.includes('positiv') || categoria.includes('elogio')) {
         positivos++;
-      } else if (categoria.includes('negativ') || categoria.includes('reclamação') || categoria.includes('crítica')) {
+      } else if (categoria.includes('negativ') || categoria.includes('reclamação')) {
         negativos++;
       } else {
         construtivos++;
@@ -387,55 +364,22 @@ const VisualizarFeedbacks = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-            {/* NOVO: Filtro por usuário com busca */}
+            {/* Filtro por usuário */}
             <div className="space-y-2">
               <Label>Colaborador</Label>
-              
-              {/* Campo de busca */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Buscar colaborador..."
-                  value={buscaColaborador}
-                  onChange={(e) => setBuscaColaborador(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              
-              {/* Select de colaboradores filtrados */}
               <Select value={filtros.usuario_id} onValueChange={(value) => handleFiltroChange('usuario_id', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos os colaboradores" />
                 </SelectTrigger>
-                <SelectContent className="max-h-60">
+                <SelectContent>
                   <SelectItem value="all">Todos os colaboradores</SelectItem>
-                  {colaboradoresFiltrados.length === 0 && buscaColaborador ? (
-                    <div className="p-4 text-center text-gray-500 text-sm">
-                      Nenhum colaborador encontrado
-                    </div>
-                  ) : (
-                    colaboradoresFiltrados.map((usuario) => (
-                      <SelectItem key={usuario.id} value={usuario.id.toString()}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{usuario.nome}</span>
-                          <span className="text-sm text-gray-500">{usuario.email}</span>
-                          {usuario.setor && (
-                            <span className="text-xs text-gray-400">{usuario.setor}</span>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))
-                  )}
+                  {usuarios.map((usuario) => (
+                    <SelectItem key={usuario.id} value={usuario.id.toString()}>
+                      {usuario.nome}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              
-              {/* Contador de resultados */}
-              {buscaColaborador && (
-                <div className="text-sm text-gray-500">
-                  {colaboradoresFiltrados.length} colaborador(es) encontrado(s)
-                </div>
-              )}
             </div>
 
             {/* Filtro por categoria */}
@@ -636,7 +580,7 @@ const VisualizarFeedbacks = () => {
         {/* Gráficos */}
         <TabsContent value="graficos">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* CORRIGIDO: Gráfico de pizza - todas as categorias */}
+            {/* Gráfico de pizza - Feedbacks por categoria */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -658,7 +602,7 @@ const VisualizarFeedbacks = () => {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(1)}%)`}
+                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"
@@ -667,7 +611,7 @@ const VisualizarFeedbacks = () => {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value, name) => [value, name]} />
+                      <Tooltip />
                     </RechartsPieChart>
                   </ResponsiveContainer>
                 ) : (
@@ -678,7 +622,7 @@ const VisualizarFeedbacks = () => {
               </CardContent>
             </Card>
 
-            {/* CORRIGIDO: Gráfico de barras - valores inteiros */}
+            {/* Gráfico de barras - Feedbacks por mês */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -697,16 +641,13 @@ const VisualizarFeedbacks = () => {
                     <BarChart data={dadosGraficoMensal}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="mes" />
-                      <YAxis 
-                        allowDecimals={false}
-                        domain={[0, 'dataMax']}
-                      />
+                      <YAxis />
                       <Tooltip />
                       <Legend />
                       <Bar dataKey="total" fill="#8884d8" name="Total" />
                       <Bar dataKey="positivos" fill="#82ca9d" name="Positivos" />
-                      <Bar dataKey="negativos" fill="#ff7c7c" name="Negativos" />
-                      <Bar dataKey="construtivos" fill="#ffc658" name="Construtivos" />
+                      <Bar dataKey="negativos" fill="#ffc658" name="Negativos" />
+                      <Bar dataKey="construtivos" fill="#ff7300" name="Construtivos" />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
