@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 
 const ConfirmModal = ({ 
   isOpen, 
@@ -28,8 +29,11 @@ const ConfirmModal = ({
     return "bg-yellow-600 hover:bg-yellow-700 text-white";
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999]">
+  const modalContent = (
+    <div 
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center"
+      style={{ zIndex: 99999 }}
+    >
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-100">
         {/* Header Melhorado */}
         <div className="px-6 py-6 border-b border-gray-200">
@@ -80,6 +84,9 @@ const ConfirmModal = ({
       </div>
     </div>
   );
+
+  // Usar createPortal para renderizar o modal no body, fora da hierarquia atual
+  return createPortal(modalContent, document.body);
 };
 
 export default ConfirmModal;
