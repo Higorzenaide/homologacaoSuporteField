@@ -130,7 +130,7 @@ const InserirFeedback = () => {
       } else {
         setMessage({ type: 'success', text: 'Feedback inserido com sucesso!' });
         
-        // Limpar formulário teste
+        // Limpar formulário
         setFormData({
           usuario_id: '',
           categoria_id: '',
@@ -403,3 +403,5 @@ const InserirFeedback = () => {
     </div>
   );
 };
+
+export default InserirFeedback;
