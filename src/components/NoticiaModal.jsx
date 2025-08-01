@@ -19,207 +19,356 @@ const NoticiaModal = ({ isOpen, onClose, noticia }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-6">
-          <div className="flex justify-between items-start">
-            <div className="flex-1 pr-4">
-              <div className="flex items-center gap-2 mb-3">
-                {noticia.destaque && (
-                  <span className="bg-yellow-400 text-red-800 text-xs px-2 py-1 rounded-full font-semibold">
-                    DESTAQUE
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden">
+        {/* Header Moderno */}
+        <div className="relative bg-gradient-to-r from-red-600 via-red-500 to-red-400 text-white">
+          {/* Padrão geométrico de fundo */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-4 left-8 w-20 h-20 border-2 border-white rounded-full"></div>
+            <div className="absolute top-12 right-16 w-16 h-16 border border-white rounded-full"></div>
+            <div className="absolute bottom-6 left-20 w-12 h-12 border border-white rounded-full"></div>
+            <div className="absolute top-8 left-1/2 w-8 h-8 border border-white rounded-full"></div>
+          </div>
+          
+          <div className="relative p-8">
+            <div className="flex justify-between items-start">
+              <div className="flex-1 pr-6">
+                {/* Badges */}
+                <div className="flex items-center gap-3 mb-4">
+                  {noticia.destaque && (
+                    <span className="bg-yellow-400 text-red-800 text-xs px-3 py-1.5 rounded-full font-bold shadow-lg">
+                      ⭐ DESTAQUE
+                    </span>
+                  )}
+                  <span className="bg-white bg-opacity-20 backdrop-blur-sm text-white text-sm px-4 py-1.5 rounded-full border border-white border-opacity-30">
+                    📂 {noticia.categoria_nome}
                   </span>
-                )}
-                <span className="bg-white bg-opacity-20 text-white text-xs px-2 py-1 rounded-full">
-                  {noticia.categoria_nome}
-                </span>
+                </div>
+                
+                {/* Título */}
+                <h1 className="text-3xl font-bold mb-4 leading-tight">
+                  {noticia.titulo}
+                </h1>
+                
+                {/* Metadados */}
+                <div className="flex items-center text-white text-opacity-90 text-sm bg-white bg-opacity-10 backdrop-blur-sm rounded-lg px-4 py-2 inline-flex">
+                  <div className="flex items-center mr-6">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span className="font-medium">{noticia.autor}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6m-6 0l-1 12a2 2 0 002 2h6a2 2 0 002-2L16 7" />
+                    </svg>
+                    <span>{formatarData(noticia.data_publicacao)}</span>
+                  </div>
+                </div>
               </div>
-              <h2 className="text-2xl font-bold mb-2">{noticia.titulo}</h2>
-              <div className="flex items-center text-white text-opacity-90 text-sm">
-                <span>Por: {noticia.autor}</span>
-                <span className="mx-2">•</span>
-                <span>{formatarData(noticia.data_publicacao)}</span>
-              </div>
+              
+              {/* Botão fechar */}
+              <button
+                onClick={onClose}
+                className="text-white hover:text-red-200 transition-colors p-3 hover:bg-white hover:bg-opacity-20 rounded-full"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-            <button
-              onClick={onClose}
-              className="text-white hover:text-gray-200 transition-colors p-2"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
           </div>
         </div>
 
-        {/* Conteúdo */}
-        <div className="p-8 max-h-[calc(90vh-200px)] overflow-y-auto">
-          {/* Conteúdo da notícia */}
-          <div className="mb-8">
-            <div className="prose prose-lg max-w-none">
-              {/* Renderizar HTML formatado */}
-              <div 
-                className="text-gray-700 leading-relaxed space-y-4 formatted-content"
-                dangerouslySetInnerHTML={{ 
-                  __html: sanitizeHTML(noticia.conteudo) 
-                }}
-              />
-            </div>
-          </div>
+        {/* Conteúdo Principal */}
+        <div className="max-h-[calc(95vh-200px)] overflow-y-auto">
+          {/* Artigo */}
+          <article className="p-8">
+            <div className="max-w-4xl mx-auto">
+              {/* Conteúdo formatado */}
+              <div className="prose prose-lg max-w-none mb-12">
+                <div 
+                  className="text-gray-800 leading-relaxed formatted-content article-content"
+                  dangerouslySetInnerHTML={{ 
+                    __html: sanitizeHTML(noticia.conteudo) 
+                  }}
+                />
+              </div>
 
-          {/* Seção de comentários */}
-          <ComentariosSectionNoticia 
-            noticiaId={noticia.id}
-            onComentarioChange={() => {}}
-          />
+              {/* Divisor elegante */}
+              <div className="flex items-center my-12">
+                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                <div className="mx-4 text-gray-400">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </div>
+                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+              </div>
+
+              {/* Seção de comentários melhorada */}
+              <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                <ComentariosSectionNoticia 
+                  noticiaId={noticia.id}
+                  onComentarioChange={() => {}}
+                />
+              </div>
+            </div>
+          </article>
         </div>
       </div>
 
-      {/* Estilos CSS para o conteúdo formatado */}
+      {/* Estilos CSS aprimorados */}
       <style jsx>{`
-        .formatted-content {
-          font-size: 16px;
-          line-height: 1.6;
-          font-family: inherit;
-        }
-        
-        .formatted-content h1, 
-        .formatted-content h2, 
-        .formatted-content h3, 
-        .formatted-content h4, 
-        .formatted-content h5, 
-        .formatted-content h6 {
-          margin-top: 1.5em;
-          margin-bottom: 0.5em;
-          font-weight: 600;
-          line-height: 1.25;
-        }
-        
-        .formatted-content h1 { font-size: 2em; color: #1f2937; }
-        .formatted-content h2 { font-size: 1.5em; color: #1f2937; }
-        .formatted-content h3 { font-size: 1.25em; color: #374151; }
-        .formatted-content h4 { font-size: 1.125em; color: #374151; }
-        .formatted-content h5 { font-size: 1em; color: #4b5563; }
-        .formatted-content h6 { font-size: 0.875em; color: #4b5563; }
-        
-        .formatted-content p {
-          margin-bottom: 1em;
-          text-align: justify;
-        }
-        
-        .formatted-content strong, 
-        .formatted-content b {
-          font-weight: 600 !important;
+        .article-content {
+          font-size: 18px;
+          line-height: 1.8;
+          font-family: 'Georgia', 'Times New Roman', serif;
           color: #1f2937;
         }
         
-        .formatted-content em, 
-        .formatted-content i {
-          font-style: italic;
+        .article-content h1, 
+        .article-content h2, 
+        .article-content h3, 
+        .article-content h4, 
+        .article-content h5, 
+        .article-content h6 {
+          margin-top: 2em;
+          margin-bottom: 1em;
+          font-weight: 700;
+          line-height: 1.3;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
         
-        .formatted-content u {
-          text-decoration: underline;
+        .article-content h1 { 
+          font-size: 2.5em; 
+          color: #111827;
+          border-bottom: 3px solid #dc2626;
+          padding-bottom: 0.5em;
+        }
+        .article-content h2 { 
+          font-size: 2em; 
+          color: #1f2937;
+          border-bottom: 2px solid #ef4444;
+          padding-bottom: 0.3em;
+        }
+        .article-content h3 { 
+          font-size: 1.5em; 
+          color: #374151;
+          border-bottom: 1px solid #f87171;
+          padding-bottom: 0.2em;
+        }
+        .article-content h4 { font-size: 1.25em; color: #374151; }
+        .article-content h5 { font-size: 1.1em; color: #4b5563; }
+        .article-content h6 { font-size: 1em; color: #4b5563; }
+        
+        .article-content p {
+          margin-bottom: 1.5em;
+          text-align: justify;
+          text-indent: 1.5em;
         }
         
-        .formatted-content s, 
-        .formatted-content strike {
-          text-decoration: line-through;
+        .article-content p:first-of-type {
+          font-size: 1.1em;
+          font-weight: 500;
+          text-indent: 0;
+          color: #374151;
         }
         
-        .formatted-content ul, 
-        .formatted-content ol {
-          margin: 1em 0;
-          padding-left: 1.5em;
+        .article-content strong, 
+        .article-content b {
+          font-weight: 700 !important;
+          color: #111827;
+          background: linear-gradient(120deg, #fef3c7 0%, #fde68a 100%);
+          padding: 0.1em 0.2em;
+          border-radius: 0.2em;
         }
         
-        .formatted-content li {
-          margin-bottom: 0.5em;
-        }
-        
-        .formatted-content blockquote {
-          border-left: 4px solid #dc2626;
-          padding-left: 1em;
-          margin: 1.5em 0;
+        .article-content em, 
+        .article-content i {
           font-style: italic;
           color: #4b5563;
-          background-color: #f9fafb;
-          padding: 1em;
-          border-radius: 0.375rem;
         }
         
-        .formatted-content a {
-          color: #dc2626;
+        .article-content u {
           text-decoration: underline;
+          text-decoration-color: #dc2626;
+          text-decoration-thickness: 2px;
         }
         
-        .formatted-content a:hover {
+        .article-content s, 
+        .article-content strike {
+          text-decoration: line-through;
+          color: #6b7280;
+        }
+        
+        .article-content ul, 
+        .article-content ol {
+          margin: 1.5em 0;
+          padding-left: 2em;
+        }
+        
+        .article-content li {
+          margin-bottom: 0.8em;
+          line-height: 1.6;
+        }
+        
+        .article-content ul li {
+          list-style-type: none;
+          position: relative;
+        }
+        
+        .article-content ul li:before {
+          content: "▶";
+          color: #dc2626;
+          font-weight: bold;
+          position: absolute;
+          left: -1.5em;
+        }
+        
+        .article-content ol li {
+          list-style-type: decimal;
+          color: #374151;
+        }
+        
+        .article-content blockquote {
+          border-left: 4px solid #dc2626;
+          background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+          margin: 2em 0;
+          padding: 1.5em;
+          border-radius: 0.5rem;
+          font-style: italic;
+          color: #7f1d1d;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .article-content blockquote:before {
+          content: """;
+          font-size: 4em;
+          color: #dc2626;
+          opacity: 0.3;
+          float: left;
+          line-height: 0.6em;
+          margin-right: 0.25em;
+          margin-top: 0.25em;
+        }
+        
+        .article-content a {
+          color: #dc2626;
+          text-decoration: none;
+          border-bottom: 2px solid transparent;
+          transition: all 0.3s ease;
+          font-weight: 500;
+        }
+        
+        .article-content a:hover {
           color: #b91c1c;
+          border-bottom-color: #dc2626;
+          background-color: #fef2f2;
+          padding: 0.1em 0.2em;
+          border-radius: 0.2em;
         }
         
-        .formatted-content img {
+        .article-content img {
           max-width: 100%;
           height: auto;
-          border-radius: 0.375rem;
-          margin: 1em 0;
+          border-radius: 1rem;
+          margin: 2em auto;
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+          border: 1px solid #e5e7eb;
         }
         
-        .formatted-content code {
-          background-color: #f3f4f6;
-          padding: 0.2em 0.4em;
-          border-radius: 0.25rem;
-          font-family: 'Courier New', monospace;
-          font-size: 0.875em;
+        .article-content code {
+          background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+          padding: 0.3em 0.6em;
+          border-radius: 0.4rem;
+          font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+          font-size: 0.9em;
+          color: #1f2937;
+          border: 1px solid #d1d5db;
         }
         
-        .formatted-content pre {
-          background-color: #1f2937;
+        .article-content pre {
+          background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
           color: #f9fafb;
-          padding: 1em;
-          border-radius: 0.5rem;
+          padding: 1.5em;
+          border-radius: 1rem;
           overflow-x: auto;
-          margin: 1em 0;
+          margin: 2em 0;
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+          border: 1px solid #374151;
         }
         
-        .formatted-content pre code {
+        .article-content pre code {
           background: none;
           color: inherit;
           padding: 0;
+          border: none;
         }
 
         /* Cores personalizadas do editor */
-        .formatted-content [style*="color: rgb(220, 38, 38)"] {
+        .article-content [style*="color: rgb(220, 38, 38)"] {
           color: #dc2626 !important;
+          font-weight: 600;
         }
         
-        .formatted-content [style*="color: rgb(5, 150, 105)"] {
+        .article-content [style*="color: rgb(5, 150, 105)"] {
           color: #059669 !important;
+          font-weight: 600;
         }
         
-        .formatted-content [style*="color: rgb(37, 99, 235)"] {
+        .article-content [style*="color: rgb(37, 99, 235)"] {
           color: #2563eb !important;
+          font-weight: 600;
         }
         
-        .formatted-content [style*="color: rgb(0, 0, 0)"] {
+        .article-content [style*="color: rgb(0, 0, 0)"] {
           color: #000000 !important;
+          font-weight: 600;
         }
 
-        /* Tamanhos de fonte */
-        .formatted-content font[size="1"] {
-          font-size: 0.75em;
+        /* Tamanhos de fonte melhorados */
+        .article-content font[size="1"] {
+          font-size: 0.8em;
+          color: #6b7280;
         }
         
-        .formatted-content font[size="3"] {
+        .article-content font[size="3"] {
           font-size: 1em;
         }
         
-        .formatted-content font[size="5"] {
-          font-size: 1.25em;
+        .article-content font[size="5"] {
+          font-size: 1.3em;
+          font-weight: 600;
+          color: #1f2937;
         }
         
-        .formatted-content font[size="7"] {
-          font-size: 1.5em;
+        .article-content font[size="7"] {
+          font-size: 1.6em;
+          font-weight: 700;
+          color: #111827;
+        }
+
+        /* Animações suaves */
+        .article-content * {
+          transition: all 0.2s ease;
+        }
+
+        /* Melhorar legibilidade em dispositivos móveis */
+        @media (max-width: 768px) {
+          .article-content {
+            font-size: 16px;
+            line-height: 1.7;
+          }
+          
+          .article-content h1 { font-size: 2em; }
+          .article-content h2 { font-size: 1.6em; }
+          .article-content h3 { font-size: 1.3em; }
+          
+          .article-content p {
+            text-indent: 0;
+          }
         }
       `}</style>
     </div>
