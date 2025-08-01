@@ -15,7 +15,7 @@ import { getNoticiasDestaque } from '../services/noticiasService';
 import EditableStatCard from '../components/EditableStatCard';
 import { useAuth } from '../contexts/AuthContext';
 
-// Componente das bolinhas interativas
+// Componente das bolinhas interativas - VERSÃO CORRIGIDA
 const InteractiveBackground = () => {
   const canvasRef = useRef(null);
   const mouseRef = useRef({ x: 0, y: 0 });
@@ -28,19 +28,22 @@ const InteractiveBackground = () => {
 
     const ctx = canvas.getContext('2d');
     
-    // Configurar canvas
+    // Configurar canvas com tamanho fixo inicial
     const resizeCanvas = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      
+      // Recriar partículas quando redimensionar
+      if (canvas.width > 0 && canvas.height > 0) {
+        particlesRef.current = createParticles();
+      }
     };
     
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
     // Criar partículas (bolinhas)
     const createParticles = () => {
       const particles = [];
-      const particleCount = Math.floor((canvas.width * canvas.height) / 15000);
+      const particleCount = Math.max(8, Math.floor((canvas.width * canvas.height) / 20000));
       
       for (let i = 0; i < particleCount; i++) {
         particles.push({
@@ -48,10 +51,10 @@ const InteractiveBackground = () => {
           y: Math.random() * canvas.height,
           originalX: 0,
           originalY: 0,
-          size: Math.random() * 60 + 40,
-          opacity: Math.random() * 0.3 + 0.1,
-          speedX: (Math.random() - 0.5) * 0.5,
-          speedY: (Math.random() - 0.5) * 0.5,
+          size: Math.random() * 40 + 20, // Tamanho menor para melhor performance
+          opacity: Math.random() * 0.4 + 0.2, // Mais visível
+          speedX: (Math.random() - 0.5) * 1, // Movimento mais perceptível
+          speedY: (Math.random() - 0.5) * 1,
           angle: Math.random() * Math.PI * 2,
           rotationSpeed: (Math.random() - 0.5) * 0.02
         });
@@ -66,7 +69,9 @@ const InteractiveBackground = () => {
       return particles;
     };
 
-    particlesRef.current = createParticles();
+    // Configuração inicial
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
 
     // Rastrear mouse
     const handleMouseMove = (e) => {
@@ -77,10 +82,20 @@ const InteractiveBackground = () => {
       };
     };
 
+    // Adicionar listener ao canvas e ao container pai
+    const container = canvas.parentElement;
+    if (container) {
+      container.addEventListener('mousemove', handleMouseMove);
+    }
     canvas.addEventListener('mousemove', handleMouseMove);
 
     // Animação
     const animate = () => {
+      if (!canvas.width || !canvas.height) {
+        animationRef.current = requestAnimationFrame(animate);
+        return;
+      }
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       particlesRef.current.forEach(particle => {
@@ -89,7 +104,7 @@ const InteractiveBackground = () => {
         particle.y += particle.speedY;
         particle.angle += particle.rotationSpeed;
         
-        // Manter dentro dos limites
+        // Manter dentro dos limites com wrap-around
         if (particle.x < -particle.size) particle.x = canvas.width + particle.size;
         if (particle.x > canvas.width + particle.size) particle.x = -particle.size;
         if (particle.y < -particle.size) particle.y = canvas.height + particle.size;
@@ -101,28 +116,29 @@ const InteractiveBackground = () => {
           Math.pow(particle.y - mouseRef.current.y, 2)
         );
         
-        const repulsionRadius = 150;
-        const repulsionForce = 0.3;
+        const repulsionRadius = 120;
+        const repulsionForce = 0.5;
         
-        if (mouseDistance < repulsionRadius) {
+        if (mouseDistance < repulsionRadius && mouseDistance > 0) {
           const angle = Math.atan2(
             particle.y - mouseRef.current.y,
             particle.x - mouseRef.current.x
           );
           const force = (repulsionRadius - mouseDistance) / repulsionRadius * repulsionForce;
           
-          particle.x += Math.cos(angle) * force * 5;
-          particle.y += Math.sin(angle) * force * 5;
+          particle.x += Math.cos(angle) * force * 8;
+          particle.y += Math.sin(angle) * force * 8;
         }
         
-        // Desenhar partícula com gradiente
+        // Desenhar partícula com gradiente mais visível
         const gradient = ctx.createRadialGradient(
           particle.x, particle.y, 0,
           particle.x, particle.y, particle.size
         );
         
-        gradient.addColorStop(0, `rgba(255, 255, 255, ${particle.opacity * 0.8})`);
-        gradient.addColorStop(0.5, `rgba(255, 255, 255, ${particle.opacity * 0.4})`);
+        gradient.addColorStop(0, `rgba(255, 255, 255, ${particle.opacity})`);
+        gradient.addColorStop(0.3, `rgba(255, 255, 255, ${particle.opacity * 0.7})`);
+        gradient.addColorStop(0.7, `rgba(255, 255, 255, ${particle.opacity * 0.3})`);
         gradient.addColorStop(1, `rgba(255, 255, 255, 0)`);
         
         ctx.save();
@@ -138,10 +154,18 @@ const InteractiveBackground = () => {
       animationRef.current = requestAnimationFrame(animate);
     };
 
-    animate();
+    // Iniciar animação após um pequeno delay para garantir que o canvas esteja pronto
+    setTimeout(() => {
+      if (canvas.width > 0 && canvas.height > 0) {
+        animate();
+      }
+    }, 100);
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
+      if (container) {
+        container.removeEventListener('mousemove', handleMouseMove);
+      }
       canvas.removeEventListener('mousemove', handleMouseMove);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
@@ -152,8 +176,12 @@ const InteractiveBackground = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 w-full h-full pointer-events-none"
-      style={{ opacity: 0.6 }}
+      className="absolute inset-0 w-full h-full"
+      style={{ 
+        opacity: 0.7,
+        pointerEvents: 'none',
+        zIndex: 1
+      }}
     />
   );
 };
@@ -425,372 +453,208 @@ const Home = ({ setCurrentPage }) => {
             </div>
             <Button 
               onClick={() => setCurrentPage('treinamentos')}
-              className="bg-gradient-to-r from-[var(--desktop-red)] to-[var(--desktop-red-dark)] hover:from-[var(--desktop-red-dark)] hover:to-[var(--desktop-red)] text-white px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              className="bg-gradient-to-r from-[var(--desktop-red)] to-[var(--desktop-red-dark)] hover:from-[var(--desktop-red-dark)] hover:to-[var(--desktop-red)] text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
             >
               Ver Todos
-              <ArrowRight size={20} className="ml-2" />
+              <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {ultimosTreinamentos.map((treinamento, index) => (
-              <Card key={treinamento.id} className="group hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border-0 shadow-lg overflow-hidden">
-                {/* Header com gradiente vermelho */}
-                <div className="h-32 bg-gradient-to-br from-[var(--desktop-red)] to-[var(--desktop-red-dark)] relative overflow-hidden">
-                  <div className="absolute inset-0 opacity-20">
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-white rounded-full -mr-10 -mt-10"></div>
-                    <div className="absolute bottom-0 left-0 w-16 h-16 bg-white rounded-full -ml-8 -mb-8"></div>
-                  </div>
-                  
-                  <div className="relative z-10 p-4 h-full flex flex-col justify-between">
-                    <div className="flex justify-between items-start">
-                      <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
+          {ultimosTreinamentos.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {ultimosTreinamentos.map((treinamento) => (
+                <Card key={treinamento.id} className="group hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-0 shadow-lg bg-gradient-to-br from-white to-gray-50">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <FileText className="w-6 h-6 text-[var(--desktop-red)]" />
+                      </div>
+                      <Badge variant="secondary" className="bg-red-50 text-[var(--desktop-red)] border-red-200">
                         {treinamento.categoria}
                       </Badge>
-                      <div className="text-white/90 text-xs flex items-center">
-                        <Calendar size={12} className="mr-1" />
-                        {new Date(treinamento.dataUpload).toLocaleDateString('pt-BR')}
-                      </div>
                     </div>
                     
-                    <div className="text-white">
-                      <FileText className="w-8 h-8 mb-2" />
-                    </div>
-                  </div>
-                </div>
-
-                <CardContent className="p-6">
-                  <h3 className="font-bold text-gray-900 mb-3 line-clamp-2 text-lg group-hover:text-[var(--desktop-red)] transition-colors">
-                    {treinamento.titulo}
-                  </h3>
-                  
-                  <p className="text-gray-600 mb-4 line-clamp-3 text-sm leading-relaxed">
-                    {treinamento.descricao}
-                  </p>
-
-                  {/* Apenas estatísticas reais se existirem */}
-                  {(treinamento.visualizacoes || treinamento.downloads || treinamento.curtidas) && (
-                    <div className="flex items-center justify-between mb-4 text-sm text-gray-500">
-                      {treinamento.visualizacoes && (
-                        <div className="flex items-center">
-                          <Eye size={14} className="mr-1" />
-                          <span>{treinamento.visualizacoes}</span>
-                        </div>
-                      )}
-                      {treinamento.downloads && (
-                        <div className="flex items-center">
-                          <Download size={14} className="mr-1" />
-                          <span>{treinamento.downloads}</span>
-                        </div>
-                      )}
-                      {treinamento.curtidas && (
-                        <div className="flex items-center">
-                          <Heart size={14} className="mr-1" />
-                          <span>{treinamento.curtidas}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {treinamento.tags && treinamento.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-4">
-                      {treinamento.tags.slice(0, 2).map((tag, tagIndex) => (
-                        <Badge key={tagIndex} variant="outline" className="text-xs px-2 py-1">
-                          #{tag}
-                        </Badge>
-                      ))}
-                      {treinamento.tags.length > 2 && (
-                        <Badge variant="outline" className="text-xs px-2 py-1">
-                          +{treinamento.tags.length - 2}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
-                  
-                  <Button 
-                    onClick={() => handleDownload(treinamento)}
-                    className="w-full bg-gradient-to-r from-[var(--desktop-red)] to-[var(--desktop-red-dark)] hover:from-[var(--desktop-red-dark)] hover:to-[var(--desktop-red)] text-white font-semibold py-2 rounded-lg transition-all duration-300 transform group-hover:scale-105"
-                    size="sm"
-                  >
-                    <Download size={16} className="mr-2" />
-                    Acessar Treinamento
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {ultimosTreinamentos.length === 0 && (
-            <div className="text-center py-16">
-              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <BookOpen size={48} className="text-gray-400" />
-              </div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-4">
-                Nenhum treinamento disponível
-              </h3>
-              <p className="text-gray-600 text-lg">
-                Os treinamentos aparecerão aqui quando forem adicionados ao sistema
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Notícias em Destaque com modal */}
-      <div className="bg-gray-50 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-16">
-            <div>
-              <div className="flex items-center mb-4">
-                <Star className="w-8 h-8 text-[var(--desktop-red)] mr-3" />
-                <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-[var(--desktop-red)] bg-clip-text text-transparent">
-                  Notícias em Destaque
-                </h2>
-              </div>
-              <p className="text-xl text-gray-600">
-                Informações importantes e atualizações para a equipe.
-              </p>
-            </div>
-            <Button 
-              variant="outline"
-              onClick={() => setCurrentPage('noticias')}
-              className="border-2 border-[var(--desktop-red)] text-[var(--desktop-red)] hover:bg-[var(--desktop-red)] hover:text-white px-8 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105"
-            >
-              Ver Todas
-              <ArrowRight size={20} className="ml-2" />
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {noticiasDestaque.map((noticia, index) => (
-              <Card key={noticia.id} className="group hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-1 border-0 shadow-lg overflow-hidden">
-                <div className="h-20 bg-gradient-to-r from-[var(--desktop-red)] to-[var(--desktop-red-dark)] relative overflow-hidden">
-                  <div className="absolute inset-0 opacity-20">
-                    <div className="absolute top-0 right-0 w-16 h-16 bg-white rounded-full -mr-8 -mt-8"></div>
-                    <div className="absolute bottom-0 left-0 w-12 h-12 bg-white rounded-full -ml-6 -mb-6"></div>
-                  </div>
-                  
-                  <div className="relative z-10 p-4 flex items-center justify-between h-full">
-                    <div className="flex items-center gap-3">
-                      <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
-                        {noticia.categoria}
-                      </Badge>
-                      <Badge className="bg-white text-[var(--desktop-red)] border-0 font-semibold">
-                        <Star size={12} className="mr-1" />
-                        Destaque
-                      </Badge>
-                    </div>
-                    <div className="text-white/90 text-sm flex items-center">
-                      <Calendar size={14} className="mr-1" />
-                      {new Date(noticia.dataPublicacao).toLocaleDateString('pt-BR')}
-                    </div>
-                  </div>
-                </div>
-
-                <CardContent className="p-8">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-[var(--desktop-red)] transition-colors">
-                    {noticia.titulo}
-                  </h3>
-                  
-                  {/* Renderizar texto simples extraído do HTML */}
-                  <p className="text-gray-700 mb-6 leading-relaxed line-clamp-4 text-base">
-                    {extrairTextoSimples(noticia.conteudo)}
-                  </p>
-
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-500 flex items-center">
-                      <Users size={14} className="mr-1" />
-                      Publicado por <span className="font-semibold ml-1">{noticia.autor}</span>
+                    <h3 className="font-bold text-lg mb-3 text-gray-900 group-hover:text-[var(--desktop-red)] transition-colors duration-300 line-clamp-2">
+                      {treinamento.titulo}
+                    </h3>
+                    
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                      {treinamento.descricao}
+                    </p>
+                    
+                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                      <div className="flex items-center">
+                        <Calendar className="w-4 h-4 mr-1" />
+                        {new Date(treinamento.dataUpload).toLocaleDateString('pt-BR')}
+                      </div>
+                      <div className="flex items-center">
+                        <Eye className="w-4 h-4 mr-1" />
+                        {treinamento.visualizacoes || 0}
+                      </div>
                     </div>
                     
                     <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => abrirModalNoticia(noticia)}
-                      className="text-[var(--desktop-red)] hover:text-[var(--desktop-red-dark)] hover:bg-red-50 font-semibold"
+                      onClick={() => handleDownload(treinamento)}
+                      className="w-full bg-gradient-to-r from-[var(--desktop-red)] to-[var(--desktop-red-dark)] hover:from-[var(--desktop-red-dark)] hover:to-[var(--desktop-red)] text-white font-semibold py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
                     >
-                      Ler mais
-                      <ChevronRight size={16} className="ml-1" />
+                      <Download className="w-4 h-4 mr-2" />
+                      Baixar Material
                     </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {noticiasDestaque.length === 0 && (
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
             <div className="text-center py-16">
-              <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Star size={48} className="text-[var(--desktop-red)]" />
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center mx-auto mb-6">
+                <BookOpen className="w-12 h-12 text-[var(--desktop-red)]" />
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-4">
-                Nenhuma notícia em destaque
-              </h3>
-              <p className="text-gray-600 text-lg">
-                As notícias em destaque aparecerão aqui quando forem publicadas
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Nenhum treinamento encontrado</h3>
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                Ainda não há treinamentos disponíveis. Novos materiais serão adicionados em breve.
               </p>
+              <Button 
+                onClick={() => setCurrentPage('treinamentos')}
+                className="bg-gradient-to-r from-[var(--desktop-red)] to-[var(--desktop-red-dark)] hover:from-[var(--desktop-red-dark)] hover:to-[var(--desktop-red)] text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                Explorar Treinamentos
+              </Button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Modal da Notícia */}
-      {noticiaModal && (
-        <Dialog open={!!noticiaModal} onOpenChange={fecharModalNoticia}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[var(--desktop-red)] to-[var(--desktop-red-dark)] rounded-xl flex items-center justify-center">
-                    <Newspaper className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <DialogTitle className="text-2xl font-bold text-gray-900 text-left">
-                      {noticiaModal.titulo}
-                    </DialogTitle>
-                    <div className="flex items-center gap-4 mt-2">
-                      <Badge className="bg-red-100 text-[var(--desktop-red)] border-red-200">
-                        {noticiaModal.categoria}
+      {/* Seção de Notícias em Destaque */}
+      {noticiasDestaque.length > 0 && (
+        <div className="bg-gray-50 py-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center mb-16">
+              <div>
+                <div className="flex items-center mb-4">
+                  <Newspaper className="w-8 h-8 text-[var(--desktop-red)] mr-3" />
+                  <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-[var(--desktop-red)] bg-clip-text text-transparent">
+                    Notícias em Destaque
+                  </h2>
+                </div>
+                <p className="text-xl text-gray-600">
+                  Fique por dentro das últimas atualizações e comunicados importantes
+                </p>
+              </div>
+              <Button 
+                onClick={() => setCurrentPage('noticias')}
+                className="bg-gradient-to-r from-[var(--desktop-red)] to-[var(--desktop-red-dark)] hover:from-[var(--desktop-red-dark)] hover:to-[var(--desktop-red)] text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              >
+                Ver Todas
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {noticiasDestaque.map((noticia) => (
+                <Card 
+                  key={noticia.id} 
+                  className="group hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-0 shadow-lg bg-gradient-to-br from-white to-gray-50 cursor-pointer"
+                  onClick={() => abrirModalNoticia(noticia)}
+                >
+                  <CardContent className="p-8">
+                    <div className="flex items-center justify-between mb-6">
+                      <Badge variant="secondary" className="bg-red-50 text-[var(--desktop-red)] border-red-200 px-3 py-1">
+                        {noticia.categoria}
                       </Badge>
-                      <div className="text-sm text-gray-500 flex items-center">
-                        <Calendar size={14} className="mr-1" />
-                        {new Date(noticiaModal.dataPublicacao).toLocaleDateString('pt-BR')}
-                      </div>
-                      <div className="text-sm text-gray-500 flex items-center">
-                        <Users size={14} className="mr-1" />
-                        {noticiaModal.autor}
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Calendar className="w-4 h-4 mr-1" />
+                        {new Date(noticia.dataPublicacao).toLocaleDateString('pt-BR')}
                       </div>
                     </div>
-                  </div>
+                    
+                    <h3 className="font-bold text-2xl mb-4 text-gray-900 group-hover:text-[var(--desktop-red)] transition-colors duration-300 line-clamp-2">
+                      {noticia.titulo}
+                    </h3>
+                    
+                    <p className="text-gray-600 mb-6 line-clamp-3 leading-relaxed">
+                      {extrairTextoSimples(noticia.conteudo)}
+                    </p>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4 text-sm text-gray-500">
+                        <div className="flex items-center">
+                          <Eye className="w-4 h-4 mr-1" />
+                          {noticia.visualizacoes || 0}
+                        </div>
+                        <div className="flex items-center">
+                          <Heart className="w-4 h-4 mr-1" />
+                          {noticia.curtidas || 0}
+                        </div>
+                        <div className="flex items-center">
+                          <MessageCircle className="w-4 h-4 mr-1" />
+                          {noticia.comentarios || 0}
+                        </div>
+                      </div>
+                      
+                      <ChevronRight className="w-5 h-5 text-[var(--desktop-red)] group-hover:translate-x-1 transition-transform duration-300" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Notícia */}
+      {noticiaModal && (
+        <Dialog open={!!noticiaModal} onOpenChange={fecharModalNoticia}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <div className="flex items-center justify-between mb-4">
+                <Badge variant="secondary" className="bg-red-50 text-[var(--desktop-red)] border-red-200">
+                  {noticiaModal.categoria}
+                </Badge>
+                <div className="flex items-center text-sm text-gray-500">
+                  <Calendar className="w-4 h-4 mr-1" />
+                  {new Date(noticiaModal.dataPublicacao).toLocaleDateString('pt-BR')}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={fecharModalNoticia}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X size={20} />
-                </Button>
               </div>
+              <DialogTitle className="text-2xl font-bold text-gray-900 mb-4">
+                {noticiaModal.titulo}
+              </DialogTitle>
             </DialogHeader>
             
-            <div className="mt-6">
-              <div className="prose prose-lg max-w-none">
-                {/* Renderizar HTML formatado no modal */}
-                <div 
-                  className="text-gray-700 leading-relaxed formatted-content"
-                  dangerouslySetInnerHTML={{ __html: noticiaModal.conteudo }}
-                />
+            <div className="prose max-w-none">
+              <div 
+                dangerouslySetInnerHTML={{ __html: noticiaModal.conteudo }}
+                className="text-gray-700 leading-relaxed"
+              />
+            </div>
+            
+            <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
+              <div className="flex items-center space-x-6 text-sm text-gray-500">
+                <div className="flex items-center">
+                  <Eye className="w-4 h-4 mr-1" />
+                  {noticiaModal.visualizacoes || 0} visualizações
+                </div>
+                <div className="flex items-center">
+                  <Heart className="w-4 h-4 mr-1" />
+                  {noticiaModal.curtidas || 0} curtidas
+                </div>
+                <div className="flex items-center">
+                  <MessageCircle className="w-4 h-4 mr-1" />
+                  {noticiaModal.comentarios || 0} comentários
+                </div>
               </div>
               
-              {noticiaModal.tags && noticiaModal.tags.length > 0 && (
-                <div className="mt-8 pt-6 border-t border-gray-200">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-3">Tags:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {noticiaModal.tags.map((tag, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        #{tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <Button 
+                onClick={fecharModalNoticia}
+                variant="outline"
+                className="border-[var(--desktop-red)] text-[var(--desktop-red)] hover:bg-[var(--desktop-red)] hover:text-white"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Fechar
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
       )}
-
-      {/* Rodapé */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="flex justify-center mb-6">
-              <div className="w-16 h-16 rounded-2xl overflow-hidden bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
-                <img
-                  src="/logo.jpeg"
-                  alt="Logo"
-                  className="w-12 h-12 object-cover rounded-xl"
-                />
-              </div>
-            </div>
-            <h3 className="text-2xl font-bold mb-4">Suporte Field</h3>
-            <p className="text-gray-400 mb-6 max-w-2xl mx-auto">
-              Comprometidos com a excelência no suporte técnico e treinamento contínuo da nossa equipe.
-            </p>
-            <div className="border-t border-gray-800 pt-6">
-              <p className="text-gray-500">
-                © 2025 Todos os direitos reservados - Suporte Field Desktop Fibra Internet
-              </p>
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      {/* Estilos para o conteúdo formatado */}
-      <style jsx>{`
-        .formatted-content strong, .formatted-content b {
-          font-weight: 700 !important;
-          color: #1f2937;
-        }
-        
-        .formatted-content em, .formatted-content i {
-          font-style: italic;
-        }
-        
-        .formatted-content u {
-          text-decoration: underline;
-        }
-        
-        .formatted-content [style*="color: rgb(220, 38, 38)"] {
-          color: #dc2626 !important;
-        }
-        
-        .formatted-content [style*="color: rgb(5, 150, 105)"] {
-          color: #059669 !important;
-        }
-        
-        .formatted-content [style*="color: rgb(37, 99, 235)"] {
-          color: #2563eb !important;
-        }
-        
-        .formatted-content [style*="color: rgb(0, 0, 0)"] {
-          color: #000000 !important;
-        }
-        
-        .formatted-content font[size="1"] {
-          font-size: 0.8em;
-        }
-        
-        .formatted-content font[size="3"] {
-          font-size: 1em;
-        }
-        
-        .formatted-content font[size="5"] {
-          font-size: 1.2em;
-        }
-        
-        .formatted-content font[size="7"] {
-          font-size: 1.4em;
-        }
-        
-        .formatted-content ul, .formatted-content ol {
-          margin: 1em 0;
-          padding-left: 1.5em;
-        }
-        
-        .formatted-content li {
-          margin-bottom: 0.5em;
-        }
-        
-        .formatted-content a {
-          color: #dc2626;
-          text-decoration: underline;
-        }
-        
-        .formatted-content a:hover {
-          color: #b91c1c;
-        }
-      `}</style>
     </div>
   );
 };
