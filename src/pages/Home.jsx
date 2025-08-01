@@ -15,65 +15,116 @@ import { getNoticiasDestaque } from '../services/noticiasService';
 import EditableStatCard from '../components/EditableStatCard';
 import { useAuth } from '../contexts/AuthContext';
 
-// Componente das bolinhas interativas - VERSÃO CORRIGIDA
+// Componente das bolinhas interativas - VERSÃO COMPLETAMENTE REESCRITA
 const InteractiveBackground = () => {
   const canvasRef = useRef(null);
-  const mouseRef = useRef({ x: 0, y: 0 });
+  const animationRef = useRef(null);
   const particlesRef = useRef([]);
-  const animationRef = useRef();
+  const mouseRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
-    
-    // Configurar canvas com tamanho fixo inicial
-    const resizeCanvas = () => {
+    let isAnimating = false;
+
+    // Função para configurar o canvas
+    const setupCanvas = () => {
       const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
+      const dpr = window.devicePixelRatio || 1;
       
-      // Recriar partículas quando redimensionar
-      if (canvas.width > 0 && canvas.height > 0) {
-        particlesRef.current = createParticles();
-      }
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      
+      ctx.scale(dpr, dpr);
+      
+      canvas.style.width = rect.width + 'px';
+      canvas.style.height = rect.height + 'px';
+      
+      return { width: rect.width, height: rect.height };
     };
-    
-    // Criar partículas (bolinhas)
-    const createParticles = () => {
+
+    // Função para criar partículas
+    const createParticles = (width, height) => {
       const particles = [];
-      const particleCount = Math.max(8, Math.floor((canvas.width * canvas.height) / 20000));
+      const count = Math.min(15, Math.max(5, Math.floor((width * height) / 25000)));
       
-      for (let i = 0; i < particleCount; i++) {
+      for (let i = 0; i < count; i++) {
         particles.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          originalX: 0,
-          originalY: 0,
-          size: Math.random() * 40 + 20, // Tamanho menor para melhor performance
-          opacity: Math.random() * 0.4 + 0.2, // Mais visível
-          speedX: (Math.random() - 0.5) * 1, // Movimento mais perceptível
-          speedY: (Math.random() - 0.5) * 1,
-          angle: Math.random() * Math.PI * 2,
-          rotationSpeed: (Math.random() - 0.5) * 0.02
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 2,
+          vy: (Math.random() - 0.5) * 2,
+          radius: Math.random() * 30 + 15,
+          opacity: Math.random() * 0.5 + 0.3,
+          hue: Math.random() * 60 + 200, // Tons de azul/roxo
         });
       }
-      
-      // Definir posições originais
-      particles.forEach(particle => {
-        particle.originalX = particle.x;
-        particle.originalY = particle.y;
-      });
       
       return particles;
     };
 
-    // Configuração inicial
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    // Função de animação
+    const animate = () => {
+      if (!isAnimating) return;
+      
+      const { width, height } = setupCanvas();
+      
+      // Limpar canvas
+      ctx.clearRect(0, 0, width, height);
+      
+      // Atualizar e desenhar partículas
+      particlesRef.current.forEach(particle => {
+        // Movimento
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+        
+        // Bounce nas bordas
+        if (particle.x <= particle.radius || particle.x >= width - particle.radius) {
+          particle.vx *= -1;
+        }
+        if (particle.y <= particle.radius || particle.y >= height - particle.radius) {
+          particle.vy *= -1;
+        }
+        
+        // Manter dentro dos limites
+        particle.x = Math.max(particle.radius, Math.min(width - particle.radius, particle.x));
+        particle.y = Math.max(particle.radius, Math.min(height - particle.radius, particle.y));
+        
+        // Interação com mouse
+        const dx = mouseRef.current.x - particle.x;
+        const dy = mouseRef.current.y - particle.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const maxDistance = 100;
+        
+        if (distance < maxDistance) {
+          const force = (maxDistance - distance) / maxDistance;
+          const angle = Math.atan2(dy, dx);
+          particle.x -= Math.cos(angle) * force * 3;
+          particle.y -= Math.sin(angle) * force * 3;
+        }
+        
+        // Desenhar partícula
+        const gradient = ctx.createRadialGradient(
+          particle.x, particle.y, 0,
+          particle.x, particle.y, particle.radius
+        );
+        
+        gradient.addColorStop(0, `hsla(${particle.hue}, 70%, 80%, ${particle.opacity})`);
+        gradient.addColorStop(0.7, `hsla(${particle.hue}, 70%, 60%, ${particle.opacity * 0.5})`);
+        gradient.addColorStop(1, `hsla(${particle.hue}, 70%, 40%, 0)`);
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      
+      animationRef.current = requestAnimationFrame(animate);
+    };
 
-    // Rastrear mouse
+    // Função para lidar com movimento do mouse
     const handleMouseMove = (e) => {
       const rect = canvas.getBoundingClientRect();
       mouseRef.current = {
@@ -82,91 +133,29 @@ const InteractiveBackground = () => {
       };
     };
 
-    // Adicionar listener ao canvas e ao container pai
-    const container = canvas.parentElement;
-    if (container) {
-      container.addEventListener('mousemove', handleMouseMove);
-    }
-    canvas.addEventListener('mousemove', handleMouseMove);
-
-    // Animação
-    const animate = () => {
-      if (!canvas.width || !canvas.height) {
-        animationRef.current = requestAnimationFrame(animate);
-        return;
-      }
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      particlesRef.current.forEach(particle => {
-        // Movimento natural
-        particle.x += particle.speedX;
-        particle.y += particle.speedY;
-        particle.angle += particle.rotationSpeed;
-        
-        // Manter dentro dos limites com wrap-around
-        if (particle.x < -particle.size) particle.x = canvas.width + particle.size;
-        if (particle.x > canvas.width + particle.size) particle.x = -particle.size;
-        if (particle.y < -particle.size) particle.y = canvas.height + particle.size;
-        if (particle.y > canvas.height + particle.size) particle.y = -particle.size;
-        
-        // Efeito de repulsão do mouse
-        const mouseDistance = Math.sqrt(
-          Math.pow(particle.x - mouseRef.current.x, 2) + 
-          Math.pow(particle.y - mouseRef.current.y, 2)
-        );
-        
-        const repulsionRadius = 120;
-        const repulsionForce = 0.5;
-        
-        if (mouseDistance < repulsionRadius && mouseDistance > 0) {
-          const angle = Math.atan2(
-            particle.y - mouseRef.current.y,
-            particle.x - mouseRef.current.x
-          );
-          const force = (repulsionRadius - mouseDistance) / repulsionRadius * repulsionForce;
-          
-          particle.x += Math.cos(angle) * force * 8;
-          particle.y += Math.sin(angle) * force * 8;
-        }
-        
-        // Desenhar partícula com gradiente mais visível
-        const gradient = ctx.createRadialGradient(
-          particle.x, particle.y, 0,
-          particle.x, particle.y, particle.size
-        );
-        
-        gradient.addColorStop(0, `rgba(255, 255, 255, ${particle.opacity})`);
-        gradient.addColorStop(0.3, `rgba(255, 255, 255, ${particle.opacity * 0.7})`);
-        gradient.addColorStop(0.7, `rgba(255, 255, 255, ${particle.opacity * 0.3})`);
-        gradient.addColorStop(1, `rgba(255, 255, 255, 0)`);
-        
-        ctx.save();
-        ctx.translate(particle.x, particle.y);
-        ctx.rotate(particle.angle);
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(0, 0, particle.size, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      });
-      
-      animationRef.current = requestAnimationFrame(animate);
+    // Função para lidar com redimensionamento
+    const handleResize = () => {
+      const { width, height } = setupCanvas();
+      particlesRef.current = createParticles(width, height);
     };
 
-    // Iniciar animação após um pequeno delay para garantir que o canvas esteja pronto
-    setTimeout(() => {
-      if (canvas.width > 0 && canvas.height > 0) {
-        animate();
-      }
-    }, 100);
+    // Inicialização
+    const { width, height } = setupCanvas();
+    particlesRef.current = createParticles(width, height);
+    
+    // Event listeners
+    canvas.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('resize', handleResize);
+    
+    // Iniciar animação
+    isAnimating = true;
+    animate();
 
+    // Cleanup
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
-      if (container) {
-        container.removeEventListener('mousemove', handleMouseMove);
-      }
+      isAnimating = false;
       canvas.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('resize', handleResize);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -177,9 +166,9 @@ const InteractiveBackground = () => {
     <canvas
       ref={canvasRef}
       className="absolute inset-0 w-full h-full"
-      style={{ 
-        opacity: 0.7,
+      style={{
         pointerEvents: 'none',
+        opacity: 0.8,
         zIndex: 1
       }}
     />
@@ -289,7 +278,7 @@ const Home = ({ setCurrentPage }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section com fundo interativo */}
-      <div className="relative overflow-hidden">
+      <div className="relative overflow-hidden min-h-[600px]">
         <div className="absolute inset-0 bg-gradient-to-r from-[var(--desktop-red)] to-[var(--desktop-red-dark)]">
           {/* Fundo interativo com bolinhas */}
           <InteractiveBackground />
@@ -436,7 +425,7 @@ const Home = ({ setCurrentPage }) => {
         </div>
       </div>
 
-      {/* Últimos Treinamentos com cores padrão */}
+      {/* Últimos Treinamentos */}
       <div className="bg-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-16">
@@ -655,6 +644,75 @@ const Home = ({ setCurrentPage }) => {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Rodapé */}
+      <footer className="bg-gray-900 text-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {/* Logo e descrição */}
+            <div className="col-span-1 md:col-span-2">
+              <div className="flex items-center mb-6">
+                <div className="w-12 h-12 rounded-xl overflow-hidden bg-white/10 flex items-center justify-center mr-4">
+                  <img
+                    src="/logo.jpeg"
+                    alt="Logo"
+                    className="w-8 h-8 object-cover rounded-lg"
+                  />
+                </div>
+                <h3 className="text-2xl font-bold">Suporte Field</h3>
+              </div>
+              <p className="text-gray-300 mb-6 leading-relaxed">
+                Equipe especializada em apoio ao técnico de campo, fornecendo suporte, 
+                treinamentos e recursos necessários para garantir a excelência no 
+                atendimento e instalação dos serviços Desktop Fibra Internet.
+              </p>
+            </div>
+
+            {/* Links rápidos */}
+            <div>
+              <h4 className="text-lg font-semibold mb-6">Links Rápidos</h4>
+              <ul className="space-y-3">
+                <li>
+                  <button 
+                    onClick={() => setCurrentPage('treinamentos')}
+                    className="text-gray-300 hover:text-white transition-colors duration-200"
+                  >
+                    Treinamentos
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => setCurrentPage('noticias')}
+                    className="text-gray-300 hover:text-white transition-colors duration-200"
+                  >
+                    Notícias
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => setCurrentPage('links-importantes')}
+                    className="text-gray-300 hover:text-white transition-colors duration-200"
+                  >
+                    Links Importantes
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Informações de contato */}
+            <div>
+              <h4 className="text-lg font-semibold mb-6">Contato</h4>
+              <div className="space-y-3 text-gray-300">
+                <p>Desktop Fibra Internet</p>
+                <p>Suporte Técnico de Campo</p>
+                <p className="text-sm">
+                  © 2024 Desktop Fibra Internet. Todos os direitos reservados.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
