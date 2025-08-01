@@ -134,19 +134,19 @@ export class AuthService {
 
   // Atualizar dados do usuário atual
   async refreshUserData() {
-    if (!this.currentUser || !this.currentUser.id) {
-      return { success: false, error: 'Usuário não logado' };
-    }
+  if (!this.currentUser || !this.currentUser.id) {
+    return { success: false, error: 'Usuário não logado' };
+  }
 
+  try {
+    // Tentar usar a função RPC primeiro
     try {
       const { data, error } = await supabase
         .rpc('get_user_by_id', {
           user_id: this.currentUser.id
         });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       if (data && data.length > 0) {
         const user = data[0];
@@ -157,7 +157,7 @@ export class AuthService {
           tipo_usuario: user.tipo_usuario,
           ativo: user.ativo,
           isAdmin: user.tipo_usuario === 'admin',
-          pode_ver_feedbacks: user.pode_ver_feedbacks, // Adicionado
+          pode_ver_feedbacks: user.pode_ver_feedbacks || false, // GARANTIR VALOR
         };
 
         this.saveUserToStorage(userData);
@@ -175,15 +175,60 @@ export class AuthService {
           error: 'Usuário não encontrado ou inativo'
         };
       }
-    } catch (error) {
-      console.error('Erro ao atualizar dados do usuário:', error);
+    } catch (rpcError) {
+      console.warn('Função RPC get_user_by_id não encontrada, usando consulta direta:', rpcError);
+      
+      // FALLBACK: consulta direta à tabela usuarios
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('id, email, nome, cargo, tipo_usuario, ativo, pode_ver_feedbacks, setor')
+        .eq('id', this.currentUser.id)
+        .eq('ativo', true)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          this.logout();
+          return {
+            success: false,
+            error: 'Usuário não encontrado ou inativo'
+          };
+        }
+        throw error;
+      }
+
+      // IMPORTANTE: Garantir que pode_ver_feedbacks seja preservado
+      const userData = {
+        ...this.currentUser,
+        nome: data.nome,
+        cargo: data.cargo,
+        tipo_usuario: data.tipo_usuario,
+        ativo: data.ativo,
+        isAdmin: data.tipo_usuario === 'admin',
+        pode_ver_feedbacks: data.pode_ver_feedbacks !== undefined ? data.pode_ver_feedbacks : this.currentUser.pode_ver_feedbacks,
+        setor: data.setor
+      };
+
+      this.saveUserToStorage(userData);
+
       return {
-        success: false,
-        error: 'Erro ao atualizar dados do usuário'
+        success: true,
+        user: userData,
+        error: null
       };
     }
+  } catch (error) {
+    console.error('Erro ao atualizar dados do usuário:', error);
+    
+    // EM CASO DE ERRO, MANTER OS DADOS ATUAIS
+    // Isso evita perder a permissão em caso de falha na consulta
+    return {
+      success: true, // Retornar success para não fazer logout
+      user: this.currentUser, // Manter dados atuais
+      error: null
+    };
   }
-
+}
   // Alterar senha do usuário atual
   async changePassword(newPassword) {
     if (!this.currentUser || !this.currentUser.id) {
