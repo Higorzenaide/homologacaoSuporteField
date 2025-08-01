@@ -102,9 +102,9 @@ const TreinamentoCardAdvanced = ({
         <div className="absolute inset-0 bg-gradient-to-br from-black/10 to-black/20"></div>
 
         <div className="relative z-10">
-          {/* Linha superior com tipo e ações */}
+          {/* Linha superior com tipo e ações - CORRIGIDA */}
           <div className="flex justify-between items-start mb-4">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3 flex-1 pr-4">
               {/* Ícone do tipo de arquivo */}
               <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/30">
                 {treinamento.logo_url ? (
@@ -130,9 +130,9 @@ const TreinamentoCardAdvanced = ({
               </div>
             </div>
 
-            {/* Ações do admin */}
+            {/* Ações do admin - CORRIGIDA para não sobrepor */}
             {isAdmin && (
-              <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
+              <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 flex-shrink-0 z-20">
                 <EditDeleteActions
                   item={treinamento}
                   type="treinamento"
@@ -144,13 +144,13 @@ const TreinamentoCardAdvanced = ({
           </div>
 
           {/* Título */}
-          <h3 className="text-xl font-bold mb-3 line-clamp-2 leading-tight text-white drop-shadow-sm">
+          <h3 className="text-xl font-bold mb-3 line-clamp-2 leading-tight text-white drop-shadow-sm pr-8">
             {treinamento.titulo}
           </h3>
 
-          {/* Informações da linha inferior */}
+          {/* Informações da linha inferior - CORRIGIDA */}
           <div className="flex items-center justify-between text-white/90 text-sm">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 flex-1">
               <svg
                 className="w-4 h-4 flex-shrink-0"
                 fill="none"
@@ -169,9 +169,9 @@ const TreinamentoCardAdvanced = ({
               </span>
             </div>
             
-            {/* Badge da categoria */}
+            {/* Badge da categoria - CORRIGIDA para não sobrepor */}
             {treinamento.categoria && (
-              <div className="bg-white/20 text-white text-xs px-3 py-1.5 rounded-full font-semibold backdrop-blur-sm border border-white/30">
+              <div className="bg-white/20 text-white text-xs px-3 py-1.5 rounded-full font-semibold backdrop-blur-sm border border-white/30 flex-shrink-0 ml-2">
                 {treinamento.categoria}
               </div>
             )}
