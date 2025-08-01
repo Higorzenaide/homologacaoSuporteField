@@ -102,7 +102,7 @@ const TreinamentoCardAdvanced = ({
         <div className="absolute inset-0 bg-gradient-to-br from-black/10 to-black/20"></div>
 
         <div className="relative z-10">
-          {/* Linha superior com tipo e ações */}
+          {/* Linha superior com tipo e ações - CORRIGIDA */}
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center space-x-3 flex-1 pr-4">
               {/* Ícone do tipo de arquivo */}
@@ -130,7 +130,7 @@ const TreinamentoCardAdvanced = ({
               </div>
             </div>
 
-            {/* Ações do admin */}
+            {/* Ações do admin - CORRIGIDA para não sobrepor */}
             {isAdmin && (
               <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 flex-shrink-0 z-20">
                 <EditDeleteActions
@@ -148,7 +148,7 @@ const TreinamentoCardAdvanced = ({
             {treinamento.titulo}
           </h3>
 
-          {/* Informações da linha inferior */}
+          {/* Informações da linha inferior - CORRIGIDA */}
           <div className="flex items-center justify-between text-white/90 text-sm">
             <div className="flex items-center space-x-2 flex-1">
               <svg
@@ -169,7 +169,7 @@ const TreinamentoCardAdvanced = ({
               </span>
             </div>
             
-            {/* Badge da categoria */}
+            {/* Badge da categoria - CORRIGIDA para não sobrepor */}
             {treinamento.categoria && (
               <div className="bg-white/20 text-white text-xs px-3 py-1.5 rounded-full font-semibold backdrop-blur-sm border border-white/30 flex-shrink-0 ml-2">
                 {treinamento.categoria}
@@ -228,33 +228,57 @@ const TreinamentoCardAdvanced = ({
           );
         })()}
 
-        {/* Estatísticas com design corporativo - APENAS VISUALIZAÇÕES */}
+        {/* Estatísticas com design corporativo */}
         <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-xl">
-          <div className="flex items-center space-x-2 text-gray-600">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-              <svg
-                className="w-4 h-4 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                />
-              </svg>
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-2 text-gray-600">
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg
+                  className="w-4 h-4 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-gray-900">{treinamento.visualizacoes || 0}</div>
+                <div className="text-xs text-gray-500">Visualizações</div>
+              </div>
             </div>
-            <div>
-              <div className="text-sm font-semibold text-gray-900">{treinamento.visualizacoes || 0}</div>
-              <div className="text-xs text-gray-500">Visualizações</div>
+
+            <div className="flex items-center space-x-2 text-gray-600">
+              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                <svg
+                  className="w-4 h-4 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-gray-900">{treinamento.downloads || 0}</div>
+                <div className="text-xs text-gray-500">Downloads</div>
+              </div>
             </div>
           </div>
 
