@@ -349,7 +349,7 @@ const Home = ({ setCurrentPage }) => {
                 >
                   <CardContent className="p-6 text-center">
                     <BarChart3 className="w-12 h-12 mx-auto mb-4 text-red-200 drop-shadow-md" />
-                    <h3 className="text-xl font-semibold mb-2 drop-shadow-md">Analytics</h3>
+                    <h3 className="text-xl font-semibold mb-2 drop-shadow-md">Análises</h3>
                     <p className="text-red-100 text-sm drop-shadow-sm">Visualize feedbacks</p>
                   </CardContent>
                 </Card>
