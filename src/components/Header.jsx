@@ -20,21 +20,21 @@ const Header = ({ currentPage, setCurrentPage }) => {
   }, []);
 
   const navItems = [
-    { id: 'home', label: 'Início', icon: '🏠', color: 'from-blue-500 to-blue-600' },
-    { id: 'treinamentos', label: 'Treinamentos', icon: '📚', color: 'from-green-500 to-green-600' },
-    { id: 'noticias', label: 'Notícias', icon: '📰', color: 'from-purple-500 to-purple-600' },
-    { id: 'links', label: 'Links Importantes', icon: '🔗', color: 'from-orange-500 to-orange-600' },
+    { id: 'home', label: 'Início', icon: '🏠', desc: 'Página inicial' },
+    { id: 'treinamentos', label: 'Treinamentos', icon: '📚', desc: 'Materiais de estudo' },
+    { id: 'noticias', label: 'Notícias', icon: '📰', desc: 'Últimas atualizações' },
+    { id: 'links', label: 'Links Importantes', icon: '🔗', desc: 'Recursos úteis' },
   ];
 
   // Adicionar itens específicos para admin
   if (isAdmin) {
     navItems.push(
-      { id: 'usuarios', label: 'Usuários', icon: '👤', color: 'from-indigo-500 to-indigo-600' },
-      { id: 'inserir-feedback', label: 'Inserir Feedback', icon: '📝', color: 'from-pink-500 to-pink-600' }
+      { id: 'usuarios', label: 'Usuários', icon: '👤', desc: 'Gerenciar equipe' },
+      { id: 'inserir-feedback', label: 'Inserir Feedback', icon: '📝', desc: 'Novo feedback' }
     );
     
     if (canViewFeedbacks) {
-      navItems.push({ id: 'visualizar-feedbacks', label: 'Visualizar Feedbacks', icon: '📊', color: 'from-teal-500 to-teal-600' });
+      navItems.push({ id: 'visualizar-feedbacks', label: 'Visualizar Feedbacks', icon: '📊', desc: 'Análise de dados' });
     }
   }
 
@@ -89,7 +89,7 @@ const Header = ({ currentPage, setCurrentPage }) => {
               </div>
             </div>
 
-            {/* Navegação Desktop */}
+            {/* Navegação Desktop - PADRÃO VERMELHO */}
             <nav className="hidden lg:flex items-center space-x-2">
               {navItems.map((item, index) => (
                 <button
@@ -97,39 +97,24 @@ const Header = ({ currentPage, setCurrentPage }) => {
                   onClick={() => handleNavClick(item.id)}
                   className={`relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
                     currentPage === item.id
-                      ? 'text-white shadow-lg'
-                      : 'text-gray-700 hover:text-white hover:shadow-md'
+                      ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg'
+                      : 'text-gray-700 hover:text-red-600 hover:bg-red-50 hover:shadow-md'
                   }`}
-                  style={{
-                    background: currentPage === item.id 
-                      ? `linear-gradient(135deg, var(--tw-gradient-stops))` 
-                      : 'transparent',
-                    animationDelay: `${index * 100}ms`
-                  }}
-                  onMouseEnter={(e) => {
-                    if (currentPage !== item.id) {
-                      e.target.style.background = `linear-gradient(135deg, ${item.color.includes('blue') ? '#3b82f6, #2563eb' : 
-                        item.color.includes('green') ? '#10b981, #059669' :
-                        item.color.includes('purple') ? '#8b5cf6, #7c3aed' :
-                        item.color.includes('orange') ? '#f59e0b, #d97706' :
-                        item.color.includes('indigo') ? '#6366f1, #4f46e5' :
-                        item.color.includes('pink') ? '#ec4899, #db2777' :
-                        '#14b8a6, #0d9488'})`;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (currentPage !== item.id) {
-                      e.target.style.background = 'transparent';
-                    }
-                  }}
                 >
                   <span className="mr-2 text-lg">{item.icon}</span>
-                  {item.label}
+                  <span className="font-semibold">{item.label}</span>
                   
-                  {/* Efeito de ondulação */}
-                  <div className="absolute inset-0 rounded-xl opacity-0 hover:opacity-100 transition-opacity duration-300">
-                    <div className="absolute inset-0 rounded-xl bg-white/20 transform scale-0 hover:scale-100 transition-transform duration-300"></div>
-                  </div>
+                  {/* Efeito de ondulação sutil */}
+                  {currentPage !== item.id && (
+                    <div className="absolute inset-0 rounded-xl opacity-0 hover:opacity-100 transition-opacity duration-300">
+                      <div className="absolute inset-0 rounded-xl bg-red-500/10 transform scale-0 hover:scale-100 transition-transform duration-300"></div>
+                    </div>
+                  )}
+                  
+                  {/* Indicador ativo */}
+                  {currentPage === item.id && (
+                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full"></div>
+                  )}
                 </button>
               ))}
             </nav>
@@ -175,7 +160,7 @@ const Header = ({ currentPage, setCurrentPage }) => {
         </div>
       </header>
 
-      {/* Menu Lateral Animado */}
+      {/* Menu Lateral Animado - PADRÃO VERMELHO */}
       <div className={`fixed top-0 right-0 h-full w-80 bg-white/95 backdrop-blur-xl shadow-2xl transform transition-all duration-500 z-40 ${
         isMenuOpen || isMenuPinned ? 'translate-x-0' : 'translate-x-full'
       }`}>
@@ -229,7 +214,7 @@ const Header = ({ currentPage, setCurrentPage }) => {
           </div>
         </div>
 
-        {/* Lista de Navegação */}
+        {/* Lista de Navegação - PADRÃO VERMELHO */}
         <div className="p-6 space-y-3">
           {navItems.map((item, index) => (
             <button
@@ -238,7 +223,7 @@ const Header = ({ currentPage, setCurrentPage }) => {
               className={`w-full flex items-center space-x-4 p-4 rounded-xl transition-all duration-300 transform hover:scale-105 group ${
                 currentPage === item.id
                   ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg'
-                  : 'text-gray-700 hover:bg-gray-50 hover:shadow-md'
+                  : 'text-gray-700 hover:bg-red-50 hover:shadow-md hover:text-red-600'
               }`}
               style={{
                 animationDelay: `${index * 100}ms`,
@@ -249,7 +234,7 @@ const Header = ({ currentPage, setCurrentPage }) => {
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ${
                 currentPage === item.id
                   ? 'bg-white/20'
-                  : 'bg-gradient-to-br ' + item.color + ' text-white group-hover:scale-110'
+                  : 'bg-gradient-to-br from-red-100 to-red-200 text-red-600 group-hover:scale-110 group-hover:from-red-200 group-hover:to-red-300'
               }`}>
                 <span className="text-xl">{item.icon}</span>
               </div>
@@ -258,15 +243,9 @@ const Header = ({ currentPage, setCurrentPage }) => {
               <div className="flex-1 text-left">
                 <div className="font-semibold">{item.label}</div>
                 <div className={`text-sm ${
-                  currentPage === item.id ? 'text-red-100' : 'text-gray-500'
+                  currentPage === item.id ? 'text-red-100' : 'text-gray-500 group-hover:text-red-500'
                 }`}>
-                  {item.id === 'home' && 'Página inicial'}
-                  {item.id === 'treinamentos' && 'Materiais de estudo'}
-                  {item.id === 'noticias' && 'Últimas atualizações'}
-                  {item.id === 'links' && 'Recursos úteis'}
-                  {item.id === 'usuarios' && 'Gerenciar equipe'}
-                  {item.id === 'inserir-feedback' && 'Novo feedback'}
-                  {item.id === 'visualizar-feedbacks' && 'Análise de dados'}
+                  {item.desc}
                 </div>
               </div>
               
@@ -277,7 +256,7 @@ const Header = ({ currentPage, setCurrentPage }) => {
               
               {/* Seta */}
               <svg className={`w-5 h-5 transition-transform duration-300 ${
-                currentPage === item.id ? 'text-white' : 'text-gray-400 group-hover:translate-x-1'
+                currentPage === item.id ? 'text-white' : 'text-gray-400 group-hover:translate-x-1 group-hover:text-red-500'
               }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
