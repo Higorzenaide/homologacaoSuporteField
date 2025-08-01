@@ -130,7 +130,7 @@ const InserirFeedback = () => {
       } else {
         setMessage({ type: 'success', text: 'Feedback inserido com sucesso!' });
         
-        // Limpar formulário
+        // Limpar formulário teste
         setFormData({
           usuario_id: '',
           categoria_id: '',
