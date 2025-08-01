@@ -3,7 +3,6 @@ import CategoriaSelector from './CategoriaSelector';
 
 // Importação dinâmica do ReactQuill para evitar problemas de SSR
 const ReactQuill = React.lazy(() => import('react-quill'));
-import 'react-quill/dist/quill.snow.css';
 
 const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [] }) => {
   const [formData, setFormData] = useState({
@@ -86,6 +85,20 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
     setTagInput('');
     setFileValidation({ isValid: true, errors: [] });
   }, [editingItem, isOpen]);
+
+  // Carregar CSS do Quill dinamicamente
+  useEffect(() => {
+    if (isOpen && type === 'noticia') {
+      // Carregar CSS do Quill dinamicamente
+      if (!document.querySelector('#quill-snow-css')) {
+        const link = document.createElement('link');
+        link.id = 'quill-snow-css';
+        link.rel = 'stylesheet';
+        link.href = 'https://cdn.quilljs.com/1.3.6/quill.snow.css';
+        document.head.appendChild(link);
+      }
+    }
+  }, [isOpen, type]);
 
   if (!isOpen) return null;
 
