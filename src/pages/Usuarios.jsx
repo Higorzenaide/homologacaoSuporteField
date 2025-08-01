@@ -8,7 +8,7 @@ import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Badge } from '../components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { 
   Loader2, 
   Search, 
@@ -197,6 +197,14 @@ const Usuarios = () => {
     setShowModal(true);
   };
 
+  // CORRIGIDO: Função para abrir modal de novo usuário
+  const handleNovoUsuario = () => {
+    // Limpar completamente o estado antes de abrir o modal
+    setEditingUser(null);
+    resetForm();
+    setShowModal(true);
+  };
+
   const handleToggleStatus = async (usuario) => {
     try {
       const result = usuario.ativo 
@@ -229,10 +237,20 @@ const Usuarios = () => {
     setMostrarSenha(false);
   };
 
+  // CORRIGIDO: Função para fechar modal
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingUser(null);
     resetForm();
+  };
+
+  // CORRIGIDO: Controlar abertura/fechamento do modal
+  const handleModalChange = (open) => {
+    if (!open) {
+      // Ao fechar o modal, limpar tudo
+      handleCloseModal();
+    }
+    setShowModal(open);
   };
 
   const gerarSenhaTemporaria = () => {
@@ -270,14 +288,14 @@ const Usuarios = () => {
               Gerencie usuários do sistema, suas permissões e informações.
             </p>
           </div>
-          <Dialog open={showModal} onOpenChange={setShowModal}>
-            <DialogTrigger asChild>
-              <Button className="bg-red-600 hover:bg-red-700">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Novo Usuário
-              </Button>
-            </DialogTrigger>
-          </Dialog>
+          {/* CORRIGIDO: Botão que chama handleNovoUsuario */}
+          <Button 
+            onClick={handleNovoUsuario}
+            className="bg-red-600 hover:bg-red-700"
+          >
+            <UserPlus className="mr-2 h-4 w-4" />
+            Novo Usuário
+          </Button>
         </div>
 
         {/* Estatísticas rápidas */}
@@ -521,8 +539,8 @@ const Usuarios = () => {
         </Card>
       )}
 
-      {/* Modal de criação/edição */}
-      <Dialog open={showModal} onOpenChange={setShowModal}>
+      {/* CORRIGIDO: Modal com controle adequado de abertura/fechamento */}
+      <Dialog open={showModal} onOpenChange={handleModalChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
