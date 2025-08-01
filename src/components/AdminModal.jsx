@@ -50,6 +50,20 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
     setFileValidation({ isValid: true, errors: [] });
   }, [editingItem, isOpen]);
 
+  // Configurar editor quando abrir
+  useEffect(() => {
+    if (isOpen && !isTraining && editorRef.current) {
+      // Garantir direção LTR (esquerda para direita)
+      editorRef.current.style.direction = 'ltr';
+      editorRef.current.style.textAlign = 'left';
+      
+      // Definir conteúdo inicial se estiver editando
+      if (editingItem && formData.conteudo) {
+        editorRef.current.innerHTML = formData.conteudo;
+      }
+    }
+  }, [isOpen, editingItem, formData.conteudo]);
+
   if (!isOpen) return null;
 
   const handleInputChange = (field, value) => {
@@ -61,8 +75,15 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
 
   // Funções do editor rico
   const formatText = (command, value = null) => {
-    document.execCommand(command, false, value);
+    // Focar no editor primeiro
     editorRef.current.focus();
+    
+    // Aplicar comando
+    document.execCommand(command, false, value);
+    
+    // Manter foco e atualizar conteúdo
+    editorRef.current.focus();
+    handleEditorInput();
   };
 
   const handleEditorInput = () => {
@@ -83,7 +104,9 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
   };
 
   const changeFontSize = (size) => {
-    formatText('fontSize', size);
+    if (size) {
+      formatText('fontSize', size);
+    }
   };
 
   const handleFileChange = (e) => {
@@ -424,10 +447,29 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
                   contentEditable
                   onInput={handleEditorInput}
                   className="p-3 min-h-[200px] focus:outline-none"
-                  style={{ minHeight: '200px' }}
-                  dangerouslySetInnerHTML={{ __html: formData.conteudo }}
-                  placeholder="Digite o conteúdo da notícia..."
+                  style={{ 
+                    minHeight: '200px',
+                    direction: 'ltr',
+                    textAlign: 'left',
+                    unicodeBidi: 'embed'
+                  }}
+                  suppressContentEditableWarning={true}
                 />
+                
+                {/* Placeholder customizado */}
+                {!formData.conteudo && (
+                  <div 
+                    className="absolute pointer-events-none text-gray-400 p-3"
+                    style={{ 
+                      top: '60px', 
+                      left: '0',
+                      direction: 'ltr',
+                      textAlign: 'left'
+                    }}
+                  >
+                    Digite o conteúdo da notícia...
+                  </div>
+                )}
               </div>
             )}
           </div>
