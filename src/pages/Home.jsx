@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
   Users, BookOpen, TrendingUp, Target, Download, Calendar, Star, ArrowRight, 
   Eye, Play, FileText, Award, Clock, Zap, Activity, BarChart3, 
-  MessageCircle, Heart, Bookmark, ChevronRight, Sparkles, Newspaper
+  MessageCircle, Heart, Bookmark, ChevronRight, Sparkles, Newspaper, X
 } from 'lucide-react';
 import { getTreinamentos } from '../services/treinamentosService';
 import { obterEstatisticas } from '../services/estatisticasService';
@@ -24,6 +25,7 @@ const Home = ({ setCurrentPage }) => {
   const [ultimosTreinamentos, setUltimosTreinamentos] = useState([]);
   const [noticiasDestaque, setNoticiasDestaque] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [noticiaModal, setNoticiaModal] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -83,6 +85,14 @@ const Home = ({ setCurrentPage }) => {
     }
   };
 
+  const abrirModalNoticia = (noticia) => {
+    setNoticiaModal(noticia);
+  };
+
+  const fecharModalNoticia = () => {
+    setNoticiaModal(null);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -95,7 +105,7 @@ const Home = ({ setCurrentPage }) => {
         </div>
       </div>
     );
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -379,7 +389,7 @@ const Home = ({ setCurrentPage }) => {
         </div>
       </div>
 
-      {/* Notícias em Destaque com cores padrão */}
+      {/* Notícias em Destaque com modal */}
       <div className="bg-gray-50 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-16">
@@ -391,7 +401,7 @@ const Home = ({ setCurrentPage }) => {
                 </h2>
               </div>
               <p className="text-xl text-gray-600">
-                Informações importantes e atualizações para a equipe de campo
+                Informações importantes e atualizações para a equipe.
               </p>
             </div>
             <Button 
@@ -448,6 +458,7 @@ const Home = ({ setCurrentPage }) => {
                     <Button 
                       variant="ghost" 
                       size="sm"
+                      onClick={() => abrirModalNoticia(noticia)}
                       className="text-[var(--desktop-red)] hover:text-[var(--desktop-red-dark)] hover:bg-red-50 font-semibold"
                     >
                       Ler mais
@@ -474,6 +485,70 @@ const Home = ({ setCurrentPage }) => {
           )}
         </div>
       </div>
+
+      {/* Modal da Notícia */}
+      {noticiaModal && (
+        <Dialog open={!!noticiaModal} onOpenChange={fecharModalNoticia}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[var(--desktop-red)] to-[var(--desktop-red-dark)] rounded-xl flex items-center justify-center">
+                    <Newspaper className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-2xl font-bold text-gray-900 text-left">
+                      {noticiaModal.titulo}
+                    </DialogTitle>
+                    <div className="flex items-center gap-4 mt-2">
+                      <Badge className="bg-red-100 text-[var(--desktop-red)] border-red-200">
+                        {noticiaModal.categoria}
+                      </Badge>
+                      <div className="text-sm text-gray-500 flex items-center">
+                        <Calendar size={14} className="mr-1" />
+                        {new Date(noticiaModal.dataPublicacao).toLocaleDateString('pt-BR')}
+                      </div>
+                      <div className="text-sm text-gray-500 flex items-center">
+                        <Users size={14} className="mr-1" />
+                        {noticiaModal.autor}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={fecharModalNoticia}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X size={20} />
+                </Button>
+              </div>
+            </DialogHeader>
+            
+            <div className="mt-6">
+              <div className="prose prose-lg max-w-none">
+                <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {noticiaModal.conteudo}
+                </div>
+              </div>
+              
+              {noticiaModal.tags && noticiaModal.tags.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3">Tags:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {noticiaModal.tags.map((tag, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        #{tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Rodapé com cores padrão */}
       <footer className="bg-gradient-to-r from-gray-900 to-gray-800 text-white py-12">
