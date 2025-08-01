@@ -133,12 +133,18 @@ export class AuthService {
   }
 
   // Atualizar dados do usuário atual
-  async refreshUserData() {
+async refreshUserData() {
+  console.log('🔍 DEBUG: Iniciando refreshUserData()');
+  console.log('🔍 DEBUG: currentUser antes:', this.currentUser);
+  
   if (!this.currentUser || !this.currentUser.id) {
+    console.log('❌ DEBUG: Usuário não logado');
     return { success: false, error: 'Usuário não logado' };
   }
 
   try {
+    console.log('🔍 DEBUG: Tentando função RPC get_user_by_id...');
+    
     // Tentar usar a função RPC primeiro
     try {
       const { data, error } = await supabase
@@ -146,10 +152,15 @@ export class AuthService {
           user_id: this.currentUser.id
         });
 
+      console.log('🔍 DEBUG: Resultado RPC:', { data, error });
+
       if (error) throw error;
 
       if (data && data.length > 0) {
         const user = data[0];
+        console.log('🔍 DEBUG: Dados do usuário via RPC:', user);
+        console.log('🔍 DEBUG: pode_ver_feedbacks via RPC:', user.pode_ver_feedbacks);
+        
         const userData = {
           ...this.currentUser,
           nome: user.nome,
@@ -157,9 +168,10 @@ export class AuthService {
           tipo_usuario: user.tipo_usuario,
           ativo: user.ativo,
           isAdmin: user.tipo_usuario === 'admin',
-          pode_ver_feedbacks: user.pode_ver_feedbacks || false, // GARANTIR VALOR
+          pode_ver_feedbacks: user.pode_ver_feedbacks,
         };
 
+        console.log('🔍 DEBUG: userData final (RPC):', userData);
         this.saveUserToStorage(userData);
 
         return {
@@ -168,7 +180,7 @@ export class AuthService {
           error: null
         };
       } else {
-        // Usuário não encontrado ou inativo
+        console.log('❌ DEBUG: RPC não retornou dados');
         this.logout();
         return {
           success: false,
@@ -176,9 +188,9 @@ export class AuthService {
         };
       }
     } catch (rpcError) {
-      console.warn('Função RPC get_user_by_id não encontrada, usando consulta direta:', rpcError);
+      console.log('⚠️ DEBUG: Erro na RPC, usando consulta direta:', rpcError);
       
-      // FALLBACK: consulta direta à tabela usuarios
+      // Fallback: consulta direta à tabela usuarios
       const { data, error } = await supabase
         .from('usuarios')
         .select('id, email, nome, cargo, tipo_usuario, ativo, pode_ver_feedbacks, setor')
@@ -186,7 +198,11 @@ export class AuthService {
         .eq('ativo', true)
         .single();
 
+      console.log('🔍 DEBUG: Resultado consulta direta:', { data, error });
+      console.log('🔍 DEBUG: pode_ver_feedbacks via consulta direta:', data?.pode_ver_feedbacks);
+
       if (error) {
+        console.log('❌ DEBUG: Erro na consulta direta:', error);
         if (error.code === 'PGRST116') {
           this.logout();
           return {
@@ -197,7 +213,6 @@ export class AuthService {
         throw error;
       }
 
-      // IMPORTANTE: Garantir que pode_ver_feedbacks seja preservado
       const userData = {
         ...this.currentUser,
         nome: data.nome,
@@ -205,10 +220,11 @@ export class AuthService {
         tipo_usuario: data.tipo_usuario,
         ativo: data.ativo,
         isAdmin: data.tipo_usuario === 'admin',
-        pode_ver_feedbacks: data.pode_ver_feedbacks !== undefined ? data.pode_ver_feedbacks : this.currentUser.pode_ver_feedbacks,
+        pode_ver_feedbacks: data.pode_ver_feedbacks,
         setor: data.setor
       };
 
+      console.log('🔍 DEBUG: userData final (consulta direta):', userData);
       this.saveUserToStorage(userData);
 
       return {
@@ -218,17 +234,14 @@ export class AuthService {
       };
     }
   } catch (error) {
-    console.error('Erro ao atualizar dados do usuário:', error);
-    
-    // EM CASO DE ERRO, MANTER OS DADOS ATUAIS
-    // Isso evita perder a permissão em caso de falha na consulta
+    console.error('❌ DEBUG: Erro geral:', error);
     return {
-      success: true, // Retornar success para não fazer logout
-      user: this.currentUser, // Manter dados atuais
-      error: null
+      success: false,
+      error: 'Erro ao atualizar dados do usuário'
     };
   }
 }
+
   // Alterar senha do usuário atual
   async changePassword(newPassword) {
     if (!this.currentUser || !this.currentUser.id) {
