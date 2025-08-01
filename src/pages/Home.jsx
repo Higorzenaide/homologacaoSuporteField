@@ -593,6 +593,10 @@ const Home = ({ setCurrentPage }) => {
                   <Calendar className="w-4 h-4 mr-1" />
                   {new Date(noticiaModal.dataPublicacao).toLocaleDateString('pt-BR')}
                 </div>
+                <div className="text-sm text-gray-500 flex items-center">
+                        <Users size={14} className="mr-1" />
+                        {noticiaModal.autor}
+                </div>
               </div>
               <DialogTitle className="text-2xl font-bold text-gray-900 mb-4">
                 {noticiaModal.titulo}
