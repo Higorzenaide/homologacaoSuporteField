@@ -55,14 +55,14 @@ const NoticiaModal = ({ isOpen, onClose, noticia }) => {
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    <span className="font-medium">{noticia.autor}</span>
+                    <span className="font-medium text-black">{noticia.autor}</span>
                   </div>
                 )}
-                <div className="flex items-center bg-black bg-opacity-10 backdrop-blur-sm rounded-lg px-3 py-2">
+                <div className="flex items-center bg-white bg-opacity-10 backdrop-blur-sm rounded-lg px-3 py-2">
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6m-6 0l-1 12a2 2 0 002 2h6a2 2 0 002-2L16 7" />
                   </svg>
-                  <span>{formatarData(noticia.data_publicacao)}</span>
+                  <span className="text-black">{formatarData(noticia.data_publicacao)}</span>
                 </div>
               </div>
             </div>
