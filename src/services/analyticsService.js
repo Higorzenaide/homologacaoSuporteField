@@ -10,10 +10,12 @@ class AnalyticsService {
     try {
       const { error } = await supabase
         .from('notification_analytics')
-        .insert({
+        .upsert({
           notification_id: notificationId,
           user_id: userId,
           action: 'read'
+        }, {
+          onConflict: 'notification_id,user_id,action'
         });
 
       if (error) throw error;
@@ -29,10 +31,12 @@ class AnalyticsService {
     try {
       const { error } = await supabase
         .from('notification_analytics')
-        .insert({
+        .upsert({
           notification_id: notificationId,
           user_id: userId,
           action: 'clicked'
+        }, {
+          onConflict: 'notification_id,user_id,action'
         });
 
       if (error) throw error;
@@ -73,6 +77,35 @@ class AnalyticsService {
     } catch (error) {
       console.error('Erro ao buscar analytics da notificação:', error);
       return null;
+    }
+  }
+
+  // Obter todas as notificações com analytics
+  async getAllNotificationsWithAnalytics(limit = 50) {
+    try {
+      const { data: notifications, error: notificationsError } = await supabase
+        .from('notifications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (notificationsError) throw notificationsError;
+
+      // Para cada notificação, buscar seus analytics
+      const notificationsWithAnalytics = await Promise.all(
+        notifications.map(async (notification) => {
+          const analytics = await this.getNotificationAnalytics(notification.id);
+          return {
+            ...notification,
+            analytics: analytics || { read: [], clicked: [], dismissed: [], total: 0 }
+          };
+        })
+      );
+
+      return notificationsWithAnalytics;
+    } catch (error) {
+      console.error('Erro ao buscar notificações com analytics:', error);
+      return [];
     }
   }
 

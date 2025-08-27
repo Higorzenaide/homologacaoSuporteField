@@ -10,9 +10,11 @@ import {
   TrendingUp,
   Calendar,
   Filter,
-  RefreshCw
+  RefreshCw,
+  Bell
 } from 'lucide-react';
 import analyticsService from '../services/analyticsService';
+import NotificationAnalytics from './NotificationAnalytics';
 
 const AnalyticsPanel = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -339,10 +341,7 @@ const AnalyticsPanel = ({ isOpen, onClose }) => {
               )}
 
               {activeTab === 'notifications' && (
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900">Analytics de Notificações</h3>
-                  <p className="text-gray-600">Selecione uma notificação para ver detalhes das interações.</p>
-                </div>
+                <NotificationAnalytics />
               )}
             </>
           )}
