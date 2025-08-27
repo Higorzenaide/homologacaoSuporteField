@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import LoginModal from './LoginModal';
 import UserMenu from './UserMenu';
 import NotificationBadge from './NotificationBadge';
+import AnalyticsPanel from './AnalyticsPanel';
 
 const Header = ({ currentPage, setCurrentPage }) => {
   const { user, isAdmin, canViewFeedbacks } = useAuth();
@@ -10,6 +11,7 @@ const Header = ({ currentPage, setCurrentPage }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMenuPinned, setIsMenuPinned] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   // Detectar scroll para efeitos visuais
   useEffect(() => {
@@ -122,6 +124,21 @@ const Header = ({ currentPage, setCurrentPage }) => {
 
             {/* Botão Hambúrguer + User Menu */}
             <div className="flex items-center space-x-6">
+              {/* Analytics Button - Admin Only */}
+              {user && isAdmin && (
+                <div className="flex-shrink-0">
+                  <button
+                    onClick={() => setShowAnalytics(true)}
+                    className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                    title="Analytics"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+
               {/* Notification Badge */}
               {user && (
                 <div className="flex-shrink-0">
@@ -334,6 +351,12 @@ const Header = ({ currentPage, setCurrentPage }) => {
           animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
       `}</style>
+
+      {/* Analytics Panel */}
+      <AnalyticsPanel 
+        isOpen={showAnalytics} 
+        onClose={() => setShowAnalytics(false)} 
+      />
     </>
   );
 };

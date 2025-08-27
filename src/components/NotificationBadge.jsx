@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, X, Settings, Check, AlertCircle, Clock, BookOpen } from 'lucide-react';
+import { Bell, X, Settings, Check, AlertCircle, Clock, BookOpen, Newspaper } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import NotificationSettings from './NotificationSettings';
@@ -132,8 +132,14 @@ const NotificationBadge = () => {
         return <BookOpen className="w-4 h-4 text-orange-500" />;
       case 'training_reminder':
         return <Clock className="w-4 h-4 text-blue-500" />;
+      case 'training_new':
+        return <BookOpen className="w-4 h-4 text-green-500" />;
+      case 'news':
+        return <Newspaper className="w-4 h-4 text-purple-500" />;
       case 'system':
         return <AlertCircle className="w-4 h-4 text-red-500" />;
+      case 'custom_reminder':
+        return <Bell className="w-4 h-4 text-indigo-500" />;
       default:
         return <Bell className="w-4 h-4 text-gray-500" />;
     }
@@ -145,8 +151,14 @@ const NotificationBadge = () => {
         return 'border-l-orange-500 bg-orange-50';
       case 'training_reminder':
         return 'border-l-blue-500 bg-blue-50';
+      case 'training_new':
+        return 'border-l-green-500 bg-green-50';
+      case 'news':
+        return 'border-l-purple-500 bg-purple-50';
       case 'system':
         return 'border-l-red-500 bg-red-50';
+      case 'custom_reminder':
+        return 'border-l-indigo-500 bg-indigo-50';
       default:
         return 'border-l-gray-500 bg-gray-50';
     }

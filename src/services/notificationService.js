@@ -407,6 +407,78 @@ class NotificationService {
     }
   }
 
+  // Notificar sobre nova notícia
+  async notifyNewNoticia(noticiaData) {
+    try {
+      const { data: users } = await supabase
+        .from('usuarios')
+        .select('id')
+        .eq('ativo', true);
+
+      if (!users || users.length === 0) return [];
+
+      const notifications = users.map(user => ({
+        user_id: user.id,
+        type: 'news',
+        title: 'Nova Notícia Publicada',
+        message: `Foi publicada uma nova notícia: "${noticiaData.titulo}"`,
+        data: {
+          noticia_id: noticiaData.id,
+          noticia_title: noticiaData.titulo,
+          action_url: `/noticias/${noticiaData.id}`
+        },
+        priority: 'medium'
+      }));
+
+      const { data, error } = await supabase
+        .from('notifications')
+        .insert(notifications)
+        .select();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Erro ao notificar sobre nova notícia:', error);
+      throw error;
+    }
+  }
+
+  // Notificar sobre novo treinamento (não obrigatório)
+  async notifyNewTreinamento(treinamentoData) {
+    try {
+      const { data: users } = await supabase
+        .from('usuarios')
+        .select('id')
+        .eq('ativo', true);
+
+      if (!users || users.length === 0) return [];
+
+      const notifications = users.map(user => ({
+        user_id: user.id,
+        type: 'training_new',
+        title: 'Novo Treinamento Disponível',
+        message: `Foi adicionado um novo treinamento: "${treinamentoData.titulo}"`,
+        data: {
+          treinamento_id: treinamentoData.id,
+          treinamento_title: treinamentoData.titulo,
+          action_url: `/treinamentos/${treinamentoData.id}`
+        },
+        priority: 'low'
+      }));
+
+      const { data, error } = await supabase
+        .from('notifications')
+        .insert(notifications)
+        .select();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Erro ao notificar sobre novo treinamento:', error);
+      throw error;
+    }
+  }
+
   // Enviar notificação push do navegador
   sendBrowserNotification(title, options = {}) {
     if (Notification.permission === 'granted') {
