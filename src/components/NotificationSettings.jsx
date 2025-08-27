@@ -123,8 +123,8 @@ const NotificationSettings = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden transform transition-all duration-300 scale-100">
         {/* Header */}
         <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-red-500 to-red-600">
           <div className="flex items-center justify-between">
@@ -147,7 +147,7 @@ const NotificationSettings = ({ isOpen, onClose }) => {
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="p-6 overflow-y-auto max-h-[calc(85vh-180px)]">
           {isLoading ? (
             <div className="space-y-4">
               {[1, 2, 3, 4].map((i) => (

@@ -10,7 +10,9 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
     autor: 'Administrador',
     destaque: false,
     tags: [],
-    logo_url: ''
+    logo_url: '',
+    obrigatorio: false,
+    prazo_limite: ''
   });
   
   const [file, setFile] = useState(null);
@@ -30,7 +32,9 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
         autor: editingItem.autor || 'Administrador',
         destaque: editingItem.destaque || false,
         tags: editingItem.tags || [],
-        logo_url: editingItem.logo_url || ''
+        logo_url: editingItem.logo_url || '',
+        obrigatorio: editingItem.obrigatorio || false,
+        prazo_limite: editingItem.prazo_limite || ''
       });
     } else {
       // Reset form para novo item
@@ -42,7 +46,9 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
         autor: 'Administrador',
         destaque: false,
         tags: [],
-        logo_url: ''
+        logo_url: '',
+        obrigatorio: false,
+        prazo_limite: ''
       });
     }
     setFile(null);
@@ -177,7 +183,9 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
           autor: 'Administrador',
           destaque: false,
           tags: [],
-          logo_url: ''
+          logo_url: '',
+          obrigatorio: false,
+          prazo_limite: ''
         });
         setFile(null);
         setTagInput('');
@@ -513,6 +521,45 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
                   </span>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Configurações de Treinamento Obrigatório (apenas para treinamentos) */}
+          {isTraining && (
+            <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
+              <h3 className="text-lg font-medium text-gray-900">Configurações de Treinamento</h3>
+              
+              {/* Checkbox para treinamento obrigatório */}
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="obrigatorio"
+                  checked={formData.obrigatorio}
+                  onChange={(e) => handleInputChange('obrigatorio', e.target.checked)}
+                  className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                />
+                <label htmlFor="obrigatorio" className="text-sm font-medium text-gray-700">
+                  Treinamento Obrigatório
+                </label>
+              </div>
+              
+              {/* Campo de prazo limite (aparece apenas se obrigatório) */}
+              {formData.obrigatorio && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Prazo Limite (opcional)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={formData.prazo_limite}
+                    onChange={(e) => handleInputChange('prazo_limite', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Se definido, os usuários receberão lembretes automáticos sobre este treinamento
+                  </p>
+                </div>
+              )}
             </div>
           )}
 

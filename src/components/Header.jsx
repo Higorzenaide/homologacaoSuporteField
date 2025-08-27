@@ -91,12 +91,12 @@ const Header = ({ currentPage, setCurrentPage }) => {
             </div>
 
             {/* Navegação Desktop - PADRÃO VERMELHO */}
-            <nav className="hidden lg:flex items-center space-x-2">
+            <nav className="hidden lg:flex items-center space-x-3">
               {navItems.map((item, index) => (
                 <button
                   key={item.id}
                   onClick={() => handleNavClick(item.id)}
-                  className={`relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
+                  className={`relative px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
                     currentPage === item.id
                       ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg'
                       : 'text-gray-700 hover:text-red-600 hover:bg-red-50 hover:shadow-md'
@@ -121,44 +121,54 @@ const Header = ({ currentPage, setCurrentPage }) => {
             </nav>
 
             {/* Botão Hambúrguer + User Menu */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-6">
               {/* Notification Badge */}
-              {user && <NotificationBadge />}
+              {user && (
+                <div className="flex-shrink-0">
+                  <NotificationBadge />
+                </div>
+              )}
               
               {/* User Menu */}
               {user ? (
-                <UserMenu />
+                <div className="flex-shrink-0">
+                  <UserMenu />
+                </div>
               ) : (
-                <button
-                  onClick={() => setShowLoginModal(true)}
-                  className="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-2 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-medium"
-                >
-                  Entrar
-                </button>
+                <div className="flex-shrink-0">
+                  <button
+                    onClick={() => setShowLoginModal(true)}
+                    className="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-2 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-medium"
+                  >
+                    Entrar
+                  </button>
+                </div>
               )}
 
               {/* Botão Hambúrguer Animado */}
-              <button
-                onClick={toggleMenu}
-                className="lg:hidden relative w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center transform transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
-              >
-                <div className="w-6 h-6 flex flex-col justify-center items-center">
-                  <span className={`block w-6 h-0.5 bg-white transform transition-all duration-300 ${
-                    isMenuOpen ? 'rotate-45 translate-y-1.5' : ''
-                  }`}></span>
-                  <span className={`block w-6 h-0.5 bg-white mt-1 transform transition-all duration-300 ${
-                    isMenuOpen ? 'opacity-0' : ''
-                  }`}></span>
-                  <span className={`block w-6 h-0.5 bg-white mt-1 transform transition-all duration-300 ${
-                    isMenuOpen ? '-rotate-45 -translate-y-1.5' : ''
-                  }`}></span>
-                </div>
-                
-                {/* Efeito de pulso quando ativo */}
-                {isMenuOpen && (
-                  <div className="absolute inset-0 rounded-xl bg-red-400 animate-ping opacity-30"></div>
-                )}
-              </button>
+              <div className="flex-shrink-0">
+                <button
+                  onClick={toggleMenu}
+                  className="lg:hidden relative w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center transform transition-all duration-300 hover:scale-110 shadow-lg hover:shadow-xl"
+                >
+                  <div className="w-6 h-6 flex flex-col justify-center items-center">
+                    <span className={`block w-6 h-0.5 bg-white transform transition-all duration-300 ${
+                      isMenuOpen ? 'rotate-45 translate-y-1.5' : ''
+                    }`}></span>
+                    <span className={`block w-6 h-0.5 bg-white mt-1 transform transition-all duration-300 ${
+                      isMenuOpen ? 'opacity-0' : ''
+                    }`}></span>
+                    <span className={`block w-6 h-0.5 bg-white mt-1 transform transition-all duration-300 ${
+                      isMenuOpen ? '-rotate-45 -translate-y-1.5' : ''
+                    }`}></span>
+                  </div>
+                  
+                  {/* Efeito de pulso quando ativo */}
+                  {isMenuOpen && (
+                    <div className="absolute inset-0 rounded-xl bg-red-400 animate-ping opacity-30"></div>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
