@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { 
   Users, BookOpen, TrendingUp, Target, Download, Calendar, Star, ArrowRight, 
   Eye, Play, FileText, Award, Clock, Zap, Activity, BarChart3, 
-  MessageCircle, Heart, Bookmark, ChevronRight, Sparkles, Newspaper, X, User
+  MessageCircle, Heart, Bookmark, ChevronRight, Sparkles, Newspaper, X, User, Bell
 } from 'lucide-react';
 import { getTreinamentos } from '../services/treinamentosService';
 import { obterEstatisticas } from '../services/estatisticasService';
