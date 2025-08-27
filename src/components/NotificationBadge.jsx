@@ -3,6 +3,7 @@ import { Bell, X, Settings, Check, AlertCircle, Clock, BookOpen, Newspaper } fro
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import NotificationSettings from './NotificationSettings';
+import analyticsService from '../services/analyticsService';
 
 const NotificationBadge = () => {
   const { user } = useAuth();
@@ -82,6 +83,11 @@ const NotificationBadge = () => {
 
       if (error) throw error;
 
+      // Registrar analytics de notificação lida
+      if (user) {
+        await analyticsService.markNotificationAsRead(notificationId, user.id);
+      }
+
       setNotifications(prev => 
         prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
       );
@@ -100,6 +106,14 @@ const NotificationBadge = () => {
         .eq('read', false);
 
       if (error) throw error;
+
+      // Registrar analytics para todas as notificações não lidas
+      if (user) {
+        const unreadNotifications = notifications.filter(n => !n.read);
+        for (const notification of unreadNotifications) {
+          await analyticsService.markNotificationAsRead(notification.id, user.id);
+        }
+      }
 
       setNotifications(prev => 
         prev.map(n => ({ ...n, read: true }))
@@ -123,6 +137,18 @@ const NotificationBadge = () => {
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Erro ao deletar notificação:', error);
+    }
+  };
+
+  const handleNotificationClick = async (notification) => {
+    // Registrar analytics de clique na notificação
+    if (user) {
+      await analyticsService.markNotificationAsClicked(notification.id, user.id);
+    }
+
+    // Se a notificação tem uma URL de ação, navegar para ela
+    if (notification.data?.action_url) {
+      window.location.href = notification.data.action_url;
     }
   };
 
@@ -259,9 +285,10 @@ const NotificationBadge = () => {
                 notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-4 border-l-4 transition-all duration-200 hover:bg-gray-50 ${
+                    className={`p-4 border-l-4 transition-all duration-200 hover:bg-gray-50 cursor-pointer ${
                       notification.read ? 'opacity-60' : 'bg-white'
                     } ${getNotificationColor(notification.type)}`}
+                    onClick={() => handleNotificationClick(notification)}
                   >
                     <div className="flex items-start space-x-3">
                       <div className="flex-shrink-0 mt-1">

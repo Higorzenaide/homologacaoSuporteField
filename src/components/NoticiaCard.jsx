@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import CurtidasButtonNoticia from './CurtidasButtonNoticia';
 import EditDeleteActions from './EditDeleteActions';
 import { contarComentariosNoticia } from '../services/comentariosNoticiasService';
+import analyticsService from '../services/analyticsService';
 
 const NoticiaCard = ({ 
   noticia, 
@@ -11,7 +12,7 @@ const NoticiaCard = ({
   onOpenComments,
   isDestaque = false
 }) => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const [comentariosCount, setComentariosCount] = useState(0);
 
   // Carregar contador de comentários
@@ -48,6 +49,18 @@ const NoticiaCard = ({
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
     return tempDiv.textContent || tempDiv.innerText || '';
+  };
+
+  // Função para registrar visualização da notícia
+  const handleNoticiaClick = async () => {
+    if (user && noticia.id) {
+      try {
+        await analyticsService.registerNoticiaView(noticia.id, user.id);
+      } catch (error) {
+        console.error('Erro ao registrar visualização da notícia:', error);
+      }
+    }
+    onOpenComments(noticia);
   };
 
   // Função para truncar texto para preview
@@ -99,7 +112,7 @@ const NoticiaCard = ({
               
               {/* Botão de comentários */}
               <button
-                onClick={() => onOpenComments(noticia)}
+                onClick={handleNoticiaClick}
                 className="flex items-center space-x-1 px-2 py-1.5 rounded-md bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 hover:shadow-sm transition-all duration-200 text-sm"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,7 +123,7 @@ const NoticiaCard = ({
 
               {/* Botão Ler mais */}
               <button
-                onClick={() => onOpenComments(noticia)}
+                onClick={handleNoticiaClick}
                 className="flex items-center space-x-1 px-3 py-1.5 rounded-md bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 hover:shadow-sm transition-all duration-200 text-sm font-medium"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -164,7 +177,7 @@ const NoticiaCard = ({
             
             {/* Botão de comentários */}
             <button
-              onClick={() => onOpenComments(noticia)}
+              onClick={handleNoticiaClick}
               className="flex items-center space-x-1 px-2 py-1.5 rounded-md bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 hover:shadow-sm transition-all duration-200 text-sm"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -175,7 +188,7 @@ const NoticiaCard = ({
 
             {/* Botão Ler mais */}
             <button
-              onClick={() => onOpenComments(noticia)}
+              onClick={handleNoticiaClick}
               className="flex items-center space-x-1 px-3 py-1.5 rounded-md bg-green-50 text-green-600 border border-green-200 hover:bg-green-100 hover:shadow-sm transition-all duration-200 text-sm font-medium"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

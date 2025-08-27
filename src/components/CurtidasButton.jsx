@@ -6,6 +6,7 @@ import {
   contarCurtidas, 
   getUsuariosCurtiram 
 } from '../services/curtidasService';
+import analyticsService from '../services/analyticsService';
 
 const CurtidasButton = ({ treinamentoId, onCurtidaChange }) => {
   const { user } = useAuth();
@@ -64,6 +65,11 @@ const CurtidasButton = ({ treinamentoId, onCurtidaChange }) => {
         
         setCurtido(novoCurtido);
         setTotalCurtidas(novoTotal);
+        
+        // Registrar analytics de curtida
+        if (novoCurtido) {
+          await analyticsService.registerTreinamentoLike(treinamentoId, user.id);
+        }
         
         if (onCurtidaChange) {
           onCurtidaChange(novoTotal);

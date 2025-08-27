@@ -3,6 +3,7 @@ import { useAuth } from "../contexts/AuthContext";
 import CurtidasButton from "./CurtidasButton";
 import EditDeleteActions from "./EditDeleteActions";
 import { contarComentarios } from "../services/comentariosService";
+import analyticsService from "../services/analyticsService";
 
 const TreinamentoCardAdvanced = ({
   treinamento,
@@ -11,7 +12,7 @@ const TreinamentoCardAdvanced = ({
   onViewPDF,
   onOpenComments,
 }) => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [comentariosCount, setComentariosCount] = useState(0);
@@ -41,6 +42,30 @@ const TreinamentoCardAdvanced = ({
       month: "short",
       year: "numeric",
     });
+  };
+
+  // Função para registrar visualização do treinamento
+  const handleTreinamentoView = async () => {
+    if (user && treinamento.id) {
+      try {
+        await analyticsService.registerTreinamentoView(treinamento.id, user.id);
+      } catch (error) {
+        console.error('Erro ao registrar visualização do treinamento:', error);
+      }
+    }
+    onViewPDF(treinamento);
+  };
+
+  // Função para registrar clique nos comentários
+  const handleCommentsClick = async () => {
+    if (user && treinamento.id) {
+      try {
+        await analyticsService.registerTreinamentoView(treinamento.id, user.id);
+      } catch (error) {
+        console.error('Erro ao registrar visualização do treinamento:', error);
+      }
+    }
+    onOpenComments(treinamento);
   };
 
   const getCategoriaColor = (categoria) => {
@@ -285,7 +310,7 @@ const TreinamentoCardAdvanced = ({
 
             {/* Botão de comentários melhorado */}
             <button
-              onClick={() => onOpenComments && onOpenComments(treinamento)}
+              onClick={handleCommentsClick}
               className="flex items-center space-x-2 px-3 py-2 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 hover:shadow-md transition-all duration-300 transform hover:scale-105 font-medium text-sm"
             >
               <svg
@@ -307,7 +332,7 @@ const TreinamentoCardAdvanced = ({
 
           {/* Botão de visualizar principal */}
           <button
-            onClick={() => onViewPDF && onViewPDF(treinamento)}
+            onClick={handleTreinamentoView}
             className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl font-semibold text-sm group"
           >
             <svg
