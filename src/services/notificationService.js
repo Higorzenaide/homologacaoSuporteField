@@ -352,6 +352,61 @@ class NotificationService {
     return permission === 'granted';
   }
 
+  // Verificar e criar notificações para lembretes personalizados
+  async checkCustomReminders(userId) {
+    try {
+      const now = new Date();
+      
+      // Buscar lembretes personalizados que devem ser notificados
+      const { data: reminders, error } = await supabase
+        .from('custom_reminders')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('active', true)
+        .lte('scheduled_for', now.toISOString());
+
+      if (error) throw error;
+
+      let notificationsCreated = 0;
+
+      for (const reminder of reminders || []) {
+        // Verificar se já existe notificação para este lembrete
+        const { data: existingNotification } = await supabase
+          .from('notifications')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('type', 'custom_reminder')
+          .eq('data->>reminder_id', reminder.id.toString())
+          .single();
+
+        if (!existingNotification) {
+          // Criar notificação para o lembrete
+          await this.createNotification({
+            user_id: userId,
+            type: 'custom_reminder',
+            title: reminder.title,
+            message: reminder.message,
+            data: {
+              reminder_id: reminder.id,
+              scheduled_for: reminder.scheduled_for,
+              repeat_interval: reminder.repeat_interval,
+              action_url: reminder.action_url,
+              priority: reminder.priority
+            },
+            priority: reminder.priority || 'medium'
+          });
+
+          notificationsCreated++;
+        }
+      }
+
+      return notificationsCreated;
+    } catch (error) {
+      console.error('Erro ao verificar lembretes personalizados:', error);
+      return 0;
+    }
+  }
+
   // Enviar notificação push do navegador
   sendBrowserNotification(title, options = {}) {
     if (Notification.permission === 'granted') {

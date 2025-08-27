@@ -81,12 +81,14 @@ export const createTreinamento = async (treinamentoData, file) => {
       .from('treinamentos')
       .insert([{
         titulo: treinamentoData.titulo,
-        ativo:true,
+        ativo: true,
         descricao: treinamentoData.descricao || '',
         tipo: treinamentoData.tipo || 'documento',
         categoria_nome: treinamentoData.categoria,
         arquivo_url,
-         tags: treinamentoData.tags?.join(', ') || '' // <- converte array para string
+        tags: treinamentoData.tags?.join(', ') || '', // <- converte array para string
+        obrigatorio: treinamentoData.obrigatorio || false,
+        prazo_limite: treinamentoData.prazo_limite || null
       }])
       .select()
       .single();
@@ -161,6 +163,14 @@ export const updateTreinamento = async (id, treinamentoData, file, logoFile) => 
     // Atualizar categoria se fornecida
     if (treinamentoData.categoria) {
       updateData.categoria_nome = treinamentoData.categoria;
+    }
+
+    // Incluir campos de treinamento obrigatório
+    if (treinamentoData.obrigatorio !== undefined) {
+      updateData.obrigatorio = treinamentoData.obrigatorio;
+    }
+    if (treinamentoData.prazo_limite !== undefined) {
+      updateData.prazo_limite = treinamentoData.prazo_limite;
     }
 
     const { data, error } = await supabase
@@ -342,6 +352,14 @@ export const editTreinamento = async (id, treinamentoData, file) => {
     // Atualizar categoria se fornecida
     if (treinamentoData.categoria) {
       updateData.categoria_nome = treinamentoData.categoria;
+    }
+
+    // Incluir campos de treinamento obrigatório
+    if (treinamentoData.obrigatorio !== undefined) {
+      updateData.obrigatorio = treinamentoData.obrigatorio;
+    }
+    if (treinamentoData.prazo_limite !== undefined) {
+      updateData.prazo_limite = treinamentoData.prazo_limite;
     }
 
     // Atualizar no banco

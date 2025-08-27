@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Calendar, Clock, Bell, Edit, Trash2, Repeat } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import notificationService from '../services/notificationService';
 
 const CustomReminders = () => {
   const { user } = useAuth();
@@ -21,8 +22,20 @@ const CustomReminders = () => {
   useEffect(() => {
     if (user) {
       loadReminders();
+      // Verificar lembretes personalizados que devem gerar notificações
+      checkCustomReminders();
     }
   }, [user]);
+
+  const checkCustomReminders = async () => {
+    if (!user) return;
+    
+    try {
+      await notificationService.checkCustomReminders(user.id);
+    } catch (error) {
+      console.error('Erro ao verificar lembretes personalizados:', error);
+    }
+  };
 
   const loadReminders = async () => {
     if (!user) return;
@@ -85,6 +98,21 @@ const CustomReminders = () => {
       setShowForm(false);
       setEditingReminder(null);
       await loadReminders();
+      
+      // Verificar se o lembrete deve gerar notificação imediatamente
+      if (!editingReminder) {
+        const scheduledDate = new Date(formData.scheduled_for);
+        const now = new Date();
+        
+        // Se o lembrete é para agora ou no passado, criar notificação imediatamente
+        if (scheduledDate <= now) {
+          try {
+            await notificationService.checkCustomReminders(user.id);
+          } catch (error) {
+            console.error('Erro ao verificar lembretes personalizados:', error);
+          }
+        }
+      }
       
       alert(editingReminder ? 'Lembrete atualizado com sucesso!' : 'Lembrete criado com sucesso!');
     } catch (error) {

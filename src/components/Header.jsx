@@ -67,7 +67,7 @@ const Header = ({ currentPage, setCurrentPage }) => {
           ? 'bg-white/95 backdrop-blur-lg shadow-xl border-b border-red-100' 
           : 'bg-white shadow-lg'
       }`}>
-        <div className="container mx-auto px-4">
+        <div className="px-6">
           <div className="flex items-center justify-between h-16">
             {/* Logo com animação */}
             <div className="flex items-center space-x-3 group">
