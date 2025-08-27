@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, X, Settings, Check, AlertCircle, Clock, BookOpen, Newspaper } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import NotificationSettings from './NotificationSettings';
 import analyticsService from '../services/analyticsService';
+import useNetworkRetry from '../hooks/useNetworkRetry';
 
 const NotificationBadge = () => {
   const { user } = useAuth();
+  const { showError, showSuccess } = useToast();
+  const { executeWithRetry, isRetrying } = useNetworkRetry();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -76,22 +80,50 @@ const NotificationBadge = () => {
 
   const markAsRead = async (notificationId) => {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notificationId);
-
-      if (error) throw error;
-
-      // Registrar analytics de notificação lida
-      if (user) {
-        await analyticsService.markNotificationAsRead(notificationId, user.id);
+      // Primeiro, otimisticamente atualiza a UI
+      const notificationToUpdate = notifications.find(n => n.id === notificationId);
+      const wasUnread = notificationToUpdate && !notificationToUpdate.read;
+      
+      if (wasUnread) {
+        setNotifications(prev => 
+          prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+        );
+        setUnreadCount(prev => Math.max(0, prev - 1));
       }
 
-      setNotifications(prev => 
-        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+      // Tentar atualizar no servidor com retry
+      await executeWithRetry(
+        async () => {
+          const { error } = await supabase
+            .from('notifications')
+            .update({ read: true })
+            .eq('id', notificationId);
+
+          if (error) throw error;
+        },
+        {
+          onError: (error) => {
+            // Reverter mudanças na UI em caso de erro
+            if (notificationToUpdate && wasUnread) {
+              setNotifications(prev => 
+                prev.map(n => n.id === notificationId ? { ...n, read: false } : n)
+              );
+              setUnreadCount(prev => prev + 1);
+            }
+            showError('Erro ao marcar notificação como lida. Verifique sua conexão.');
+          }
+        }
       );
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      
+      // Sucesso - registrar analytics
+      if (user) {
+        try {
+          await analyticsService.markNotificationAsRead(notificationId, user.id);
+        } catch (analyticsError) {
+          console.warn('Erro ao registrar analytics (não crítico):', analyticsError);
+        }
+      }
+      
     } catch (error) {
       console.error('Erro ao marcar como lida:', error);
     }
@@ -126,15 +158,41 @@ const NotificationBadge = () => {
 
   const deleteNotification = async (notificationId) => {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', notificationId);
-
-      if (error) throw error;
-
+      // Primeiro, otimisticamente remove da UI
+      const notificationToDelete = notifications.find(n => n.id === notificationId);
+      const wasUnread = notificationToDelete && !notificationToDelete.read;
+      
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      if (wasUnread) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+
+      // Tentar deletar no servidor com retry
+      await executeWithRetry(
+        async () => {
+          const { error } = await supabase
+            .from('notifications')
+            .delete()
+            .eq('id', notificationId);
+
+          if (error) throw error;
+        },
+        {
+          onError: (error) => {
+            // Reverter mudanças na UI em caso de erro
+            if (notificationToDelete) {
+              setNotifications(prev => [...prev, notificationToDelete].sort((a, b) => 
+                new Date(b.created_at) - new Date(a.created_at)
+              ));
+              if (wasUnread) {
+                setUnreadCount(prev => prev + 1);
+              }
+            }
+            showError('Erro ao deletar notificação. Verifique sua conexão.');
+          }
+        }
+      );
+      
     } catch (error) {
       console.error('Erro ao deletar notificação:', error);
     }
@@ -325,10 +383,13 @@ const NotificationBadge = () => {
                             )}
                             <button
                               onClick={() => deleteNotification(notification.id)}
-                              className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                              title="Excluir"
+                              disabled={isRetrying}
+                              className={`p-1 text-gray-400 hover:text-red-600 transition-colors ${
+                                isRetrying ? 'opacity-50 cursor-not-allowed' : ''
+                              }`}
+                              title={isRetrying ? "Deletando..." : "Excluir"}
                             >
-                              <X className="w-4 h-4" />
+                              <X className={`w-4 h-4 ${isRetrying ? 'animate-pulse' : ''}`} />
                             </button>
                           </div>
                         </div>
