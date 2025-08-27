@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider } from './contexts/ToastContext';
 import Header from './components/Header';
 import Home from './pages/Home';
 import Treinamentos from './pages/Treinamentos';
@@ -35,14 +36,16 @@ function App() {
   };
 
   return (
-    <AuthProvider>
-      <div className="min-h-screen bg-gray-50">
-        <Header currentPage={currentPage} setCurrentPage={setCurrentPage} />
-        <main>
-          {renderPage()}
-        </main>
-      </div>
-    </AuthProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <div className="min-h-screen bg-gray-50">
+          <Header currentPage={currentPage} setCurrentPage={setCurrentPage} />
+          <main>
+            {renderPage()}
+          </main>
+        </div>
+      </AuthProvider>
+    </ToastProvider>
   );
 }
 
