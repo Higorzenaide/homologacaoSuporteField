@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import LoginModal from './LoginModal';
 import UserMenu from './UserMenu';
+import NotificationBadge from './NotificationBadge';
 
 const Header = ({ currentPage, setCurrentPage }) => {
   const { user, isAdmin, canViewFeedbacks } = useAuth();
@@ -121,6 +122,9 @@ const Header = ({ currentPage, setCurrentPage }) => {
 
             {/* Botão Hambúrguer + User Menu */}
             <div className="flex items-center space-x-4">
+              {/* Notification Badge */}
+              {user && <NotificationBadge />}
+              
               {/* User Menu */}
               {user ? (
                 <UserMenu />

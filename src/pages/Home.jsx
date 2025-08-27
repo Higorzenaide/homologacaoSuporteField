@@ -13,6 +13,8 @@ import { obterEstatisticas } from '../services/estatisticasService';
 import { atualizarEstatistica } from '../services/estatisticasService';
 import { getNoticiasDestaque } from '../services/noticiasService';
 import EditableStatCard from '../components/EditableStatCard';
+import TrainingReminders from '../components/TrainingReminders';
+import CustomReminders from '../components/CustomReminders';
 import { useAuth } from '../contexts/AuthContext';
 
 // Componente das bolinhas interativas - VERSÃO COM LEGIBILIDADE MELHORADA
@@ -420,6 +422,33 @@ const Home = ({ setCurrentPage }) => {
           />
         </div>
       </div>
+
+      {/* Seção de Notificações - apenas para usuários logados */}
+      {user && (
+        <div className="bg-gray-50 py-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <div className="flex items-center justify-center mb-4">
+                <Bell className="w-8 h-8 text-[var(--desktop-red)] mr-3" />
+                <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-[var(--desktop-red)] bg-clip-text text-transparent">
+                  Suas Notificações
+                </h2>
+              </div>
+              <p className="text-xl text-gray-600">
+                Mantenha-se atualizado com treinamentos e lembretes personalizados
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Lembretes de Treinamentos */}
+              <TrainingReminders />
+              
+              {/* Lembretes Personalizados */}
+              <CustomReminders />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Últimos Treinamentos */}
       <div className="bg-white py-20">
