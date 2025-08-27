@@ -94,12 +94,22 @@ const NotificationBadge = () => {
       // Tentar atualizar no servidor com retry
       await executeWithRetry(
         async () => {
+          // Atualizar notificação como lida
           const { error } = await supabase
             .from('notifications')
             .update({ read: true })
             .eq('id', notificationId);
 
           if (error) throw error;
+
+          // Registrar analytics (dentro do retry)
+          if (user) {
+            try {
+              await analyticsService.markNotificationAsRead(notificationId, user.id);
+            } catch (analyticsError) {
+              console.warn('Erro ao registrar analytics (não crítico):', analyticsError);
+            }
+          }
         },
         {
           onError: (error) => {
@@ -115,15 +125,6 @@ const NotificationBadge = () => {
         }
       );
       
-      // Sucesso - registrar analytics
-      if (user) {
-        try {
-          await analyticsService.markNotificationAsRead(notificationId, user.id);
-        } catch (analyticsError) {
-          console.warn('Erro ao registrar analytics (não crítico):', analyticsError);
-        }
-      }
-      
     } catch (error) {
       console.error('Erro ao marcar como lida:', error);
     }
@@ -131,26 +132,47 @@ const NotificationBadge = () => {
 
   const markAllAsRead = async () => {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('user_id', user.id)
-        .eq('read', false);
-
-      if (error) throw error;
-
-      // Registrar analytics para todas as notificações não lidas
-      if (user) {
-        const unreadNotifications = notifications.filter(n => !n.read);
-        for (const notification of unreadNotifications) {
-          await analyticsService.markNotificationAsRead(notification.id, user.id);
-        }
-      }
-
+      const unreadNotifications = notifications.filter(n => !n.read);
+      
+      // Primeiro, otimisticamente atualiza a UI
       setNotifications(prev => 
         prev.map(n => ({ ...n, read: true }))
       );
       setUnreadCount(0);
+
+      // Tentar atualizar no servidor com retry
+      await executeWithRetry(
+        async () => {
+          const { error } = await supabase
+            .from('notifications')
+            .update({ read: true })
+            .eq('user_id', user.id)
+            .eq('read', false);
+
+          if (error) throw error;
+
+          // Registrar analytics para todas as notificações não lidas
+          if (user) {
+            for (const notification of unreadNotifications) {
+              try {
+                await analyticsService.markNotificationAsRead(notification.id, user.id);
+              } catch (analyticsError) {
+                console.warn('Erro ao registrar analytics (não crítico):', analyticsError);
+              }
+            }
+          }
+        },
+        {
+          onError: (error) => {
+            // Reverter mudanças na UI em caso de erro
+            setNotifications(prev => 
+              prev.map(n => ({ ...n, read: n.read }))
+            );
+            setUnreadCount(unreadNotifications.length);
+            showError('Erro ao marcar todas como lidas. Verifique sua conexão.');
+          }
+        }
+      );
     } catch (error) {
       console.error('Erro ao marcar todas como lidas:', error);
     }
@@ -199,14 +221,27 @@ const NotificationBadge = () => {
   };
 
   const handleNotificationClick = async (notification) => {
-    // Registrar analytics de clique na notificação
-    if (user) {
-      await analyticsService.markNotificationAsClicked(notification.id, user.id);
-    }
+    try {
+      // Registrar analytics de clique na notificação com retry
+      if (user) {
+        await executeWithRetry(
+          async () => {
+            await analyticsService.markNotificationAsClicked(notification.id, user.id);
+          },
+          {
+            onError: (error) => {
+              console.warn('Erro ao registrar analytics de clique (não crítico):', error);
+            }
+          }
+        );
+      }
 
-    // Se a notificação tem uma URL de ação, navegar para ela
-    if (notification.data?.action_url) {
-      window.location.href = notification.data.action_url;
+      // Se a notificação tem uma URL de ação, navegar para ela
+      if (notification.data?.action_url) {
+        window.location.href = notification.data.action_url;
+      }
+    } catch (error) {
+      console.error('Erro ao processar clique na notificação:', error);
     }
   };
 
