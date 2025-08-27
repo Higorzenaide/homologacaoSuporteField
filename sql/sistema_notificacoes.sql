@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS notifications (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
     type VARCHAR(50) NOT NULL, -- 'training_required', 'training_reminder', 'system', 'custom_reminder'
     title VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
@@ -26,15 +26,21 @@ ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
 -- Política: usuários só podem ver suas próprias notificações
 CREATE POLICY "Users can view own notifications" ON notifications
-    FOR SELECT USING (auth.uid() = user_id);
+    FOR SELECT USING (user_id IN (
+        SELECT id FROM usuarios WHERE email = auth.email()
+    ));
 
 -- Política: usuários podem atualizar suas próprias notificações
 CREATE POLICY "Users can update own notifications" ON notifications
-    FOR UPDATE USING (auth.uid() = user_id);
+    FOR UPDATE USING (user_id IN (
+        SELECT id FROM usuarios WHERE email = auth.email()
+    ));
 
 -- Política: usuários podem deletar suas próprias notificações
 CREATE POLICY "Users can delete own notifications" ON notifications
-    FOR DELETE USING (auth.uid() = user_id);
+    FOR DELETE USING (user_id IN (
+        SELECT id FROM usuarios WHERE email = auth.email()
+    ));
 
 -- Política: sistema pode inserir notificações (via service role)
 CREATE POLICY "System can insert notifications" ON notifications
@@ -58,7 +64,7 @@ CREATE TRIGGER trigger_update_notifications_updated_at
 -- Tabela para configurações de notificações do usuário
 CREATE TABLE IF NOT EXISTS notification_settings (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
     email_notifications BOOLEAN DEFAULT TRUE,
     push_notifications BOOLEAN DEFAULT TRUE,
     training_reminders BOOLEAN DEFAULT TRUE,
@@ -107,7 +113,7 @@ CREATE TRIGGER trigger_update_notification_settings_updated_at
 -- Tabela para lembretes personalizados
 CREATE TABLE IF NOT EXISTS custom_reminders (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
     scheduled_for TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -182,12 +188,15 @@ BEGIN
     -- Se o treinamento é obrigatório e está ativo, notificar todos os usuários
     IF NEW.obrigatorio = true AND NEW.ativo = true THEN
         FOR user_record IN 
-            SELECT id FROM auth.users 
+            SELECT id FROM usuarios 
             WHERE id NOT IN (
                 SELECT DISTINCT usuario_id 
-                FROM interacoes_treinamentos 
-                WHERE treinamento_id = NEW.id 
-                AND tipo_interacao = 'concluido'
+                FROM treinamento_comentarios 
+                WHERE treinamento_id = NEW.id
+                UNION
+                SELECT DISTINCT usuario_id 
+                FROM treinamento_curtidas 
+                WHERE treinamento_id = NEW.id
             )
         LOOP
             INSERT INTO notifications (user_id, type, title, message, data, priority)
@@ -241,10 +250,13 @@ BEGIN
             SELECT u.id 
             FROM auth.users u
             WHERE u.id NOT IN (
-                SELECT DISTINCT it.usuario_id 
-                FROM interacoes_treinamentos it
-                WHERE it.treinamento_id = training_record.id 
-                AND it.tipo_interacao = 'concluido'
+                SELECT DISTINCT usuario_id 
+                FROM treinamento_comentarios 
+                WHERE treinamento_id = training_record.id
+                UNION
+                SELECT DISTINCT usuario_id 
+                FROM treinamento_curtidas 
+                WHERE treinamento_id = training_record.id
             )
             AND u.id NOT IN (
                 -- Não criar lembrete se já existe um nas últimas 24h

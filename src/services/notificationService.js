@@ -229,30 +229,40 @@ class NotificationService {
   // Buscar treinamentos pendentes para um usuário
   async getPendingTrainings(userId) {
     try {
-      // Buscar treinamentos obrigatórios que o usuário ainda não completou
-      const { data, error } = await supabase
+      // Buscar treinamentos obrigatórios ativos
+      const { data: trainings, error: trainingsError } = await supabase
         .from('treinamentos')
-        .select(`
-          *,
-          interacoes_treinamentos!left(
-            id,
-            usuario_id,
-            data_interacao,
-            tipo_interacao
-          )
-        `)
+        .select('*')
         .eq('obrigatorio', true)
         .eq('ativo', true);
 
-      if (error) throw error;
+      if (trainingsError) throw trainingsError;
 
-      // Filtrar apenas os que o usuário não completou
-      const pendingTrainings = data?.filter(training => {
-        const userInteractions = training.interacoes_treinamentos?.filter(
-          interaction => interaction.usuario_id === userId
-        );
-        return !userInteractions || userInteractions.length === 0;
-      }) || [];
+      // Para cada treinamento, verificar se o usuário já interagiu (comentou ou curtiu)
+      const pendingTrainings = [];
+      
+      for (const training of trainings || []) {
+        // Verificar se o usuário já comentou neste treinamento
+        const { data: comments } = await supabase
+          .from('treinamento_comentarios')
+          .select('id')
+          .eq('treinamento_id', training.id)
+          .eq('usuario_id', userId)
+          .limit(1);
+
+        // Verificar se o usuário já curtiu este treinamento
+        const { data: likes } = await supabase
+          .from('treinamento_curtidas')
+          .select('id')
+          .eq('treinamento_id', training.id)
+          .eq('usuario_id', userId)
+          .limit(1);
+
+        // Se não comentou nem curtiu, considera pendente
+        if ((!comments || comments.length === 0) && (!likes || likes.length === 0)) {
+          pendingTrainings.push(training);
+        }
+      }
 
       return pendingTrainings;
     } catch (error) {
