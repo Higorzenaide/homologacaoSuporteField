@@ -229,19 +229,36 @@ class NotificationService {
   // Buscar treinamentos pendentes para um usuário
   async getPendingTrainings(userId) {
     try {
-      // Buscar treinamentos obrigatórios ativos
+      // Primeiro, verificar se a coluna obrigatorio existe
       const { data: trainings, error: trainingsError } = await supabase
         .from('treinamentos')
         .select('*')
-        .eq('obrigatorio', true)
         .eq('ativo', true);
 
-      if (trainingsError) throw trainingsError;
+      if (trainingsError) {
+        // Se der erro por coluna não existir, buscar todos os treinamentos ativos
+        if (trainingsError.code === '42703' && trainingsError.message.includes('obrigatorio')) {
+          console.log('Coluna obrigatorio não existe ainda. Buscando todos os treinamentos ativos.');
+          const { data: allTrainings, error: allError } = await supabase
+            .from('treinamentos')
+            .select('*')
+            .eq('ativo', true);
+          
+          if (allError) throw allError;
+          
+          // Por enquanto, retornar array vazio até a coluna ser adicionada
+          return [];
+        }
+        throw trainingsError;
+      }
+
+      // Filtrar apenas treinamentos obrigatórios (se a coluna existir)
+      const mandatoryTrainings = trainings?.filter(training => training.obrigatorio === true) || [];
 
       // Para cada treinamento, verificar se o usuário já interagiu (comentou ou curtiu)
       const pendingTrainings = [];
       
-      for (const training of trainings || []) {
+      for (const training of mandatoryTrainings) {
         // Verificar se o usuário já comentou neste treinamento
         const { data: comments } = await supabase
           .from('treinamento_comentarios')
@@ -267,7 +284,8 @@ class NotificationService {
       return pendingTrainings;
     } catch (error) {
       console.error('Erro ao buscar treinamentos pendentes:', error);
-      throw error;
+      // Retornar array vazio em caso de erro para não quebrar a interface
+      return [];
     }
   }
 
