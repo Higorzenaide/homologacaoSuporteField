@@ -89,23 +89,22 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
       const verificacaoQuestionario = await verificarSeTemQuestionario(treinamento.id);
       console.log('🔍 Resultado verificação em tempo real:', verificacaoQuestionario);
 
+      // SEMPRE abrir o PDF em nova aba primeiro
+      console.log('🎯 Abrindo PDF em nova aba');
+      if (treinamento.arquivo_url) {
+        window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
+      }
+
+      // Se tem questionário obrigatório e não respondeu, abrir modal também
       if (verificacaoQuestionario.temQuestionario && verificacaoQuestionario.obrigatorio) {
-        // Verificar se já respondeu
         console.log('🔍 Verificando se já respondeu...');
         const verificacaoResposta = await verificarQuestionarioRespondido(treinamento.id, user.id);
         console.log('🔍 Resultado verificação resposta:', verificacaoResposta);
 
         if (!verificacaoResposta.jaRespondido) {
-          console.log('🎯 DEVE ABRIR QUESTIONÁRIO - não respondeu ainda');
+          console.log('🎯 ABRINDO QUESTIONÁRIO TAMBÉM - não respondeu ainda');
           setShowQuestionarioModal(true);
-          return;
         }
-      }
-
-      console.log('🎯 Abrindo PDF em nova aba - questionário não obrigatório ou já respondido');
-      // Abrir PDF em nova aba
-      if (treinamento.arquivo_url) {
-        window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
       }
     } catch (error) {
       console.error('❌ Erro na verificação:', error);
@@ -119,10 +118,8 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
   const handleQuestionarioComplete = (resultado) => {
     setJaRespondeuQuestionario(true);
     setShowQuestionarioModal(false);
-    // Após completar o questionário, abrir o PDF apenas em nova aba
-    if (treinamento.arquivo_url) {
-      window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
-    }
+    // PDF já foi aberto quando clicou em "Visualizar", não precisa abrir novamente
+    console.log('✅ Questionário concluído! PDF já estava aberto em nova aba.');
   };
 
   const getCategoriaColor = (categoria) => {
@@ -437,23 +434,25 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
                       </div>
                       
                       {questionarioObrigatorio && !jaRespondeuQuestionario && (
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                          <p className="text-yellow-800 text-sm">
-                            <strong>Atenção:</strong> Este questionário é obrigatório e deve ser respondido antes de acessar o treinamento.
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <p className="text-blue-800 text-sm">
+                            <strong>✨ Automático:</strong> O questionário abrirá automaticamente quando você clicar em "Visualizar Treinamento".
                           </p>
                         </div>
                       )}
 
-                      <button
-                        onClick={() => setShowQuestionarioModal(true)}
-                        className={`w-full py-3 px-4 rounded-xl font-semibold transition-colors ${
-                          jaRespondeuQuestionario
-                            ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                        }`}
-                      >
-                        {jaRespondeuQuestionario ? 'Ver Resultado' : 'Responder Questionário'}
-                      </button>
+                      {jaRespondeuQuestionario ? (
+                        <button
+                          onClick={() => setShowQuestionarioModal(true)}
+                          className="w-full py-3 px-4 rounded-xl font-semibold transition-colors bg-green-100 text-green-700 hover:bg-green-200"
+                        >
+                          👁️ Ver Resultado do Questionário
+                        </button>
+                      ) : (
+                        <div className="w-full py-3 px-4 rounded-xl font-semibold text-center bg-gray-100 text-gray-600 border-2 border-dashed border-gray-300">
+                          📝 Questionário aguardando resposta
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

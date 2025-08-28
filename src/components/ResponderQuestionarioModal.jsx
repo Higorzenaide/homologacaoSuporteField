@@ -29,6 +29,21 @@ const ResponderQuestionarioModal = ({
   const [mostrarResultado, setMostrarResultado] = useState(false);
   const [tempoInicio, setTempoInicio] = useState(Date.now());
 
+  // Helper para fazer parse seguro das opções de resposta
+  const parseOpcoes = (opcoes_resposta) => {
+    try {
+      if (typeof opcoes_resposta === 'string') {
+        return JSON.parse(opcoes_resposta);
+      } else if (Array.isArray(opcoes_resposta)) {
+        return opcoes_resposta;
+      }
+      return [];
+    } catch (e) {
+      console.error('Erro ao fazer parse das opções:', e);
+      return [];
+    }
+  };
+
   useEffect(() => {
     if (isOpen && treinamento && user) {
       carregarQuestionario();
@@ -212,7 +227,7 @@ const ResponderQuestionarioModal = ({
 
           {pergunta.tipo_resposta === 'unica' && (
             <div className="space-y-3">
-              {JSON.parse(pergunta.opcoes_resposta || '[]').map((opcao, index) => (
+              {parseOpcoes(pergunta.opcoes_resposta).map((opcao, index) => (
                 <label key={index} className="flex items-center space-x-3 cursor-pointer">
                   <input
                     type="radio"
@@ -230,7 +245,7 @@ const ResponderQuestionarioModal = ({
 
           {pergunta.tipo_resposta === 'multipla' && (
             <div className="space-y-3">
-              {JSON.parse(pergunta.opcoes_resposta || '[]').map((opcao, index) => (
+              {parseOpcoes(pergunta.opcoes_resposta).map((opcao, index) => (
                 <label key={index} className="flex items-center space-x-3 cursor-pointer">
                   <input
                     type="checkbox"
