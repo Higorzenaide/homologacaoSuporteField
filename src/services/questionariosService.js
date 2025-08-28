@@ -389,13 +389,23 @@ export const salvarResposta = async (questionarioId, perguntaId, usuarioId, resp
     console.log('🔍 Salvando resposta:', { questionarioId, perguntaId, resposta });
     
     // Buscar dados da pergunta para verificar se está correta
+    console.log('🔍 Buscando pergunta ID:', perguntaId);
     const { data: pergunta, error: perguntaError } = await supabase
       .from('perguntas_questionarios')
-      .select('perguntas_questionarios.resposta_correta, perguntas_questionarios.pontuacao, perguntas_questionarios.tipo_resposta')
+      .select('resposta_correta, pontuacao, tipo_resposta')
       .eq('id', perguntaId)
       .single();
+      
+    console.log('🔍 Resultado da busca:', { pergunta, perguntaError });
 
-    if (perguntaError) throw perguntaError;
+    if (perguntaError) {
+      console.error('❌ Erro ao buscar pergunta:', perguntaError);
+      throw perguntaError;
+    }
+
+    if (!pergunta) {
+      throw new Error(`Pergunta com ID ${perguntaId} não encontrada`);
+    }
 
     // Verificar se a resposta está correta
     let correta = false;
