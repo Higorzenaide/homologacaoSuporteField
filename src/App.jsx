@@ -3,6 +3,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import Header from './components/Header';
 import CacheMonitor from './components/CacheMonitor';
+import PerformanceMonitor from './components/PerformanceMonitor';
 import { preloadEssentialData } from './services/cachedServices';
 import Home from './pages/Home';
 import Treinamentos from './pages/Treinamentos';
@@ -101,6 +102,7 @@ function App() {
             {renderPage()}
           </main>
           <CacheMonitor />
+          <PerformanceMonitor />
         </div>
       </AuthProvider>
     </ToastProvider>

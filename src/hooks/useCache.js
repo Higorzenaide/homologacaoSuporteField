@@ -93,6 +93,7 @@ export const useCache = (key, fetcher, options = {}) => {
     // Verificar se os dados em cache ainda são válidos
     if (!force && globalCache.has(cacheKey) && !isExpired(cacheKey)) {
       const cachedData = globalCache.get(cacheKey);
+      console.log(`🎯 CACHE HIT: ${key} (${cacheKey}) - Dados servidos do cache em 0ms`);
       if (mountedRef.current) {
         setData(cachedData);
         setError(null);
@@ -115,19 +116,23 @@ export const useCache = (key, fetcher, options = {}) => {
         }
       }
 
+      const startTime = Date.now();
       const result = await fetcher(params);
-      const timestamp = Date.now();
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      
+      console.log(`🚀 CACHE MISS: ${key} (${cacheKey}) - Busca no banco: ${duration}ms`);
       
       if (mountedRef.current) {
         setData(result);
         setError(null);
         setIsLoading(false);
-        setLastFetch(timestamp);
+        setLastFetch(endTime);
       }
 
       // Salvar no cache com TTL
       globalCache.set(cacheKey, result);
-      cacheExpiry.set(cacheKey, timestamp + ttl);
+      cacheExpiry.set(cacheKey, endTime + ttl);
       
       // Notificar outros componentes que usam a mesma chave
       notifySubscribers(cacheKey, result);

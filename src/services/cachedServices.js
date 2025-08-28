@@ -1,5 +1,6 @@
 // Serviços com cache integrado para evitar consultas desnecessárias
 import { useCache } from '../hooks/useCache';
+import { supabase } from '../lib/supabase';
 import { getTreinamentos } from './treinamentosService';
 import { getNoticias } from './noticiasService';
 import { listarUsuarios } from './usuariosService';
@@ -48,10 +49,40 @@ export const useCachedNoticias = (filters = {}) => {
 // Hook para usuários com cache
 export const useCachedUsuarios = () => {
   return useCache(
-    'users',
+    'users_v3', // Versão nova para forçar invalidação
     async () => {
-      const result = await listarUsuarios();
-      return result.data || result;
+      console.log('🔍 [USUÁRIOS] Iniciando busca de usuários...');
+      const startTime = Date.now();
+      
+      try {
+        // Tentar usar função RPC primeiro (garante estrutura correta)
+        console.log('🔍 [USUÁRIOS] Tentando RPC get_usuarios_for_notifications...');
+        const { data: rpcData, error: rpcError } = await supabase
+          .rpc('get_usuarios_for_notifications');
+        
+        if (!rpcError && rpcData) {
+          const duration = Date.now() - startTime;
+          console.log(`✅ [USUÁRIOS] RPC sucesso: ${rpcData.length} usuários em ${duration}ms`);
+          return rpcData;
+        }
+        console.log('⚠️ [USUÁRIOS] RPC falhou, usando consulta direta');
+      } catch (e) {
+        console.log('⚠️ [USUÁRIOS] RPC não disponível, usando consulta direta');
+      }
+      
+      // Fallback: consulta direta para garantir que usa ultimo_acesso
+      console.log('🔍 [USUÁRIOS] Executando consulta direta na tabela usuarios...');
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('id, nome, email, ativo, tipo_usuario, ultimo_acesso, created_at')
+        .order('nome');
+      
+      if (error) throw error;
+      
+      const duration = Date.now() - startTime;
+      console.log(`✅ [USUÁRIOS] Consulta direta sucesso: ${data?.length || 0} usuários em ${duration}ms`);
+      
+      return data || [];
     },
     {
       ttl: 10 * 60 * 1000, // 10 minutos (dados de usuários mudam pouco)

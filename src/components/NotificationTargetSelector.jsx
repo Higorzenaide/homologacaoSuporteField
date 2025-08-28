@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Search, Filter, Check, X, Calendar, Activity, UserCheck } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { useCachedUsuarios } from '../services/cachedServices';
+// FORÇA BUILD UPDATE - ultimo_acesso corrigido definitivamente
 
 const NotificationTargetSelector = ({ 
   isOpen, 
@@ -9,10 +10,11 @@ const NotificationTargetSelector = ({
   title = "Selecionar Usuários para Notificação",
   subtitle = "Escolha quais usuários devem receber esta notificação"
 }) => {
-  const [users, setUsers] = useState([]);
+  // Usar cache de usuários ao invés de carregamento direto
+  const { data: users = [], isLoading: loading, error } = useCachedUsuarios();
+  
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [stats, setStats] = useState({
@@ -22,43 +24,24 @@ const NotificationTargetSelector = ({
     admins: 0
   });
 
+  // Calcular estatísticas quando users mudar
   useEffect(() => {
-    if (isOpen) {
-      loadUsers();
+    if (users && users.length > 0) {
+      const newStats = {
+        total: users.length,
+        active: users.filter(u => u.ativo).length,
+        withLogin: users.filter(u => u.ultimo_acesso).length,
+        admins: users.filter(u => u.tipo_usuario === 'admin').length
+      };
+      setStats(newStats);
     }
-  }, [isOpen]);
+  }, [users]);
 
   useEffect(() => {
     applyFilters();
   }, [users, searchTerm, activeFilter]);
 
-  const loadUsers = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select('id, nome, email, ativo, tipo_usuario, ultimo_acesso, created_at')
-        .order('nome');
 
-      if (error) throw error;
-
-      setUsers(data || []);
-      
-      // Calcular estatísticas
-      const stats = {
-        total: data?.length || 0,
-        active: data?.filter(u => u.ativo).length || 0,
-        withLogin: data?.filter(u => u.ultimo_acesso).length || 0,
-        admins: data?.filter(u => u.tipo_usuario === 'admin').length || 0
-      };
-      setStats(stats);
-
-    } catch (error) {
-      console.error('Erro ao carregar usuários:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const applyFilters = () => {
     let filtered = [...users];

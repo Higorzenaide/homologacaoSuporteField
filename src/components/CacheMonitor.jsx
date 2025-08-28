@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, Database, Clock, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
+import { Activity, Database, Clock, AlertTriangle, CheckCircle, RefreshCw, Trash2 } from 'lucide-react';
 import { clearAllCache, clearExpiredCache } from '../hooks/useCache';
+import { clearUserCacheCompletely, diagnosticCacheIssues } from '../utils/clearOldCache';
+import { runCachePerformanceTest, testUserLoadingInHeader } from '../utils/cachePerformanceTest';
 
 // Monitor de cache para desenvolvimento e debug
 const CacheMonitor = () => {
@@ -39,6 +41,63 @@ const CacheMonitor = () => {
       timestamp: new Date(),
       type: 'clear'
     }].slice(-10));
+  };
+
+  const handleClearUserCache = () => {
+    const cleared = clearUserCacheCompletely();
+    setRecentActivity(prev => [...prev, {
+      id: Date.now(),
+      action: cleared ? 'Cache de usuários limpo (fix ultimo_login)' : 'Erro ao limpar cache de usuários',
+      timestamp: new Date(),
+      type: cleared ? 'fix' : 'error'
+    }].slice(-10));
+  };
+
+  const handleDiagnostic = () => {
+    const issues = diagnosticCacheIssues();
+    setRecentActivity(prev => [...prev, {
+      id: Date.now(),
+      action: `Diagnóstico: ${issues.length} problemas encontrados`,
+      timestamp: new Date(),
+      type: issues.length > 0 ? 'warning' : 'success'
+    }].slice(-10));
+  };
+
+  const handlePerformanceTest = async () => {
+    setRecentActivity(prev => [...prev, {
+      id: Date.now(),
+      action: 'Iniciando teste de performance...',
+      timestamp: new Date(),
+      type: 'info'
+    }].slice(-10));
+
+    try {
+      await runCachePerformanceTest();
+      setRecentActivity(prev => [...prev, {
+        id: Date.now(),
+        action: 'Teste de performance concluído - veja console',
+        timestamp: new Date(),
+        type: 'success'
+      }].slice(-10));
+    } catch (error) {
+      setRecentActivity(prev => [...prev, {
+        id: Date.now(),
+        action: 'Erro no teste de performance',
+        timestamp: new Date(),
+        type: 'error'
+      }].slice(-10));
+    }
+  };
+
+  const handleHeaderTest = () => {
+    setRecentActivity(prev => [...prev, {
+      id: Date.now(),
+      action: 'Monitor de header ativo por 30s - veja console',
+      timestamp: new Date(),
+      type: 'info'
+    }].slice(-10));
+
+    testUserLoadingInHeader();
   };
 
   const handleClearExpired = () => {
@@ -140,18 +199,50 @@ const CacheMonitor = () => {
               {/* Ações */}
               <div className="space-y-3">
                 <h3 className="text-lg font-semibold text-gray-900">Ações de Cache</h3>
-                <div className="flex space-x-3">
+                <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={handleClearExpired}
-                    className="flex items-center space-x-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                    className="flex items-center space-x-2 px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm"
                   >
                     <Clock className="w-4 h-4" />
                     <span>Limpar Expirados</span>
                   </button>
                   
                   <button
+                    onClick={handleClearUserCache}
+                    className="flex items-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Fix Usuários</span>
+                  </button>
+                  
+                  <button
+                    onClick={handlePerformanceTest}
+                    className="flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Teste Performance</span>
+                  </button>
+                  
+                  <button
+                    onClick={handleHeaderTest}
+                    className="flex items-center space-x-2 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    <span>Teste Header</span>
+                  </button>
+                  
+                  <button
+                    onClick={handleDiagnostic}
+                    className="flex items-center space-x-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
+                  >
+                    <Activity className="w-4 h-4" />
+                    <span>Diagnóstico</span>
+                  </button>
+                  
+                  <button
                     onClick={handleClearAllCache}
-                    className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    className="flex items-center space-x-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
                   >
                     <AlertTriangle className="w-4 h-4" />
                     <span>Limpar Tudo</span>
@@ -175,6 +266,10 @@ const CacheMonitor = () => {
                           <div className={`w-2 h-2 rounded-full ${
                             activity.type === 'clear' ? 'bg-red-500' :
                             activity.type === 'cleanup' ? 'bg-orange-500' :
+                            activity.type === 'fix' ? 'bg-green-500' :
+                            activity.type === 'warning' ? 'bg-yellow-500' :
+                            activity.type === 'error' ? 'bg-red-600' :
+                            activity.type === 'success' ? 'bg-green-400' :
                             'bg-blue-500'
                           }`} />
                           <span className="text-sm text-gray-800">{activity.action}</span>
