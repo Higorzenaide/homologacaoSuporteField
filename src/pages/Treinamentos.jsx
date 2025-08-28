@@ -6,6 +6,7 @@ import { criarQuestionario } from '../services/questionariosService';
 import { getCategoriasAtivas } from '../services/categoriasTreinamentosService';
 import AdminModal from '../components/AdminModal';
 import TreinamentoCardAdvanced from '../components/TreinamentoCardAdvanced';
+import DraggableTreinamentoList from '../components/DraggableTreinamentoList';
 import TreinamentoModal from '../components/TreinamentoModal';
 import ResponderQuestionarioModal from '../components/ResponderQuestionarioModal';
 import GerenciadorCategorias from '../components/GerenciadorCategorias';
@@ -33,6 +34,7 @@ const Treinamentos = ({ pageParams }) => {
   const [showQuestionarioModal, setShowQuestionarioModal] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isDragModeEnabled, setIsDragModeEnabled] = useState(false);
 
   useEffect(() => {
     carregarDados();
@@ -234,6 +236,21 @@ const Treinamentos = ({ pageParams }) => {
     }
   };
 
+  const handleTreinamentosReordered = (reorderedTreinamentos) => {
+    setTreinamentos(reorderedTreinamentos);
+  };
+
+  const toggleDragMode = () => {
+    if (isDragModeEnabled) {
+      // Sair do modo de reordenação - recarregar dados para garantir ordem correta
+      setIsDragModeEnabled(false);
+      carregarDados();
+    } else {
+      // Entrar no modo de reordenação
+      setIsDragModeEnabled(true);
+    }
+  };
+
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingItem(null);
@@ -367,6 +384,28 @@ const Treinamentos = ({ pageParams }) => {
                   </svg>
                   <span className="relative z-10">Novo Treinamento</span>
                 </button>
+
+                {/* Botão para ativar/desativar modo de reordenação */}
+                <button
+                  onClick={toggleDragMode}
+                  className={`group relative overflow-hidden px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 border-2 ${
+                    isDragModeEnabled
+                      ? 'bg-orange-600 text-white border-orange-600 hover:bg-orange-700 hover:border-orange-700'
+                      : 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:border-blue-700'
+                  }`}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white to-transparent opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                  <svg className="w-6 h-6 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {isDragModeEnabled ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                    )}
+                  </svg>
+                  <span className="relative z-10">
+                    {isDragModeEnabled ? 'Finalizar Reordenação' : 'Reordenar Treinamentos'}
+                  </span>
+                </button>
               </div>
             )}
           </div>
@@ -493,23 +532,15 @@ const Treinamentos = ({ pageParams }) => {
             )}
           </div>
         ) : (
-          <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-            {treinamentosFiltrados.map((treinamento, index) => (
-              <div
-                key={treinamento.id}
-                className="animate-fade-in-up"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <TreinamentoCardAdvanced
-                  treinamento={treinamento}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onViewPDF={handleViewPDF}
-                  onOpenComments={handleOpenComments}
-                />
-              </div>
-            ))}
-          </div>
+          <DraggableTreinamentoList
+            treinamentos={treinamentosFiltrados}
+            onTreinamentosReordered={handleTreinamentosReordered}
+            isDragEnabled={isDragModeEnabled && isAdmin}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onViewPDF={handleViewPDF}
+            onOpenComments={handleOpenComments}
+          />
         )}
       </div>
 

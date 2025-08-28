@@ -37,7 +37,7 @@ const NotificationTargetSelector = ({
     try {
       const { data, error } = await supabase
         .from('usuarios')
-        .select('id, nome, email, ativo, admin, ultimo_login, created_at')
+        .select('id, nome, email, ativo, tipo_usuario, ultimo_login, created_at')
         .order('nome');
 
       if (error) throw error;
@@ -49,7 +49,7 @@ const NotificationTargetSelector = ({
         total: data?.length || 0,
         active: data?.filter(u => u.ativo).length || 0,
         withLogin: data?.filter(u => u.ultimo_login).length || 0,
-        admins: data?.filter(u => u.admin).length || 0
+        admins: data?.filter(u => u.tipo_usuario === 'admin').length || 0
       };
       setStats(stats);
 
@@ -88,10 +88,10 @@ const NotificationTargetSelector = ({
         );
         break;
       case 'admins':
-        filtered = filtered.filter(user => user.admin);
+        filtered = filtered.filter(user => user.tipo_usuario === 'admin');
         break;
       case 'non_admins':
-        filtered = filtered.filter(user => !user.admin);
+        filtered = filtered.filter(user => user.tipo_usuario !== 'admin');
         break;
       case 'never_logged':
         filtered = filtered.filter(user => !user.ultimo_login);
@@ -272,7 +272,7 @@ const NotificationTargetSelector = ({
                       <div>
                         <div className="flex items-center space-x-2">
                           <h3 className="font-semibold text-gray-900">{user.nome}</h3>
-                          {user.admin && (
+                          {user.tipo_usuario === 'admin' && (
                             <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
                               Admin
                             </span>

@@ -51,7 +51,9 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
         tags: editingItem.tags || [],
         logo_url: editingItem.logo_url || '',
         obrigatorio: editingItem.obrigatorio || false,
-        prazo_limite: editingItem.prazo_limite || ''
+        prazo_limite: editingItem.prazo_limite || '',
+        enviarNotificacao: false, // Para edição, não enviar notificação por padrão
+        tipoNotificacao: 'none'
       });
     } else {
       // Reset form para novo item
@@ -66,11 +68,14 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
         logo_url: '',
         obrigatorio: false,
         prazo_limite: '',
-        criarQuestionario: false
+        criarQuestionario: false,
+        enviarNotificacao: true,
+        tipoNotificacao: 'selected'
       });
     }
     setFile(null);
     setTagInput('');
+    setSelectedNotificationUsers([]);
     setFileValidation({ isValid: true, errors: [] });
     setQuestionarioData(null);
     setShowQuestionarioModal(false);
@@ -252,10 +257,13 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
           logo_url: '',
           obrigatorio: false,
           prazo_limite: '',
-          criarQuestionario: false
+          criarQuestionario: false,
+          enviarNotificacao: true,
+          tipoNotificacao: 'selected'
         });
         setFile(null);
         setTagInput('');
+        setSelectedNotificationUsers([]);
         setFileValidation({ isValid: true, errors: [] });
         setQuestionarioData(null);
         
@@ -785,7 +793,7 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
             </div>
             
             {/* Opções de tipo de notificação */}
-            {formData.enviarNotificacao && (
+            {formData.enviarNotificacao === true && (
               <div className="space-y-3">
                 <p className="text-sm text-gray-600">Quem deve receber a notificação?</p>
                 

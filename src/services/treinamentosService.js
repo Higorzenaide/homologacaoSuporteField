@@ -7,6 +7,7 @@ export const getTreinamentos = async () => {
       .from('treinamentos')
       .select('*')
       .eq('ativo', true)
+      .order('ordem', { ascending: true })
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -406,6 +407,51 @@ export const deleteTreinamento = async (id) => {
     return { data, error: null };
   } catch (error) {
     console.error('Erro ao deletar treinamento:', error);
+    return { data: null, error };
+  }
+};
+
+// Atualizar ordem dos treinamentos
+export const atualizarOrdemTreinamentos = async (treinamentosOrdenados) => {
+  try {
+    console.log('🔄 Atualizando ordem dos treinamentos:', treinamentosOrdenados.map(t => ({ id: t.id, ordem: t.ordem, titulo: t.titulo })));
+    
+    // Preparar array de updates
+    const updates = treinamentosOrdenados.map((treinamento, index) => ({
+      id: treinamento.id,
+      ordem: index + 1
+    }));
+
+    // Executar updates em batch usando rpc function
+    const { data, error } = await supabase.rpc('update_treinamentos_ordem', {
+      updates: updates
+    });
+
+    if (error) {
+      // Se a function não existir, fazer updates individuais
+      if (error.code === '42883') {
+        console.log('⚠️ Function update_treinamentos_ordem não encontrada, fazendo updates individuais...');
+        
+        for (const update of updates) {
+          const { error: updateError } = await supabase
+            .from('treinamentos')
+            .update({ ordem: update.ordem })
+            .eq('id', update.id);
+          
+          if (updateError) throw updateError;
+        }
+        
+        console.log('✅ Ordem atualizada com sucesso (updates individuais)');
+        return { data: updates, error: null };
+      } else {
+        throw error;
+      }
+    }
+
+    console.log('✅ Ordem atualizada com sucesso via RPC');
+    return { data, error: null };
+  } catch (error) {
+    console.error('❌ Erro ao atualizar ordem dos treinamentos:', error);
     return { data: null, error };
   }
 };
