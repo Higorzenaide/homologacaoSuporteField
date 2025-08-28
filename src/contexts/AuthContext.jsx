@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../services/authService';
+import { preloadUserCurtidas } from '../services/curtidasOptimizedService';
 
 const AuthContext = createContext({});
 
@@ -29,6 +30,9 @@ export const AuthProvider = ({ children }) => {
           if (result.success) {
             setUser(result.user);
             setIsAuthenticated(true);
+            
+            // Pré-carregar curtidas do usuário
+            preloadUserCurtidas(result.user.id).catch(console.error);
           } else {
             // Se falhou ao atualizar, fazer logout
             authService.logout();
@@ -63,6 +67,10 @@ export const AuthProvider = ({ children }) => {
       if (result.success) {
         setUser(result.user);
         setIsAuthenticated(true);
+        
+        // Pré-carregar curtidas do usuário
+        preloadUserCurtidas(result.user.id).catch(console.error);
+        
         return { success: true, error: null };
       } else {
         setUser(null);

@@ -5,6 +5,7 @@ import Header from './components/Header';
 import CacheMonitor from './components/CacheMonitor';
 import PerformanceMonitor from './components/PerformanceMonitor';
 import { preloadEssentialData } from './services/cachedServices';
+import { preloadUserCurtidas } from './services/curtidasOptimizedService';
 import Home from './pages/Home';
 import Treinamentos from './pages/Treinamentos';
 import Noticias from './pages/Noticias';

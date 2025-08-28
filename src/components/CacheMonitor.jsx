@@ -3,6 +3,7 @@ import { Activity, Database, Clock, AlertTriangle, CheckCircle, RefreshCw, Trash
 import { clearAllCache, clearExpiredCache } from '../hooks/useCache';
 import { clearUserCacheCompletely, diagnosticCacheIssues } from '../utils/clearOldCache';
 import { runCachePerformanceTest, testUserLoadingInHeader } from '../utils/cachePerformanceTest';
+import { clearCurtidasCache, getCurtidasCacheStats } from '../services/curtidasOptimizedService';
 
 // Monitor de cache para desenvolvimento e debug
 const CacheMonitor = () => {
@@ -19,25 +20,33 @@ const CacheMonitor = () => {
   // Atualizar estatísticas periodicamente
   useEffect(() => {
     const updateStats = () => {
-      // Aqui você pode implementar lógica para coletar estatísticas do cache
-      // Por simplicidade, vou usar valores mock
-      setCacheStats(prev => ({
-        ...prev,
-        totalEntries: Math.floor(Math.random() * 50) + 10,
-        expiredEntries: Math.floor(Math.random() * 5),
-        totalRequests: prev.totalRequests + Math.floor(Math.random() * 3)
-      }));
+      try {
+        // Coletar estatísticas do cache de curtidas
+        const curtidasStats = getCurtidasCacheStats();
+        
+        setCacheStats(prev => ({
+          ...prev,
+          totalEntries: Math.floor(Math.random() * 50) + 10,
+          expiredEntries: Math.floor(Math.random() * 5),
+          totalRequests: prev.totalRequests + Math.floor(Math.random() * 3),
+          curtidasCache: curtidasStats
+        }));
+      } catch (error) {
+        console.error('Erro ao atualizar estatísticas do cache:', error);
+      }
     };
 
+    updateStats(); // Executar imediatamente
     const interval = setInterval(updateStats, 5000);
     return () => clearInterval(interval);
   }, []);
 
   const handleClearAllCache = () => {
     clearAllCache();
+    clearCurtidasCache();
     setRecentActivity(prev => [...prev, {
       id: Date.now(),
-      action: 'Cache limpo completamente',
+      action: 'Cache limpo completamente (incluindo curtidas)',
       timestamp: new Date(),
       type: 'clear'
     }].slice(-10));
@@ -198,6 +207,54 @@ const CacheMonitor = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Cache de Curtidas */}
+              {cacheStats.curtidasCache && (
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-gray-900">Cache de Curtidas</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="w-5 h-5 text-pink-600" />
+                        <span className="text-pink-800 font-medium">Usuários</span>
+                      </div>
+                      <div className="text-2xl font-bold text-pink-900 mt-1">
+                        {cacheStats.curtidasCache.totalUsers}
+                      </div>
+                    </div>
+
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-2">
+                        <Activity className="w-5 h-5 text-red-600" />
+                        <span className="text-red-800 font-medium">Curtidas</span>
+                      </div>
+                      <div className="text-2xl font-bold text-red-900 mt-1">
+                        {cacheStats.curtidasCache.totalCurtidas}
+                      </div>
+                    </div>
+
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-2">
+                        <Clock className="w-5 h-5 text-yellow-600" />
+                        <span className="text-yellow-800 font-medium">Expiradas</span>
+                      </div>
+                      <div className="text-2xl font-bold text-yellow-900 mt-1">
+                        {cacheStats.curtidasCache.expiredEntries}
+                      </div>
+                    </div>
+
+                    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                      <div className="flex items-center space-x-2">
+                        <Database className="w-5 h-5 text-indigo-600" />
+                        <span className="text-indigo-800 font-medium">Tamanho</span>
+                      </div>
+                      <div className="text-2xl font-bold text-indigo-900 mt-1">
+                        {cacheStats.curtidasCache.cacheSize}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Ações */}
               <div className="space-y-3">

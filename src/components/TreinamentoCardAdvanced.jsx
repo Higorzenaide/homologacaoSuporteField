@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import CurtidasButton from "./CurtidasButton";
+import CurtidasButtonOptimized from "./CurtidasButtonOptimized";
 import EditDeleteActions from "./EditDeleteActions";
 import { contarComentarios } from "../services/comentariosService";
 import analyticsService from "../services/analyticsService";
@@ -306,7 +306,7 @@ const TreinamentoCardAdvanced = ({
         <div className="flex items-center justify-between pt-4 border-t border-gray-100">
           <div className="flex items-center space-x-3">
             {/* Botão de curtidas melhorado */}
-            <CurtidasButton treinamentoId={treinamento.id} />
+            <CurtidasButtonOptimized treinamentoId={treinamento.id} />
 
             {/* Botão de comentários melhorado */}
             <button
