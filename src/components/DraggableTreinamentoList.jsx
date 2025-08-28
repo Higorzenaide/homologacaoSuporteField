@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import TreinamentoCardAdvanced from './TreinamentoCardAdvanced';
 import { atualizarOrdemTreinamentos } from '../services/treinamentosService';
 
@@ -14,25 +13,47 @@ const DraggableTreinamentoList = ({
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
-  const handleDragEnd = async (result) => {
-    setIsDragging(false);
+  const handleDragStart = (e, index) => {
+    if (!isDragEnabled) return;
     
-    if (!result.destination || !isDragEnabled) {
-      return;
-    }
+    setIsDragging(true);
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', e.target.outerHTML);
+    e.dataTransfer.setData('text/plain', index.toString());
+  };
 
-    const sourceIndex = result.source.index;
-    const destinationIndex = result.destination.index;
+  const handleDragOver = (e, index) => {
+    if (!isDragEnabled || draggedIndex === null) return;
+    
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  };
 
-    if (sourceIndex === destinationIndex) {
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = async (e, dropIndex) => {
+    if (!isDragEnabled || draggedIndex === null) return;
+    
+    e.preventDefault();
+    setIsDragging(false);
+    setDragOverIndex(null);
+
+    if (draggedIndex === dropIndex) {
+      setDraggedIndex(null);
       return;
     }
 
     // Criar nova ordem dos treinamentos
     const reorderedTreinamentos = Array.from(treinamentos);
-    const [movedItem] = reorderedTreinamentos.splice(sourceIndex, 1);
-    reorderedTreinamentos.splice(destinationIndex, 0, movedItem);
+    const [movedItem] = reorderedTreinamentos.splice(draggedIndex, 1);
+    reorderedTreinamentos.splice(dropIndex, 0, movedItem);
 
     // Atualizar estado local imediatamente para feedback visual
     onTreinamentosReordered(reorderedTreinamentos);
@@ -57,11 +78,14 @@ const DraggableTreinamentoList = ({
       alert('Erro ao salvar nova ordem. Tente novamente.');
     } finally {
       setIsUpdating(false);
+      setDraggedIndex(null);
     }
   };
 
-  const handleDragStart = () => {
-    setIsDragging(true);
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   if (!isDragEnabled) {
@@ -111,72 +135,66 @@ const DraggableTreinamentoList = ({
         </div>
       </div>
 
-      <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
-        <Droppable droppableId="treinamentos" direction="vertical">
-          {(provided, snapshot) => (
-            <div
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              className={`grid gap-8 md:grid-cols-2 xl:grid-cols-3 transition-all duration-200 ${
-                snapshot.isDraggingOver ? 'bg-blue-50/50 rounded-xl p-4' : ''
-              }`}
-            >
-              {treinamentos.map((treinamento, index) => (
-                <Draggable 
-                  key={treinamento.id} 
-                  draggableId={treinamento.id.toString()} 
-                  index={index}
-                  isDragDisabled={isUpdating}
-                >
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      className={`transition-all duration-200 ${
-                        snapshot.isDragging 
-                          ? 'rotate-2 scale-105 shadow-2xl z-50' 
-                          : isDragging && !snapshot.isDragging
-                          ? 'scale-95 opacity-70'
-                          : 'animate-fade-in-up'
-                      }`}
-                      style={{ 
-                        ...provided.draggableProps.style,
-                        animationDelay: isDragging ? '0ms' : `${index * 100}ms`
-                      }}
-                    >
-                      {/* Handle de arraste */}
-                      <div
-                        {...provided.dragHandleProps}
-                        className={`absolute top-2 right-2 z-20 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-lg border-2 border-gray-200 flex items-center justify-center cursor-grab active:cursor-grabbing transition-all duration-200 hover:bg-blue-50 hover:border-blue-300 ${
-                          snapshot.isDragging ? 'bg-blue-100 border-blue-400' : ''
-                        }`}
-                        title="Arraste para reordenar"
-                      >
-                        <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                        </svg>
-                      </div>
+      {/* Grid com drag-and-drop nativo HTML5 */}
+      <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+        {treinamentos.map((treinamento, index) => (
+          <div
+            key={treinamento.id}
+            draggable={isDragEnabled && !isUpdating}
+            onDragStart={(e) => handleDragStart(e, index)}
+            onDragOver={(e) => handleDragOver(e, index)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, index)}
+            onDragEnd={handleDragEnd}
+            className={`relative transition-all duration-200 ${
+              draggedIndex === index
+                ? 'opacity-50 rotate-2 scale-105'
+                : dragOverIndex === index
+                ? 'scale-105 bg-blue-50/50 rounded-xl'
+                : isDragging && draggedIndex !== index
+                ? 'scale-95 opacity-70'
+                : 'animate-fade-in-up'
+            } ${
+              isDragEnabled ? 'cursor-grab active:cursor-grabbing' : ''
+            }`}
+            style={{ 
+              animationDelay: isDragging ? '0ms' : `${index * 100}ms`
+            }}
+          >
+            {/* Handle de arraste */}
+            {isDragEnabled && (
+              <div
+                className={`absolute top-2 right-2 z-20 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-lg border-2 border-gray-200 flex items-center justify-center cursor-grab active:cursor-grabbing transition-all duration-200 hover:bg-blue-50 hover:border-blue-300 ${
+                  draggedIndex === index ? 'bg-blue-100 border-blue-400' : ''
+                }`}
+                title="Arraste para reordenar"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
+              </div>
+            )}
 
-                      {/* Card do treinamento */}
-                      <div className={`relative ${snapshot.isDragging ? 'pointer-events-none' : ''}`}>
-                        <TreinamentoCardAdvanced
-                          treinamento={treinamento}
-                          onEdit={onEdit}
-                          onDelete={onDelete}
-                          onViewPDF={onViewPDF}
-                          onOpenComments={onOpenComments}
-                          isDragMode={isDragEnabled}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
+            {/* Card do treinamento */}
+            <div 
+              className={`relative ${
+                isDragEnabled && draggedIndex === index ? 'pointer-events-none' : ''
+              }`}
+              style={{ pointerEvents: isDragEnabled && draggedIndex === index ? 'none' : 'auto' }}
+            >
+              <TreinamentoCardAdvanced
+                treinamento={treinamento}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onViewPDF={onViewPDF}
+                onOpenComments={onOpenComments}
+                isDragMode={isDragEnabled}
+              />
             </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

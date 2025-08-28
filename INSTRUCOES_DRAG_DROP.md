@@ -1,20 +1,13 @@
-# Instruções para Instalar React Beautiful DnD
+# Sistema de Drag-and-Drop Nativo HTML5
 
-Para o sistema de drag-and-drop funcionar corretamente, você precisa instalar a biblioteca `react-beautiful-dnd`.
+O sistema de drag-and-drop foi implementado usando a **API nativa HTML5**, então **não requer nenhuma biblioteca externa**!
 
-## Comandos de Instalação
+## ✅ Sem Dependências Externas
 
-Execute um dos comandos abaixo no terminal:
-
-### Usando npm:
-```bash
-npm install react-beautiful-dnd
-```
-
-### Usando yarn:
-```bash
-yarn add react-beautiful-dnd
-```
+- **Não precisa instalar** react-beautiful-dnd
+- **Zero dependências** adicionais
+- **Compatível com Vercel** e outros ambientes de build
+- **Performance nativa** do navegador
 
 ## Arquivos Adicionados/Modificados
 
@@ -42,4 +35,12 @@ Certifique-se de executar os scripts SQL:
 1. `sql/adicionar_coluna_ordem_treinamentos.sql`
 2. `sql/funcao_update_ordem_treinamentos.sql`
 
-Após instalar a biblioteca e executar os scripts, o sistema estará pronto para uso!
+Após executar apenas os scripts SQL, o sistema estará **100% pronto para uso**!
+
+## ✨ Vantagens da Implementação HTML5
+
+- **🚀 Performance** - API nativa do navegador
+- **📦 Zero dependências** - Sem bibliotecas externas  
+- **🌐 Compatibilidade** - Funciona em todos os navegadores modernos
+- **⚡ Build rápido** - Sem conflitos de dependências
+- **🔧 Manutenção** - Menos complexidade no projeto
