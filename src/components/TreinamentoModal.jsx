@@ -2,19 +2,27 @@ import React, { useState, useEffect } from 'react';
 import ComentariosSection from './ComentariosSection';
 import CurtidasButton from './CurtidasButton';
 import PDFViewer from './PDFViewer';
+import ResponderQuestionarioModal from './ResponderQuestionarioModal';
 import { contarComentarios } from '../services/comentariosService';
 import { contarCurtidas } from '../services/curtidasService';
+import { verificarSeTemQuestionario, verificarQuestionarioRespondido } from '../services/questionariosService';
+import { useAuth } from '../contexts/AuthContext';
 
 const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('detalhes');
   const [showPDFViewer, setShowPDFViewer] = useState(false);
   const [totalComentarios, setTotalComentarios] = useState(0);
   const [totalCurtidas, setTotalCurtidas] = useState(0);
+  const [showQuestionarioModal, setShowQuestionarioModal] = useState(false);
+  const [temQuestionario, setTemQuestionario] = useState(false);
+  const [questionarioObrigatorio, setQuestionarioObrigatorio] = useState(false);
+  const [jaRespondeuQuestionario, setJaRespondeuQuestionario] = useState(false);
 
   // Carregar contadores quando o modal abrir
   useEffect(() => {
     const carregarContadores = async () => {
-      if (isOpen && treinamento?.id) {
+      if (isOpen && treinamento?.id && user) {
         try {
           // Carregar contador de comentários
           const comentariosResult = await contarComentarios(treinamento.id);
@@ -27,6 +35,17 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
           if (curtidasResult.count !== undefined) {
             setTotalCurtidas(curtidasResult.count);
           }
+
+          // Verificar se tem questionário
+          const { temQuestionario: hasQuestionario, obrigatorio } = await verificarSeTemQuestionario(treinamento.id);
+          setTemQuestionario(hasQuestionario);
+          setQuestionarioObrigatorio(obrigatorio);
+
+          // Se tem questionário, verificar se já respondeu
+          if (hasQuestionario) {
+            const { jaRespondido } = await verificarQuestionarioRespondido(treinamento.id, user.id);
+            setJaRespondeuQuestionario(jaRespondido);
+          }
         } catch (error) {
           console.error('Erro ao carregar contadores:', error);
           setTotalComentarios(0);
@@ -36,7 +55,7 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
     };
 
     carregarContadores();
-  }, [isOpen, treinamento?.id]);
+  }, [isOpen, treinamento?.id, user]);
 
   if (!isOpen || !treinamento) return null;
 
@@ -51,8 +70,24 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
   };
 
   const handleViewPDF = () => {
+    // Se tem questionário obrigatório e não respondeu, mostrar questionário primeiro
+    if (temQuestionario && questionarioObrigatorio && !jaRespondeuQuestionario) {
+      setShowQuestionarioModal(true);
+      return;
+    }
+    
     setShowPDFViewer(true);
     // Abrir em nova aba também
+    if (treinamento.arquivo_url) {
+      window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleQuestionarioComplete = (resultado) => {
+    setJaRespondeuQuestionario(true);
+    setShowQuestionarioModal(false);
+    // Após completar o questionário, abrir o PDF
+    setShowPDFViewer(true);
     if (treinamento.arquivo_url) {
       window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
     }
@@ -337,6 +372,59 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
                     </div>
                   </div>
                 </div>
+
+                {/* Seção do Questionário */}
+                {temQuestionario && (
+                  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+                        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900">Questionário de Avaliação</h3>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600">Status:</span>
+                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                          jaRespondeuQuestionario 
+                            ? 'bg-green-100 text-green-800' 
+                            : questionarioObrigatorio 
+                              ? 'bg-red-100 text-red-800' 
+                              : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {jaRespondeuQuestionario 
+                            ? '✓ Concluído' 
+                            : questionarioObrigatorio 
+                              ? '⚠ Obrigatório' 
+                              : '📝 Opcional'
+                          }
+                        </span>
+                      </div>
+                      
+                      {questionarioObrigatorio && !jaRespondeuQuestionario && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                          <p className="text-yellow-800 text-sm">
+                            <strong>Atenção:</strong> Este questionário é obrigatório e deve ser respondido antes de acessar o treinamento.
+                          </p>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={() => setShowQuestionarioModal(true)}
+                        className={`w-full py-3 px-4 rounded-xl font-semibold transition-colors ${
+                          jaRespondeuQuestionario
+                            ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                        }`}
+                      >
+                        {jaRespondeuQuestionario ? 'Ver Resultado' : 'Responder Questionário'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             
@@ -405,6 +493,16 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
             url: treinamento.arquivo_url,
             title: treinamento.titulo
           }}
+        />
+      )}
+
+      {/* Questionário Modal */}
+      {showQuestionarioModal && (
+        <ResponderQuestionarioModal
+          treinamento={treinamento}
+          isOpen={showQuestionarioModal}
+          onClose={() => setShowQuestionarioModal(false)}
+          onComplete={handleQuestionarioComplete}
         />
       )}
     </>

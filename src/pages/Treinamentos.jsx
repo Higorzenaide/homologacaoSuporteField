@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getTreinamentosComEstatisticas } from '../services/interacaoService';
 import { getTreinamentos, deleteTreinamento } from '../services/treinamentosService';
+import { criarQuestionario } from '../services/questionariosService';
 import { getCategoriasAtivas } from '../services/categoriasTreinamentosService';
 import AdminModal from '../components/AdminModal';
 import TreinamentoCardAdvanced from '../components/TreinamentoCardAdvanced';
 import TreinamentoModal from '../components/TreinamentoModal';
 import GerenciadorCategorias from '../components/GerenciadorCategorias';
 import GerenciadorCategoriasFeedback from '../components/GerenciadorCategoriasFeedback';
+import AnalyticsQuestionarios from '../components/AnalyticsQuestionarios';
 import AnimatedBackground from '../components/AnimatedBackground';
 import { FullPageLoader, InlineLoader } from '../components/LoadingSpinner';
 import PDFViewer from '../components/PDFViewer';
@@ -28,6 +30,7 @@ const Treinamentos = () => {
   const [selectedTreinamento, setSelectedTreinamento] = useState(null);
   const [showGerenciadorCategorias, setShowGerenciadorCategorias] = useState(false);
   const [showGerenciadorCategoriasFeedback, setShowGerenciadorCategoriasFeedback] = useState(false);
+  const [showAnalyticsQuestionarios, setShowAnalyticsQuestionarios] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -99,16 +102,34 @@ const Treinamentos = () => {
     setShowTreinamentoModal(true);
   };
 
-  const handleSave = async (formData, file) => {
+  const handleSave = async (formData, file, questionarioData = null) => {
     try {
       const { createTreinamento, editTreinamento } = await import('../services/treinamentosService');
       
+      let treinamentoResult;
+      
       if (editingItem) {
-        await editTreinamento(editingItem.id, formData, file);
+        treinamentoResult = await editTreinamento(editingItem.id, formData, file);
         setSuccess('Treinamento editado com sucesso!');
       } else {
-        await createTreinamento(formData, file);
+        treinamentoResult = await createTreinamento(formData, file);
         setSuccess('Treinamento criado com sucesso!');
+      }
+      
+      // Se foi criado/editado um questionário, criar ele agora
+      if (questionarioData && treinamentoResult.data) {
+        try {
+          const questionarioResult = await criarQuestionario(treinamentoResult.data.id, questionarioData);
+          if (questionarioResult.error) {
+            console.error('Erro ao criar questionário:', questionarioResult.error);
+            setError('Treinamento salvo, mas houve erro ao criar o questionário');
+          } else {
+            setSuccess(prev => prev + ' Questionário criado com sucesso!');
+          }
+        } catch (questionarioError) {
+          console.error('Erro ao criar questionário:', questionarioError);
+          setError('Treinamento salvo, mas houve erro ao criar o questionário');
+        }
       }
       
       // Fechar modal e limpar estado de edição
@@ -251,6 +272,17 @@ const Treinamentos = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                   </svg>
                   <span className="relative z-10">Categorias Feedback</span>
+                </button>
+
+                <button
+                  onClick={() => setShowAnalyticsQuestionarios(true)}
+                  className="group relative bg-gradient-to-r from-indigo-500 to-indigo-600 text-white px-6 py-4 rounded-2xl hover:from-indigo-600 hover:to-indigo-700 transition-all duration-300 font-semibold flex items-center space-x-3 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white to-transparent opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                  <svg className="w-6 h-6 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  <span className="relative z-10">Analytics Questionários</span>
                 </button>
                 
                 <button
@@ -456,6 +488,13 @@ const Treinamentos = () => {
           onClose={() => {
             setShowGerenciadorCategoriasFeedback(false);
           }}
+        />
+      )}
+
+      {showAnalyticsQuestionarios && (
+        <AnalyticsQuestionarios
+          isOpen={showAnalyticsQuestionarios}
+          onClose={() => setShowAnalyticsQuestionarios(false)}
         />
       )}
 
