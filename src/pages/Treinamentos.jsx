@@ -17,7 +17,7 @@ import { FullPageLoader, InlineLoader } from '../components/LoadingSpinner';
 import ConfirmModal from '../components/ConfirmModal';
 
 const Treinamentos = () => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const [treinamentos, setTreinamentos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
