@@ -378,6 +378,41 @@ export const iniciarSessaoQuestionario = async (questionarioId, usuarioId) => {
  */
 export const salvarResposta = async (questionarioId, perguntaId, usuarioId, resposta, tempoResposta = null) => {
   try {
+    console.log('🔍 Salvando resposta:', { questionarioId, perguntaId, resposta });
+    
+    // Buscar dados da pergunta para verificar se está correta
+    const { data: pergunta, error: perguntaError } = await supabase
+      .from('perguntas_questionarios')
+      .select('resposta_correta, pontuacao, tipo_resposta')
+      .eq('id', perguntaId)
+      .single();
+
+    if (perguntaError) throw perguntaError;
+
+    // Verificar se a resposta está correta
+    let correta = false;
+    let respostaStr = typeof resposta === 'string' ? resposta : JSON.stringify(resposta);
+    let respostaCorretaStr = typeof pergunta.resposta_correta === 'string' ? pergunta.resposta_correta : JSON.stringify(pergunta.resposta_correta);
+    
+    if (pergunta.tipo_resposta === 'multipla') {
+      // Para múltipla escolha, comparar arrays
+      const respostaArray = Array.isArray(resposta) ? resposta.sort() : [resposta].sort();
+      const corretaArray = Array.isArray(pergunta.resposta_correta) ? pergunta.resposta_correta.sort() : [pergunta.resposta_correta].sort();
+      correta = JSON.stringify(respostaArray) === JSON.stringify(corretaArray);
+    } else {
+      // Para outras, comparar strings
+      correta = respostaStr.toLowerCase().trim() === respostaCorretaStr.toLowerCase().trim();
+    }
+
+    const pontosObtidos = correta ? (pergunta.pontuacao || 1) : 0;
+    
+    console.log('🔍 Avaliação:', { 
+      resposta: respostaStr, 
+      respostaCorreta: respostaCorretaStr, 
+      correta, 
+      pontosObtidos 
+    });
+
     const { data, error } = await supabase
       .from('respostas_questionarios')
       .upsert([{
@@ -385,6 +420,8 @@ export const salvarResposta = async (questionarioId, perguntaId, usuarioId, resp
         pergunta_id: perguntaId,
         usuario_id: usuarioId,
         resposta: resposta,
+        correta: correta,
+        pontos_obtidos: pontosObtidos,
         tempo_resposta: tempoResposta
       }], {
         onConflict: 'questionario_id,pergunta_id,usuario_id'
@@ -393,9 +430,11 @@ export const salvarResposta = async (questionarioId, perguntaId, usuarioId, resp
       .single();
 
     if (error) throw error;
+    
+    console.log('✅ Resposta salva:', data);
     return { data, error: null };
   } catch (error) {
-    console.error('Erro ao salvar resposta:', error);
+    console.error('❌ Erro ao salvar resposta:', error);
     return { data: null, error };
   }
 };
