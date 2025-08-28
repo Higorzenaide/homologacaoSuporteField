@@ -3,8 +3,8 @@ import { useCache } from '../hooks/useCache';
 import { supabase } from '../lib/supabase';
 import { getTreinamentos } from './treinamentosService';
 import { getNoticias } from './noticiasService';
-import { listarUsuarios } from './usuariosService';
-import { listarCategorias as listarCategoriasFeedback } from './categoriasFeedbackService';
+import { usuariosService } from './usuariosService';
+import { categoriasFeedbackService } from './categoriasFeedbackService';
 import { getCategoriasAtivas as getCategoriasTreinamentos } from './categoriasTreinamentosService';
 import { getCategoriasNoticias } from './noticiasService';
 import { obterEstatisticas } from './estatisticasService';
@@ -95,7 +95,7 @@ export const useCachedCategoriasFeedback = () => {
   return useCache(
     'categories_feedback',
     async () => {
-      const result = await listarCategoriasFeedback();
+      const result = await categoriasFeedbackService.listarCategorias();
       return result.data || result;
     },
     {
