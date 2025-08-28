@@ -110,19 +110,34 @@ const Treinamentos = () => {
         window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
       }
 
-      // Se tem questionário obrigatório e não respondeu, abrir modal também
+      // Se tem questionário obrigatório, verificar se precisa responder
       if (verificacaoQuestionario.temQuestionario && verificacaoQuestionario.obrigatorio) {
         console.log('🔍 Verificando se já respondeu...');
         const verificacaoResposta = await verificarQuestionarioRespondido(treinamento.id, user.id);
         console.log('🔍 Resultado verificação resposta:', verificacaoResposta);
 
-        if (!verificacaoResposta.jaRespondido) {
-          console.log('🎯 ABRINDO QUESTIONÁRIO DO CARD - não respondeu ainda');
+        const jaRespondido = verificacaoResposta.jaRespondido;
+        const percentualAcerto = verificacaoResposta.data?.percentual_acerto || 0;
+        
+        console.log('🔍 Já respondido:', jaRespondido);
+        console.log('🔍 Percentual de acerto:', percentualAcerto);
+
+        // Abrir modal se:
+        // 1. Nunca respondeu (!jaRespondido)
+        // 2. Já respondeu mas tirou nota < 90% (jaRespondido && percentualAcerto < 90)
+        const deveAbrirModal = !jaRespondido || (jaRespondido && percentualAcerto < 90);
+
+        if (deveAbrirModal) {
+          if (!jaRespondido) {
+            console.log('🎯 ABRINDO QUESTIONÁRIO - primeira vez');
+          } else {
+            console.log('🎯 ABRINDO QUESTIONÁRIO - refazer (nota < 90%)');
+          }
           // Definir o treinamento e abrir modal
           setSelectedTreinamento(treinamento);
           setShowQuestionarioModal(true);
         } else {
-          console.log('ℹ️ Usuário já respondeu o questionário');
+          console.log('ℹ️ Usuário já passou no questionário (≥ 90%)');
         }
       }
     } catch (error) {
