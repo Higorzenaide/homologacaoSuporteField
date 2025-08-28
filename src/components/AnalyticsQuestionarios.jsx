@@ -51,19 +51,33 @@ const AnalyticsQuestionarios = ({ isOpen, onClose }) => {
 
   const carregarDadosQuestionario = async (questionarioId) => {
     try {
+      console.log('🔍 Carregando dados do questionário:', questionarioId);
+      
       const [performanceResult, relatorioResult] = await Promise.all([
         buscarPerformanceUsuarios(questionarioId),
         buscarRelatorioPorPergunta(questionarioId)
       ]);
 
-      if (performanceResult.error) throw performanceResult.error;
-      if (relatorioResult.error) throw relatorioResult.error;
+      console.log('🔍 Resultados:', { performanceResult, relatorioResult });
+
+      // Verificar se houve erro, mas não interromper se for erro de tabela não encontrada
+      if (performanceResult.error && performanceResult.error.code !== '42P01') {
+        console.error('❌ Erro na performance:', performanceResult.error);
+        throw performanceResult.error;
+      }
+      
+      if (relatorioResult.error && relatorioResult.error.code !== '42P01') {
+        console.error('❌ Erro no relatório:', relatorioResult.error);
+        throw relatorioResult.error;
+      }
 
       setPerformanceUsuarios(performanceResult.data || []);
       setRelatorioPorPergunta(relatorioResult.data || []);
+      
+      console.log('✅ Dados carregados com sucesso');
     } catch (error) {
-      console.error('Erro ao carregar dados do questionário:', error);
-      setError('Erro ao carregar dados detalhados');
+      console.error('❌ Erro ao carregar dados do questionário:', error);
+      setError('Erro ao carregar dados detalhados: ' + (error.message || error));
     }
   };
 

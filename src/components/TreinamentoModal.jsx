@@ -72,25 +72,47 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
     });
   };
 
-  const handleViewPDF = () => {
-    console.log('🔍 handleViewPDF - Estado atual:', {
-      temQuestionario,
-      questionarioObrigatorio,
-      jaRespondeuQuestionario,
-      arquivo_url: treinamento.arquivo_url
-    });
+  const handleViewPDF = async () => {
+    console.log('🔍 handleViewPDF - Verificação em tempo real');
 
-    // Se tem questionário obrigatório e não respondeu, mostrar questionário primeiro
-    if (temQuestionario && questionarioObrigatorio && !jaRespondeuQuestionario) {
-      console.log('🎯 Abrindo modal do questionário');
-      setShowQuestionarioModal(true);
+    if (!treinamento?.id || !user?.id) {
+      console.log('❌ Dados insuficientes para verificação');
+      if (treinamento.arquivo_url) {
+        window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
+      }
       return;
     }
-    
-    console.log('🎯 Abrindo PDF em nova aba');
-    // Apenas abrir em nova aba, sem visualizador interno
-    if (treinamento.arquivo_url) {
-      window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
+
+    try {
+      // Verificar em tempo real se tem questionário
+      console.log('🔍 Verificando questionário em tempo real...');
+      const verificacaoQuestionario = await verificarSeTemQuestionario(treinamento.id);
+      console.log('🔍 Resultado verificação em tempo real:', verificacaoQuestionario);
+
+      if (verificacaoQuestionario.temQuestionario && verificacaoQuestionario.obrigatorio) {
+        // Verificar se já respondeu
+        console.log('🔍 Verificando se já respondeu...');
+        const verificacaoResposta = await verificarQuestionarioRespondido(treinamento.id, user.id);
+        console.log('🔍 Resultado verificação resposta:', verificacaoResposta);
+
+        if (!verificacaoResposta.jaRespondido) {
+          console.log('🎯 DEVE ABRIR QUESTIONÁRIO - não respondeu ainda');
+          setShowQuestionarioModal(true);
+          return;
+        }
+      }
+
+      console.log('🎯 Abrindo PDF em nova aba - questionário não obrigatório ou já respondido');
+      // Abrir PDF em nova aba
+      if (treinamento.arquivo_url) {
+        window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
+      }
+    } catch (error) {
+      console.error('❌ Erro na verificação:', error);
+      // Em caso de erro, abrir o PDF mesmo assim
+      if (treinamento.arquivo_url) {
+        window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
+      }
     }
   };
 

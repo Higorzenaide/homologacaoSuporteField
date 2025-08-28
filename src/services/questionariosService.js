@@ -420,16 +420,43 @@ export const finalizarQuestionario = async (questionarioId, usuarioId) => {
  */
 export const buscarEstatisticasQuestionario = async (questionarioId) => {
   try {
-    const { data, error } = await supabase
+    console.log('🔍 buscarEstatisticasQuestionario - questionarioId:', questionarioId);
+    
+    let { data, error } = await supabase
       .from('relatorio_questionarios')
       .select('*')
       .eq('questionario_id', questionarioId)
       .single();
 
-    if (error && error.code !== 'PGRST116') throw error;
+    // Se a view não existir, criar dados básicos
+    if (error && error.code === '42P01') { // Tabela não existe
+      console.log('ℹ️ View relatório não existe, criando dados básicos');
+      
+      const { data: questionario, error: questionarioError } = await supabase
+        .from('questionarios_treinamentos')
+        .select('*')
+        .eq('id', questionarioId)
+        .single();
+
+      if (questionarioError) throw questionarioError;
+
+      data = {
+        questionario_id: questionario.id,
+        questionario_titulo: questionario.titulo,
+        total_usuarios_responderam: 0,
+        usuarios_concluiram: 0,
+        media_acertos: 0,
+        taxa_conclusao: 0,
+        data_criacao: questionario.created_at
+      };
+    } else if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+
+    console.log('✅ Estatísticas encontradas:', data);
     return { data: data || null, error: null };
   } catch (error) {
-    console.error('Erro ao buscar estatísticas:', error);
+    console.error('❌ Erro ao buscar estatísticas:', error);
     return { data: null, error };
   }
 };
@@ -524,13 +551,30 @@ export const buscarRelatorioPorPergunta = async (questionarioId) => {
         // Análise de respostas por opção (para múltipla escolha)
         const analiseOpcoes = {};
         if (pergunta.tipo_resposta !== 'texto' && pergunta.opcoes_resposta) {
-          const opcoes = JSON.parse(pergunta.opcoes_resposta);
-          opcoes.forEach(opcao => {
-            analiseOpcoes[opcao] = respostas.filter(r => {
-              const resposta = typeof r.resposta === 'string' ? r.resposta : JSON.stringify(r.resposta);
-              return resposta.includes(opcao);
-            }).length;
-          });
+          try {
+            let opcoes = [];
+            
+            // Tentar fazer parse das opções
+            if (typeof pergunta.opcoes_resposta === 'string') {
+              opcoes = JSON.parse(pergunta.opcoes_resposta);
+            } else if (Array.isArray(pergunta.opcoes_resposta)) {
+              opcoes = pergunta.opcoes_resposta;
+            }
+            
+            opcoes.forEach(opcao => {
+              analiseOpcoes[opcao] = respostas.filter(r => {
+                try {
+                  const resposta = typeof r.resposta === 'string' ? r.resposta : JSON.stringify(r.resposta);
+                  return resposta.includes(opcao);
+                } catch (e) {
+                  return false;
+                }
+              }).length;
+            });
+          } catch (e) {
+            console.log('⚠️ Erro ao analisar opções da pergunta:', e);
+            // Se der erro no parse, continuar sem análise de opções
+          }
         }
 
         return {
