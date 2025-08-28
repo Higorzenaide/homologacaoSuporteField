@@ -87,7 +87,11 @@ const ResponderQuestionarioModal = ({
         setJaRespondido(false);
         setResultado(null);
         setMostrarResultado(false);
+        setPerguntaAtual(0);
+        setRespostas({});
+        setSessaoId(null);
         setModoRefazer(false); // Resetar o flag
+        console.log('🔄 Estados resetados para novo questionário');
       }
 
       // Buscar questionário do treinamento
@@ -523,9 +527,13 @@ const ResponderQuestionarioModal = ({
             </div>
           )}
 
-          {!loading && !error && (mostrarResultado || jaRespondido) && renderResultado()}
+          {!loading && !error && (mostrarResultado || jaRespondido) && (
+            console.log('🔍 Renderizando RESULTADO - mostrarResultado:', mostrarResultado, 'jaRespondido:', jaRespondido),
+            renderResultado()
+          )}
 
           {!loading && !error && !mostrarResultado && questionario && !jaRespondido && (
+            console.log('🔍 Renderizando QUESTIONÁRIO - mostrarResultado:', mostrarResultado, 'jaRespondido:', jaRespondido, 'questionario:', !!questionario),
             <>
               {/* Aviso de questionário obrigatório */}
               {questionario.obrigatorio && (
