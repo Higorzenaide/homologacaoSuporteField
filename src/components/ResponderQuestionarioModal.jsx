@@ -29,6 +29,7 @@ const ResponderQuestionarioModal = ({
   const [resultado, setResultado] = useState(null);
   const [mostrarResultado, setMostrarResultado] = useState(false);
   const [tempoInicio, setTempoInicio] = useState(Date.now());
+  const [modoRefazer, setModoRefazer] = useState(false);
 
   // Helper para fazer parse seguro das opções de resposta
   const parseOpcoes = (opcoes_resposta) => {
@@ -66,18 +67,27 @@ const ResponderQuestionarioModal = ({
     setError('');
 
     try {
-      // Verificar se já respondeu
-      const { jaRespondido: respondido, data: dadosResposta } = await verificarQuestionarioRespondido(
-        treinamento.id, 
-        user.id
-      );
+      // Verificar se já respondeu (mas só se não estiver no modo refazer)
+      if (!modoRefazer) {
+        const { jaRespondido: respondido, data: dadosResposta } = await verificarQuestionarioRespondido(
+          treinamento.id, 
+          user.id
+        );
 
-      if (respondido) {
-        setJaRespondido(true);
-        setResultado(dadosResposta);
-        setMostrarResultado(true);
-        setLoading(false);
-        return;
+        if (respondido) {
+          setJaRespondido(true);
+          setResultado(dadosResposta);
+          setMostrarResultado(true);
+          setLoading(false);
+          return;
+        }
+      } else {
+        // Se está refazendo, resetar states
+        console.log('🔄 Modo refazer ativado - iniciando novo questionário');
+        setJaRespondido(false);
+        setResultado(null);
+        setMostrarResultado(false);
+        setModoRefazer(false); // Resetar o flag
       }
 
       // Buscar questionário do treinamento
@@ -410,12 +420,14 @@ const ResponderQuestionarioModal = ({
             <button
               onClick={() => {
                 // Reset para refazer
+                console.log('🔄 Iniciando refazer questionário');
                 setMostrarResultado(false);
                 setJaRespondido(false);
                 setPerguntaAtual(0);
                 setRespostas({});
                 setResultado(null);
                 setTempoInicio(Date.now());
+                setModoRefazer(true); // Ativar modo refazer
                 // Carregar novamente para nova tentativa
                 carregarQuestionario();
               }}
