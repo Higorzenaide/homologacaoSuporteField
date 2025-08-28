@@ -7,7 +7,8 @@ import {
   verificarQuestionarioRespondido, 
   iniciarSessaoQuestionario, 
   salvarResposta, 
-  finalizarQuestionario 
+  finalizarQuestionario,
+  recusarQuestionario
 } from '../services/questionariosService';
 
 const ResponderQuestionarioModal = ({ 
@@ -167,6 +168,32 @@ const ResponderQuestionarioModal = ({
     }
   };
 
+  const handleRecusarQuestionario = async () => {
+    const confirmar = window.confirm(
+      'Tem certeza que não deseja responder o questionário? Esta ação será registrada.'
+    );
+    
+    if (!confirmar) return;
+
+    setSubmetendo(true);
+    try {
+      const { data, error } = await recusarQuestionario(questionario.id, user.id);
+      
+      if (error) throw error;
+
+      console.log('✅ Recusa registrada');
+      if (onComplete) {
+        onComplete({ recusou: true });
+      }
+      onClose();
+    } catch (error) {
+      console.error('Erro ao registrar recusa:', error);
+      setError('Erro ao registrar recusa. Tente novamente.');
+    } finally {
+      setSubmetendo(false);
+    }
+  };
+
   const renderPergunta = () => {
     const pergunta = questionario.perguntas_questionarios[perguntaAtual];
     const respostaAtual = respostas[pergunta.id] || '';
@@ -185,7 +212,7 @@ const ResponderQuestionarioModal = ({
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-red-600 h-2 rounded-full transition-all duration-300"
               style={{
                 width: `${((perguntaAtual + 1) / questionario.perguntas_questionarios.length) * 100}%`
               }}
@@ -194,9 +221,9 @@ const ResponderQuestionarioModal = ({
         </div>
 
         {/* Pergunta */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
           <div className="flex items-start space-x-3 mb-4">
-            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center flex-shrink-0">
               <span className="text-white font-bold text-sm">{perguntaAtual + 1}</span>
             </div>
             <div className="flex-1">
@@ -220,7 +247,7 @@ const ResponderQuestionarioModal = ({
               value={respostaAtual}
               onChange={(e) => handleRespostaChange(pergunta.id, e.target.value)}
               placeholder="Digite sua resposta..."
-              className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+              className="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
               rows={5}
             />
           )}
@@ -235,7 +262,7 @@ const ResponderQuestionarioModal = ({
                     value={opcao}
                     checked={respostaAtual === opcao}
                     onChange={(e) => handleRespostaChange(pergunta.id, e.target.value)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                    className="w-4 h-4 text-red-600 border-gray-300 focus:ring-red-500"
                   />
                   <span className="text-gray-900">{opcao}</span>
                 </label>
@@ -259,7 +286,7 @@ const ResponderQuestionarioModal = ({
                         handleRespostaChange(pergunta.id, respostasAtuais.filter(r => r !== opcao));
                       }
                     }}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
                   />
                   <span className="text-gray-900">{opcao}</span>
                 </label>
@@ -280,7 +307,7 @@ const ResponderQuestionarioModal = ({
           <button
             onClick={proximaPergunta}
             disabled={submetendo}
-            className="px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+            className="px-8 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
           >
             {submetendo && (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -299,36 +326,42 @@ const ResponderQuestionarioModal = ({
 
   const renderResultado = () => {
     const percentual = resultado?.percentual_acerto || 0;
-    const acertou = percentual >= 70; // 70% como nota mínima
+    const aprovado = percentual >= 90; // 90% como nota mínima
+    const tentativa = resultado?.tentativa || 1;
 
     return (
       <div className="text-center space-y-6">
         {/* Ícone de resultado */}
         <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center ${
-          acertou ? 'bg-green-100' : 'bg-yellow-100'
+          aprovado ? 'bg-green-100' : 'bg-red-100'
         }`}>
-          {acertou ? (
+          {aprovado ? (
             <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           ) : (
-            <svg className="w-10 h-10 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           )}
         </div>
 
         {/* Título */}
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            {jaRespondido ? 'Questionário já Respondido' : 'Questionário Concluído!'}
+          <h2 className={`text-2xl font-bold mb-2 ${aprovado ? 'text-green-700' : 'text-red-700'}`}>
+            {aprovado ? '🎉 APROVADO!' : '❌ REPROVADO'}
           </h2>
           <p className="text-gray-600">
-            {acertou 
-              ? 'Parabéns! Você demonstrou bom conhecimento sobre o treinamento.'
-              : 'Você completou o questionário. Recomendamos revisar o material do treinamento.'
+            {aprovado 
+              ? `Parabéns! Você atingiu ${percentual.toFixed(1)}% de acertos e foi aprovado no questionário.`
+              : `Você obteve ${percentual.toFixed(1)}% de acertos. É necessário 90% ou mais para aprovação.`
             }
           </p>
+          {tentativa > 1 && (
+            <p className="text-sm text-gray-500 mt-2">
+              Tentativa #{tentativa}
+            </p>
+          )}
         </div>
 
         {/* Estatísticas */}
@@ -353,21 +386,45 @@ const ResponderQuestionarioModal = ({
               <div className="text-sm text-gray-600">Aproveitamento</div>
             </div>
             <div className="text-center">
-              <div className={`text-2xl font-bold ${acertou ? 'text-green-600' : 'text-yellow-600'}`}>
-                {acertou ? 'APROVADO' : 'REVISAR'}
+              <div className={`text-2xl font-bold ${aprovado ? 'text-green-600' : 'text-red-600'}`}>
+                {aprovado ? 'APROVADO' : 'REPROVADO'}
               </div>
               <div className="text-sm text-gray-600">Status</div>
             </div>
           </div>
         </div>
 
-        {/* Botão para fechar */}
-        <button
-          onClick={onClose}
-          className="px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
-        >
-          Continuar para o Treinamento
-        </button>
+        {/* Botões de ação */}
+        <div className="flex flex-col space-y-3">
+          {!aprovado && (
+            <button
+              onClick={() => {
+                // Reset para refazer
+                setMostrarResultado(false);
+                setJaRespondido(false);
+                setPerguntaAtual(0);
+                setRespostas({});
+                setResultado(null);
+                setTempoInicio(Date.now());
+                // Carregar novamente para nova tentativa
+                carregarQuestionario();
+              }}
+              className="px-8 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition-colors font-semibold"
+            >
+              🔄 Refazer Questionário
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className={`px-8 py-3 rounded-xl transition-colors font-semibold ${
+              aprovado 
+                ? 'bg-green-600 text-white hover:bg-green-700' 
+                : 'bg-gray-600 text-white hover:bg-gray-700'
+            }`}
+          >
+            {aprovado ? '✅ Continuar para o Treinamento' : '📖 Acessar Treinamento Mesmo Assim'}
+          </button>
+        </div>
       </div>
     );
   };
@@ -380,27 +437,40 @@ const ResponderQuestionarioModal = ({
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[95vh] overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
+        <div className="bg-gradient-to-r from-red-500 to-red-600 p-6 text-white">
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold">
                 {jaRespondido ? 'Resultado do Questionário' : 'Questionário Obrigatório'}
               </h1>
-              <p className="text-blue-100 mt-1">
+              <p className="text-red-100 mt-1">
                 {treinamento?.titulo}
               </p>
             </div>
-            {/* Não permitir fechar se não for obrigatório ou não tiver respondido */}
-            {(jaRespondido || mostrarResultado) && (
-              <button
-                onClick={onClose}
-                className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
+            <div className="flex items-center space-x-3">
+              {/* Botão "Não quero responder" - só aparece se não respondeu ainda */}
+              {!jaRespondido && !mostrarResultado && questionario && (
+                <button
+                  onClick={handleRecusarQuestionario}
+                  disabled={submetendo}
+                  className="px-4 py-2 bg-red-500/20 text-red-100 border border-red-400 rounded-xl hover:bg-red-500/30 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submetendo ? 'Registrando...' : 'Não quero responder'}
+                </button>
+              )}
+              
+              {/* Botão fechar - só aparece se já respondeu */}
+              {(jaRespondido || mostrarResultado) && (
+                <button
+                  onClick={onClose}
+                  className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center hover:bg-white/30 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

@@ -293,24 +293,63 @@ export const verificarQuestionarioRespondido = async (treinamentoId, usuarioId) 
 };
 
 /**
+ * Registrar recusa em responder questionário
+ */
+export const recusarQuestionario = async (questionarioId, usuarioId) => {
+  try {
+    console.log('🔍 Registrando recusa do questionário:', { questionarioId, usuarioId });
+    
+    const { data, error } = await supabase
+      .from('sessoes_questionarios')
+      .insert([{
+        questionario_id: questionarioId,
+        usuario_id: usuarioId,
+        status: 'recusado',
+        recusou_responder: true,
+        tentativa: 1
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    console.log('✅ Recusa registrada com sucesso:', data);
+    return { data, error: null };
+  } catch (error) {
+    console.error('❌ Erro ao registrar recusa:', error);
+    return { data: null, error };
+  }
+};
+
+/**
  * Iniciar sessão de questionário
  */
 export const iniciarSessaoQuestionario = async (questionarioId, usuarioId) => {
   try {
-    // Verificar se já existe uma sessão ativa
-    const { data: sessaoExistente } = await supabase
+    console.log('🔍 Iniciando sessão questionário:', { questionarioId, usuarioId });
+    
+    // Buscar todas as sessões para contar tentativas
+    const { data: sessoesAnteriores } = await supabase
       .from('sessoes_questionarios')
       .select('*')
       .eq('questionario_id', questionarioId)
       .eq('usuario_id', usuarioId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+      .order('created_at', { ascending: false });
 
-    // Se já existe uma sessão não concluída, retornar ela
-    if (sessaoExistente && sessaoExistente.status !== 'concluido') {
-      return { data: sessaoExistente, error: null };
+    // Verificar se já existe uma sessão ativa (não concluída)
+    const sessaoAtiva = sessoesAnteriores?.find(s => s.status === 'iniciado');
+    if (sessaoAtiva) {
+      console.log('🔍 Sessão ativa encontrada:', sessaoAtiva);
+      return { data: sessaoAtiva, error: null };
     }
+
+    // Contar tentativas (incluir só tentativas concluídas ou reprovadas)
+    const tentativasAnteriores = sessoesAnteriores?.filter(s => 
+      s.status === 'concluido' && (s.percentual_acerto < 90 || s.percentual_acerto >= 90)
+    ).length || 0;
+
+    const novaTentativa = tentativasAnteriores + 1;
+    console.log('🔍 Nova tentativa:', novaTentativa);
 
     // Criar nova sessão
     const { data, error } = await supabase
@@ -319,15 +358,17 @@ export const iniciarSessaoQuestionario = async (questionarioId, usuarioId) => {
         questionario_id: questionarioId,
         usuario_id: usuarioId,
         status: 'iniciado',
-        tentativa: (sessaoExistente?.tentativa || 0) + 1
+        tentativa: novaTentativa
       }])
       .select()
       .single();
 
     if (error) throw error;
+    
+    console.log('✅ Nova sessão criada:', data);
     return { data, error: null };
   } catch (error) {
-    console.error('Erro ao iniciar sessão:', error);
+    console.error('❌ Erro ao iniciar sessão:', error);
     return { data: null, error };
   }
 };
@@ -766,6 +807,7 @@ export default {
   
   // Respostas dos usuários
   verificarQuestionarioRespondido,
+  recusarQuestionario,
   iniciarSessaoQuestionario,
   salvarResposta,
   buscarRespostasUsuario,

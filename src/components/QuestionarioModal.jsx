@@ -243,13 +243,13 @@ const QuestionarioModal = ({
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[95vh] shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white flex-shrink-0 rounded-t-2xl">
+        <div className="bg-gradient-to-r from-red-500 to-red-600 p-6 text-white flex-shrink-0 rounded-t-2xl">
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-2xl font-bold">
                 {questionarioExistente ? 'Editar Questionário' : 'Criar Questionário'}
               </h2>
-              <p className="text-blue-100 mt-1">
+              <p className="text-red-100 mt-1">
                 Configure as perguntas que os usuários devem responder
               </p>
             </div>
@@ -614,12 +614,12 @@ const QuestionarioModal = ({
         {/* Footer */}
         <div className="border-t border-gray-200 p-6 bg-gray-50 flex-shrink-0 rounded-b-2xl">
           {questionario.perguntas.length > 0 && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-center space-x-2">
-                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <p className="text-blue-800 text-sm font-medium">
+                <p className="text-red-800 text-sm font-medium">
                   ⚠️ Não esqueça de clicar em "Salvar Questionário" antes de fechar esta janela!
                 </p>
               </div>
