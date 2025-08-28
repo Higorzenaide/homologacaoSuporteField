@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import Header from './components/Header';
+import CacheMonitor from './components/CacheMonitor';
+import { preloadEssentialData } from './services/cachedServices';
 import Home from './pages/Home';
 import Treinamentos from './pages/Treinamentos';
 import Noticias from './pages/Noticias';
@@ -57,6 +59,9 @@ function App() {
 
     // Disponibilizar a função de navegação globalmente para as notificações
     window.navigateToPage = navigateToPage;
+
+    // Pré-carregar dados essenciais
+    preloadEssentialData();
   }, []);
 
   // Limpar parâmetros quando mudar de página
@@ -95,6 +100,7 @@ function App() {
           <main>
             {renderPage()}
           </main>
+          <CacheMonitor />
         </div>
       </AuthProvider>
     </ToastProvider>

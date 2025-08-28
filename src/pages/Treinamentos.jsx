@@ -4,6 +4,7 @@ import { getTreinamentosComEstatisticas } from '../services/interacaoService';
 import { getTreinamentos, deleteTreinamento } from '../services/treinamentosService';
 import { criarQuestionario } from '../services/questionariosService';
 import { getCategoriasAtivas } from '../services/categoriasTreinamentosService';
+import { useCachedTreinamentos, useCachedCategoriasTreinamentos, invalidateTreinamentosCache } from '../services/cachedServices';
 import AdminModal from '../components/AdminModal';
 import TreinamentoCardAdvanced from '../components/TreinamentoCardAdvanced';
 import DraggableTreinamentoList from '../components/DraggableTreinamentoList';
@@ -19,9 +20,21 @@ import ConfirmModal from '../components/ConfirmModal';
 
 const Treinamentos = ({ pageParams }) => {
   const { isAdmin, user } = useAuth();
-  const [treinamentos, setTreinamentos] = useState([]);
-  const [categorias, setCategorias] = useState([]);
-  const [loading, setLoading] = useState(true);
+  
+  // Usar cache para treinamentos e categorias
+  const { 
+    data: treinamentos = [], 
+    isLoading: loadingTreinamentos, 
+    revalidate: revalidateTreinamentos,
+    mutate: mutateTreinamentos 
+  } = useCachedTreinamentos();
+  
+  const { 
+    data: categorias = [], 
+    isLoading: loadingCategorias 
+  } = useCachedCategoriasTreinamentos();
+  
+  const loading = loadingTreinamentos || loadingCategorias;
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [busca, setBusca] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -35,10 +48,6 @@ const Treinamentos = ({ pageParams }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isDragModeEnabled, setIsDragModeEnabled] = useState(false);
-
-  useEffect(() => {
-    carregarDados();
-  }, []);
 
   // Efeito para abrir treinamento específico quando vindo de notificação
   useEffect(() => {
@@ -63,25 +72,14 @@ const Treinamentos = ({ pageParams }) => {
     }
   }, [success]);
 
+  // Função para revalidar dados (agora usando cache)
   const carregarDados = async () => {
-    setLoading(true);
     try {
-      const [treinamentosResult, categoriasResult] = await Promise.all([
-        getTreinamentos(),
-        getCategoriasAtivas()
-      ]);
-
-      // Processar resultado dos treinamentos
-      const treinamentosData = treinamentosResult?.data || treinamentosResult || [];
-      const categoriasData = categoriasResult || [];
-
-      setTreinamentos(treinamentosData);
-      setCategorias(categoriasData);
+      await revalidateTreinamentos();
+      console.log('🔄 Dados revalidados via cache');
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
+      console.error('Erro ao revalidar dados:', error);
       setError('Erro ao carregar dados');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -237,7 +235,8 @@ const Treinamentos = ({ pageParams }) => {
   };
 
   const handleTreinamentosReordered = (reorderedTreinamentos) => {
-    setTreinamentos(reorderedTreinamentos);
+    // Atualizar cache com nova ordem otimisticamente
+    mutateTreinamentos(reorderedTreinamentos);
   };
 
   const toggleDragMode = () => {

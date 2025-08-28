@@ -37,7 +37,7 @@ const NotificationTargetSelector = ({
     try {
       const { data, error } = await supabase
         .from('usuarios')
-        .select('id, nome, email, ativo, tipo_usuario, ultimo_login, created_at')
+        .select('id, nome, email, ativo, tipo_usuario, ultimo_acesso, created_at')
         .order('nome');
 
       if (error) throw error;
@@ -48,7 +48,7 @@ const NotificationTargetSelector = ({
       const stats = {
         total: data?.length || 0,
         active: data?.filter(u => u.ativo).length || 0,
-        withLogin: data?.filter(u => u.ultimo_login).length || 0,
+        withLogin: data?.filter(u => u.ultimo_acesso).length || 0,
         admins: data?.filter(u => u.tipo_usuario === 'admin').length || 0
       };
       setStats(stats);
@@ -77,14 +77,14 @@ const NotificationTargetSelector = ({
         filtered = filtered.filter(user => user.ativo);
         break;
       case 'with_login':
-        filtered = filtered.filter(user => user.ultimo_login);
+        filtered = filtered.filter(user => user.ultimo_acesso);
         break;
       case 'recent_login':
-        // Usuários que fizeram login nos últimos 30 dias
+        // Usuários que acessaram nos últimos 30 dias
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         filtered = filtered.filter(user => 
-          user.ultimo_login && new Date(user.ultimo_login) > thirtyDaysAgo
+          user.ultimo_acesso && new Date(user.ultimo_acesso) > thirtyDaysAgo
         );
         break;
       case 'admins':
@@ -94,7 +94,7 @@ const NotificationTargetSelector = ({
         filtered = filtered.filter(user => user.tipo_usuario !== 'admin');
         break;
       case 'never_logged':
-        filtered = filtered.filter(user => !user.ultimo_login);
+        filtered = filtered.filter(user => !user.ultimo_acesso);
         break;
       default:
         // 'all' - não filtrar
@@ -287,8 +287,8 @@ const NotificationTargetSelector = ({
                       </div>
                     </div>
                     <div className="text-right text-sm text-gray-500">
-                      <div>Último Login:</div>
-                      <div className="font-medium">{formatLastLogin(user.ultimo_login)}</div>
+                      <div>Último Acesso:</div>
+                      <div className="font-medium">{formatLastLogin(user.ultimo_acesso)}</div>
                     </div>
                   </div>
                 </div>
