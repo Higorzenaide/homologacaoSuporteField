@@ -100,6 +100,8 @@ export const buscarQuestionarioPorTreinamento = async (treinamentoId) => {
  */
 export const verificarSeTemQuestionario = async (treinamentoId) => {
   try {
+    console.log('🔍 verificarSeTemQuestionario - treinamentoId:', treinamentoId);
+    
     const { data, error } = await supabase
       .from('questionarios_treinamentos')
       .select('id, obrigatorio')
@@ -107,16 +109,21 @@ export const verificarSeTemQuestionario = async (treinamentoId) => {
       .eq('ativo', true)
       .single();
 
+    console.log('🔍 Dados retornados da query:', { data, error });
+
     if (error && error.code !== 'PGRST116') throw error;
 
-    return { 
+    const resultado = { 
       temQuestionario: !!data, 
       obrigatorio: data?.obrigatorio || false,
       questionarioId: data?.id || null,
       error: null 
     };
+
+    console.log('🔍 Resultado final verificarSeTemQuestionario:', resultado);
+    return resultado;
   } catch (error) {
-    console.error('Erro ao verificar questionário:', error);
+    console.error('❌ Erro ao verificar questionário:', error);
     return { temQuestionario: false, obrigatorio: false, questionarioId: null, error };
   }
 };

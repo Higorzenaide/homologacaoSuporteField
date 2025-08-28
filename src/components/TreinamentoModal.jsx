@@ -103,7 +103,15 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
 
         if (!verificacaoResposta.jaRespondido) {
           console.log('🎯 ABRINDO QUESTIONÁRIO TAMBÉM - não respondeu ainda');
+          console.log('🔍 Definindo showQuestionarioModal como true...');
           setShowQuestionarioModal(true);
+          
+          // Verificar se o estado foi definido
+          setTimeout(() => {
+            console.log('🔍 Estado showQuestionarioModal após timeout:', showQuestionarioModal);
+          }, 100);
+        } else {
+          console.log('ℹ️ Usuário já respondeu o questionário');
         }
       }
     } catch (error) {
@@ -518,14 +526,17 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
 
 
       {/* Questionário Modal */}
-      {showQuestionarioModal && (
-        <ResponderQuestionarioModal
-          treinamento={treinamento}
-          isOpen={showQuestionarioModal}
-          onClose={() => setShowQuestionarioModal(false)}
-          onComplete={handleQuestionarioComplete}
-        />
-      )}
+      {(() => {
+        console.log('🔍 Renderizando - showQuestionarioModal:', showQuestionarioModal);
+        return showQuestionarioModal && (
+          <ResponderQuestionarioModal
+            treinamento={treinamento}
+            isOpen={showQuestionarioModal}
+            onClose={() => setShowQuestionarioModal(false)}
+            onComplete={handleQuestionarioComplete}
+          />
+        );
+      })()}
     </>
   );
 };

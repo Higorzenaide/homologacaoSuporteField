@@ -372,6 +372,8 @@ const ResponderQuestionarioModal = ({
     );
   };
 
+  console.log('🔍 ResponderQuestionarioModal - isOpen:', isOpen, 'treinamento:', treinamento?.id);
+  
   if (!isOpen) return null;
 
   return (
