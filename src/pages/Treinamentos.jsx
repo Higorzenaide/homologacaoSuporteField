@@ -7,6 +7,7 @@ import { getCategoriasAtivas } from '../services/categoriasTreinamentosService';
 import AdminModal from '../components/AdminModal';
 import TreinamentoCardAdvanced from '../components/TreinamentoCardAdvanced';
 import TreinamentoModal from '../components/TreinamentoModal';
+import ResponderQuestionarioModal from '../components/ResponderQuestionarioModal';
 import GerenciadorCategorias from '../components/GerenciadorCategorias';
 import GerenciadorCategoriasFeedback from '../components/GerenciadorCategoriasFeedback';
 import AnalyticsQuestionarios from '../components/AnalyticsQuestionarios';
@@ -29,6 +30,7 @@ const Treinamentos = () => {
   const [showGerenciadorCategorias, setShowGerenciadorCategorias] = useState(false);
   const [showGerenciadorCategoriasFeedback, setShowGerenciadorCategoriasFeedback] = useState(false);
   const [showAnalyticsQuestionarios, setShowAnalyticsQuestionarios] = useState(false);
+  const [showQuestionarioModal, setShowQuestionarioModal] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -70,6 +72,17 @@ const Treinamentos = () => {
   };
 
   const handleViewPDF = async (treinamento) => {
+    console.log('🔍 handleViewPDF do card - Verificação em tempo real');
+
+    // Verificar se há dados suficientes
+    if (!treinamento?.id || !user?.id) {
+      console.log('❌ Dados insuficientes para verificação');
+      if (treinamento.arquivo_url) {
+        window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
+      }
+      return;
+    }
+
     try {
       // Incrementar contador de visualizações
       const { incrementVisualizacoes } = await import('../services/treinamentosService');
@@ -83,13 +96,41 @@ const Treinamentos = () => {
             : t
         )
       );
-    } catch (error) {
-      console.error('Erro ao incrementar visualizações:', error);
-    }
 
-    // Apenas abrir em nova aba, sem visualizador interno
-    if (treinamento.arquivo_url) {
-      window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
+      // Verificar em tempo real se tem questionário
+      console.log('🔍 Verificando questionário em tempo real...');
+      const { verificarSeTemQuestionario, verificarQuestionarioRespondido } = await import('../services/questionariosService');
+      
+      const verificacaoQuestionario = await verificarSeTemQuestionario(treinamento.id);
+      console.log('🔍 Resultado verificação em tempo real:', verificacaoQuestionario);
+
+      // SEMPRE abrir o PDF em nova aba primeiro
+      console.log('🎯 Abrindo PDF em nova aba');
+      if (treinamento.arquivo_url) {
+        window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
+      }
+
+      // Se tem questionário obrigatório e não respondeu, abrir modal também
+      if (verificacaoQuestionario.temQuestionario && verificacaoQuestionario.obrigatorio) {
+        console.log('🔍 Verificando se já respondeu...');
+        const verificacaoResposta = await verificarQuestionarioRespondido(treinamento.id, user.id);
+        console.log('🔍 Resultado verificação resposta:', verificacaoResposta);
+
+        if (!verificacaoResposta.jaRespondido) {
+          console.log('🎯 ABRINDO QUESTIONÁRIO DO CARD - não respondeu ainda');
+          // Definir o treinamento e abrir modal
+          setSelectedTreinamento(treinamento);
+          setShowQuestionarioModal(true);
+        } else {
+          console.log('ℹ️ Usuário já respondeu o questionário');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Erro na verificação:', error);
+      // Em caso de erro, abrir o PDF mesmo assim
+      if (treinamento.arquivo_url) {
+        window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
+      }
     }
   };
 
@@ -482,6 +523,22 @@ const Treinamentos = () => {
           isOpen={showGerenciadorCategoriasFeedback}
           onClose={() => {
             setShowGerenciadorCategoriasFeedback(false);
+          }}
+        />
+      )}
+
+      {showQuestionarioModal && selectedTreinamento && (
+        <ResponderQuestionarioModal
+          treinamento={selectedTreinamento}
+          isOpen={showQuestionarioModal}
+          onClose={() => {
+            setShowQuestionarioModal(false);
+            setSelectedTreinamento(null);
+          }}
+          onComplete={(resultado) => {
+            console.log('✅ Questionário concluído do card!', resultado);
+            setShowQuestionarioModal(false);
+            setSelectedTreinamento(null);
           }}
         />
       )}
