@@ -251,17 +251,15 @@ const TreinamentoCard = ({
               </a>
             </>
           ) : (
-            <a
-              href={treinamento.arquivo_url}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => onViewPDF(treinamento)}
               className="w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-3 px-4 rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-300 font-semibold flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>
               <span>Visualizar Treinamento</span>
-            </a>
+            </button>
           )}
         </div>
 
