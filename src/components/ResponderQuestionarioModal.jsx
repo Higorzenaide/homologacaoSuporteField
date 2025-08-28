@@ -32,6 +32,12 @@ const ResponderQuestionarioModal = ({
   const [modoRefazer, setModoRefazer] = useState(false);
   const [forcarQuestionario, setForcarQuestionario] = useState(false);
 
+  // Função para fechar modal e resetar estados
+  const handleCloseModal = () => {
+    setForcarQuestionario(false);
+    onClose();
+  };
+
   // Helper para fazer parse seguro das opções de resposta
   const parseOpcoes = (opcoes_resposta) => {
     try {
@@ -120,13 +126,18 @@ const ResponderQuestionarioModal = ({
 
       setSessaoId(sessao.id);
       setTempoInicio(Date.now());
+      
+      // Se estava no modo refazer, ativar forçar questionário agora que carregou
+      if (modoRefazer) {
+        setForcarQuestionario(true);
+      }
 
     } catch (error) {
       console.error('Erro ao carregar questionário:', error);
       setError('Erro ao carregar questionário. Tente novamente.');
     } finally {
       setLoading(false);
-      setForcarQuestionario(false); // Reset do flag forçar questionário
+      // Não resetar forcarQuestionario aqui se estava em modo refazer
     }
   };
 
@@ -211,7 +222,7 @@ const ResponderQuestionarioModal = ({
       if (onComplete) {
         onComplete({ recusou: true });
       }
-      onClose();
+      handleCloseModal();
     } catch (error) {
       console.error('Erro ao registrar recusa:', error);
       setError('Erro ao registrar recusa. Tente novamente.');
@@ -428,9 +439,6 @@ const ResponderQuestionarioModal = ({
                 // Reset para refazer
                 console.log('🔄 Iniciando refazer questionário');
                 
-                // Primeiro força exibição do questionário
-                setForcarQuestionario(true);
-                
                 // Reset todos os estados
                 setMostrarResultado(false);
                 setJaRespondido(false);
@@ -441,7 +449,7 @@ const ResponderQuestionarioModal = ({
                 setSessaoId(null);
                 setModoRefazer(true);
                 
-                // Carregar questionário
+                // Carregar questionário - vai forçar questionário quando carregar
                 carregarQuestionario();
               }}
               className="px-8 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition-colors font-semibold"
@@ -450,7 +458,7 @@ const ResponderQuestionarioModal = ({
             </button>
           )}
           <button
-            onClick={onClose}
+            onClick={handleCloseModal}
             className={`px-8 py-3 rounded-xl transition-colors font-semibold ${
               aprovado 
                 ? 'bg-green-600 text-white hover:bg-green-700' 
@@ -538,7 +546,7 @@ const ResponderQuestionarioModal = ({
 
           {!loading && !error && (mostrarResultado || jaRespondido) && !forcarQuestionario && renderResultado()}
 
-          {!loading && !error && (!mostrarResultado && questionario && !jaRespondido) || forcarQuestionario && (
+          {!loading && !error && questionario && ((!mostrarResultado && !jaRespondido) || forcarQuestionario) && (
             <>
               {/* Indicador de modo questionário */}
               <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
@@ -553,7 +561,7 @@ const ResponderQuestionarioModal = ({
               </div>
 
               {/* Aviso de questionário obrigatório */}
-              {questionario.obrigatorio && (
+              {questionario?.obrigatorio && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
                   <div className="flex items-center space-x-2">
                     <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -569,9 +577,9 @@ const ResponderQuestionarioModal = ({
               {/* Informações do questionário */}
               <div className="bg-gray-50 rounded-xl p-6 mb-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                  {questionario.titulo}
+                  {questionario?.titulo || 'Questionário'}
                 </h2>
-                {questionario.descricao && (
+                {questionario?.descricao && (
                   <p className="text-gray-600 mb-4">{questionario.descricao}</p>
                 )}
                 <div className="flex items-center space-x-6 text-sm text-gray-600">
@@ -579,7 +587,7 @@ const ResponderQuestionarioModal = ({
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span>{questionario.perguntas_questionarios?.length || 0} perguntas</span>
+                    <span>{questionario?.perguntas_questionarios?.length || 0} perguntas</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
