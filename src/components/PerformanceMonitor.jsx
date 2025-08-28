@@ -94,8 +94,11 @@ const PerformanceMonitor = () => {
     }
   };
 
-  // Só mostrar em desenvolvimento
-  if (process.env.NODE_ENV === 'production') {
+  // Só mostrar em desenvolvimento ou homologação
+  const isProduction = process.env.NODE_ENV === 'production';
+  const isHomologacao = window.location.hostname.includes('homologacao');
+  
+  if (isProduction && !isHomologacao) {
     return null;
   }
 
