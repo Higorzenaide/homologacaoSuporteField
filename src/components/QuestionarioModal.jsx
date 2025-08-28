@@ -202,10 +202,12 @@ const QuestionarioModal = ({
     setErros([]);
 
     try {
-      if (questionarioExistente) {
+      if (questionarioExistente && questionarioExistente.id) {
         // Se está editando um questionário existente, salvar no banco
+        console.log('🔍 Atualizando questionário existente:', questionarioExistente.id);
         const resultado = await atualizarQuestionario(questionarioExistente.id, questionario);
         if (resultado.error) {
+          console.error('❌ Erro ao atualizar questionário:', resultado.error);
           throw resultado.error;
         }
 

@@ -235,12 +235,35 @@ export const excluirQuestionario = async (questionarioId) => {
 /**
  * Verificar se usuário já respondeu o questionário
  */
-export const verificarQuestionarioRespondido = async (questionarioId, usuarioId) => {
+export const verificarQuestionarioRespondido = async (treinamentoId, usuarioId) => {
   try {
+    console.log('🔍 verificarQuestionarioRespondido:', { treinamentoId, usuarioId });
+    
+    // Primeiro buscar o questionário pelo treinamento
+    const { data: questionario, error: questionarioError } = await supabase
+      .from('questionarios_treinamentos')
+      .select('id')
+      .eq('treinamento_id', treinamentoId)
+      .eq('ativo', true)
+      .single();
+
+    if (questionarioError && questionarioError.code !== 'PGRST116') {
+      console.error('❌ Erro ao buscar questionário:', questionarioError);
+      throw questionarioError;
+    }
+
+    if (!questionario) {
+      console.log('ℹ️ Nenhum questionário encontrado para este treinamento');
+      return { data: null, jaRespondido: false, error: null };
+    }
+
+    console.log('🔍 Questionário encontrado ID:', questionario.id);
+
+    // Agora verificar se o usuário já respondeu
     const { data, error } = await supabase
       .from('sessoes_questionarios')
       .select('status, data_conclusao, percentual_acerto, pontuacao_total, pontuacao_maxima')
-      .eq('questionario_id', questionarioId)
+      .eq('questionario_id', questionario.id)
       .eq('usuario_id', usuarioId)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -248,13 +271,16 @@ export const verificarQuestionarioRespondido = async (questionarioId, usuarioId)
 
     if (error && error.code !== 'PGRST116') throw error;
 
+    const jaRespondido = data?.status === 'concluido';
+    console.log('🔍 Resultado verificação resposta:', { data, jaRespondido });
+
     return { 
       data: data || null, 
-      jaRespondido: data?.status === 'concluido',
+      jaRespondido,
       error: null 
     };
   } catch (error) {
-    console.error('Erro ao verificar questionário respondido:', error);
+    console.error('❌ Erro ao verificar questionário respondido:', error);
     return { data: null, jaRespondido: false, error };
   }
 };
@@ -413,16 +439,46 @@ export const buscarEstatisticasQuestionario = async (questionarioId) => {
  */
 export const buscarPerformanceUsuarios = async (questionarioId) => {
   try {
-    const { data, error } = await supabase
+    console.log('🔍 buscarPerformanceUsuarios - questionarioId:', questionarioId);
+    
+    let { data, error } = await supabase
       .from('performance_usuarios_questionarios')
       .select('*')
       .eq('questionario_id', questionarioId)
       .order('percentual_acerto', { ascending: false });
 
-    if (error) throw error;
+    // Se a view não existir, buscar dados das tabelas básicas
+    if (error && error.code === '42P01') { // Tabela não existe
+      console.log('ℹ️ View performance não existe, buscando dados das tabelas básicas');
+      
+      const { data: sessoes, error: sessoesError } = await supabase
+        .from('sessoes_questionarios')
+        .select(`
+          *,
+          usuarios(id, nome, email)
+        `)
+        .eq('questionario_id', questionarioId);
+
+      if (sessoesError) throw sessoesError;
+
+      // Transformar dados para formato esperado
+      data = sessoes.map(s => ({
+        usuario_nome: s.usuarios?.nome || 'Usuário sem nome',
+        usuario_email: s.usuarios?.email || 'sem-email@exemplo.com',
+        data_conclusao: s.data_conclusao,
+        pontuacao_total: s.pontuacao_total || 0,
+        pontuacao_maxima: s.pontuacao_maxima || 0,
+        percentual_acerto: s.percentual_acerto || 0,
+        status: s.status
+      }));
+    } else if (error) {
+      throw error;
+    }
+
+    console.log('✅ Performance usuários encontrada:', data?.length || 0);
     return { data: data || [], error: null };
   } catch (error) {
-    console.error('Erro ao buscar performance dos usuários:', error);
+    console.error('❌ Erro ao buscar performance dos usuários:', error);
     return { data: [], error };
   }
 };
@@ -432,6 +488,8 @@ export const buscarPerformanceUsuarios = async (questionarioId) => {
  */
 export const buscarRelatorioPorPergunta = async (questionarioId) => {
   try {
+    console.log('🔍 buscarRelatorioPorPergunta - questionarioId:', questionarioId);
+    
     // Buscar todas as perguntas
     const { data: perguntas, error: perguntasError } = await supabase
       .from('perguntas_questionarios')
@@ -439,7 +497,15 @@ export const buscarRelatorioPorPergunta = async (questionarioId) => {
       .eq('questionario_id', questionarioId)
       .order('ordem');
 
-    if (perguntasError) throw perguntasError;
+    if (perguntasError) {
+      console.error('❌ Erro ao buscar perguntas:', perguntasError);
+      throw perguntasError;
+    }
+
+    if (!perguntas || perguntas.length === 0) {
+      console.log('ℹ️ Nenhuma pergunta encontrada para este questionário');
+      return { data: [], error: null };
+    }
 
     // Para cada pergunta, buscar estatísticas de resposta
     const relatorio = await Promise.all(
@@ -492,15 +558,51 @@ export const buscarRelatorioPorPergunta = async (questionarioId) => {
  */
 export const buscarTodosQuestionarios = async () => {
   try {
-    const { data, error } = await supabase
+    console.log('🔍 buscarTodosQuestionarios - iniciando...');
+    
+    // Tentar buscar dados da view primeiro, se não existir, buscar dados básicos
+    let { data, error } = await supabase
       .from('relatorio_questionarios')
       .select('*')
       .order('data_criacao', { ascending: false });
 
-    if (error) throw error;
+    // Se a view não existir, buscar dados das tabelas básicas
+    if (error && error.code === '42P01') { // Tabela não existe
+      console.log('ℹ️ View não existe, buscando dados das tabelas básicas');
+      
+      const { data: questionarios, error: questionariosError } = await supabase
+        .from('questionarios_treinamentos')
+        .select(`
+          id,
+          titulo,
+          created_at,
+          treinamentos(id, titulo, categoria_nome)
+        `)
+        .eq('ativo', true)
+        .order('created_at', { ascending: false });
+
+      if (questionariosError) throw questionariosError;
+
+      // Transformar dados para formato esperado
+      data = questionarios.map(q => ({
+        questionario_id: q.id,
+        questionario_titulo: q.titulo,
+        treinamento_titulo: q.treinamentos?.titulo || 'Sem título',
+        categoria: q.treinamentos?.categoria_nome || 'Sem categoria',
+        data_criacao: q.created_at,
+        total_usuarios_responderam: 0,
+        usuarios_concluiram: 0,
+        media_acertos: 0,
+        taxa_conclusao: 0
+      }));
+    } else if (error) {
+      throw error;
+    }
+
+    console.log('✅ Questionários encontrados:', data?.length || 0);
     return { data: data || [], error: null };
   } catch (error) {
-    console.error('Erro ao buscar questionários:', error);
+    console.error('❌ Erro ao buscar questionários:', error);
     return { data: [], error };
   }
 };

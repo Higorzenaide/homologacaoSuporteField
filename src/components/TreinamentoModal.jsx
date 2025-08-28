@@ -36,13 +36,17 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
           }
 
           // Verificar se tem questionário
+          console.log('🔍 Verificando questionário para treinamento:', treinamento.id);
           const { temQuestionario: hasQuestionario, obrigatorio } = await verificarSeTemQuestionario(treinamento.id);
+          console.log('🔍 Resultado verificação:', { hasQuestionario, obrigatorio });
           setTemQuestionario(hasQuestionario);
           setQuestionarioObrigatorio(obrigatorio);
 
           // Se tem questionário, verificar se já respondeu
           if (hasQuestionario) {
+            console.log('🔍 Verificando se usuário já respondeu questionário');
             const { jaRespondido } = await verificarQuestionarioRespondido(treinamento.id, user.id);
+            console.log('🔍 Já respondeu:', jaRespondido);
             setJaRespondeuQuestionario(jaRespondido);
           }
         } catch (error) {
@@ -69,12 +73,21 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
   };
 
   const handleViewPDF = () => {
+    console.log('🔍 handleViewPDF - Estado atual:', {
+      temQuestionario,
+      questionarioObrigatorio,
+      jaRespondeuQuestionario,
+      arquivo_url: treinamento.arquivo_url
+    });
+
     // Se tem questionário obrigatório e não respondeu, mostrar questionário primeiro
     if (temQuestionario && questionarioObrigatorio && !jaRespondeuQuestionario) {
+      console.log('🎯 Abrindo modal do questionário');
       setShowQuestionarioModal(true);
       return;
     }
     
+    console.log('🎯 Abrindo PDF em nova aba');
     // Apenas abrir em nova aba, sem visualizador interno
     if (treinamento.arquivo_url) {
       window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
