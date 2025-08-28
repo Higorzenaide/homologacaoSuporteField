@@ -10,6 +10,7 @@ import {
   finalizarQuestionario,
   recusarQuestionario
 } from '../services/questionariosService';
+import ConfirmRecusaModal from './ConfirmRecusaModal';
 
 const ResponderQuestionarioModal = ({ 
   treinamento, 
@@ -31,6 +32,7 @@ const ResponderQuestionarioModal = ({
   const [tempoInicio, setTempoInicio] = useState(Date.now());
   const [modoRefazer, setModoRefazer] = useState(false);
   const [forcarQuestionario, setForcarQuestionario] = useState(false);
+  const [showConfirmRecusa, setShowConfirmRecusa] = useState(false);
 
   // Função para fechar modal e resetar estados
   const handleCloseModal = () => {
@@ -156,7 +158,9 @@ const ResponderQuestionarioModal = ({
     const resposta = respostas[pergunta.id];
 
     if (pergunta.obrigatoria && (!resposta || (Array.isArray(resposta) && resposta.length === 0))) {
-      alert('Esta pergunta é obrigatória. Por favor, responda antes de continuar.');
+      // Criar um toast ou modal para mostrar o erro de forma mais elegante
+      setError('Esta pergunta é obrigatória. Por favor, responda antes de continuar.');
+      setTimeout(() => setError(''), 3000);
       return;
     }
 
@@ -205,13 +209,11 @@ const ResponderQuestionarioModal = ({
     }
   };
 
-  const handleRecusarQuestionario = async () => {
-    const confirmar = window.confirm(
-      'Tem certeza que não deseja responder o questionário? Esta ação será registrada.'
-    );
-    
-    if (!confirmar) return;
+  const handleRecusarQuestionario = () => {
+    setShowConfirmRecusa(true);
+  };
 
+  const confirmarRecusa = async () => {
     setSubmetendo(true);
     try {
       const { data, error } = await recusarQuestionario(questionario.id, user.id);
@@ -222,6 +224,7 @@ const ResponderQuestionarioModal = ({
       if (onComplete) {
         onComplete({ recusou: true });
       }
+      setShowConfirmRecusa(false);
       handleCloseModal();
     } catch (error) {
       console.error('Erro ao registrar recusa:', error);
@@ -604,6 +607,14 @@ const ResponderQuestionarioModal = ({
           )}
         </div>
       </div>
+      
+      {/* Modal de confirmação de recusa */}
+      <ConfirmRecusaModal
+        isOpen={showConfirmRecusa}
+        onClose={() => setShowConfirmRecusa(false)}
+        onConfirm={confirmarRecusa}
+        loading={submetendo}
+      />
     </div>
   );
 };
