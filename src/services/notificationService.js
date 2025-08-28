@@ -175,32 +175,7 @@ class NotificationService {
     }
   }
 
-  // Notificar sobre sistema (manutenção, atualizações, etc.)
-  async notifySystem(userIds, title, message, priority = 'medium') {
-    try {
-      const notifications = userIds.map(userId => ({
-        user_id: userId,
-        type: 'system',
-        title,
-        message,
-        priority,
-        data: {
-          system_notification: true
-        }
-      }));
 
-      const { data, error } = await supabase
-        .from('notifications')
-        .insert(notifications)
-        .select();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Erro ao notificar sistema:', error);
-      throw error;
-    }
-  }
 
   // Configurar lembretes personalizados
   async createCustomReminder(userId, reminderData) {
@@ -407,18 +382,25 @@ class NotificationService {
     }
   }
 
-  // Notificar sobre nova notícia
-  async notifyNewNoticia(noticiaData) {
+  // Notificar sobre nova notícia (com seleção de usuários)
+  async notifyNewNoticia(noticiaData, selectedUserIds = null) {
     try {
-      const { data: users } = await supabase
-        .from('usuarios')
-        .select('id')
-        .eq('ativo', true);
+      let userIds = selectedUserIds;
+      
+      // Se não foram especificados usuários, usar todos os ativos (comportamento antigo)
+      if (!userIds) {
+        const { data: users } = await supabase
+          .from('usuarios')
+          .select('id')
+          .eq('ativo', true);
 
-      if (!users || users.length === 0) return [];
+        userIds = users?.map(user => user.id) || [];
+      }
 
-      const notifications = users.map(user => ({
-        user_id: user.id,
+      if (userIds.length === 0) return [];
+
+      const notifications = userIds.map(userId => ({
+        user_id: userId,
         type: 'news',
         title: 'Nova Notícia Publicada',
         message: `Foi publicada uma nova notícia: "${noticiaData.titulo}"`,
@@ -436,6 +418,8 @@ class NotificationService {
         .select();
 
       if (error) throw error;
+      
+      console.log(`✅ Notificação sobre notícia enviada para ${userIds.length} usuários selecionados`);
       return data;
     } catch (error) {
       console.error('Erro ao notificar sobre nova notícia:', error);
@@ -443,18 +427,25 @@ class NotificationService {
     }
   }
 
-  // Notificar sobre novo treinamento (não obrigatório)
-  async notifyNewTreinamento(treinamentoData) {
+  // Notificar sobre novo treinamento (não obrigatório, com seleção de usuários)
+  async notifyNewTreinamento(treinamentoData, selectedUserIds = null) {
     try {
-      const { data: users } = await supabase
-        .from('usuarios')
-        .select('id')
-        .eq('ativo', true);
+      let userIds = selectedUserIds;
+      
+      // Se não foram especificados usuários, usar todos os ativos (comportamento antigo)
+      if (!userIds) {
+        const { data: users } = await supabase
+          .from('usuarios')
+          .select('id')
+          .eq('ativo', true);
 
-      if (!users || users.length === 0) return [];
+        userIds = users?.map(user => user.id) || [];
+      }
 
-      const notifications = users.map(user => ({
-        user_id: user.id,
+      if (userIds.length === 0) return [];
+
+      const notifications = userIds.map(userId => ({
+        user_id: userId,
         type: 'training_new',
         title: 'Novo Treinamento Disponível',
         message: `Foi adicionado um novo treinamento: "${treinamentoData.titulo}"`,
@@ -472,9 +463,52 @@ class NotificationService {
         .select();
 
       if (error) throw error;
+      
+      console.log(`✅ Notificação sobre treinamento enviada para ${userIds.length} usuários selecionados`);
       return data;
     } catch (error) {
       console.error('Erro ao notificar sobre novo treinamento:', error);
+      throw error;
+    }
+  }
+
+  // Notificar sobre sistema (com seleção de usuários)
+  async notifySystem(title, message, selectedUserIds = null, priority = 'medium') {
+    try {
+      let userIds = selectedUserIds;
+      
+      // Se não foram especificados usuários, usar todos os ativos (comportamento antigo)
+      if (!userIds) {
+        const { data: users } = await supabase
+          .from('usuarios')
+          .select('id')
+          .eq('ativo', true);
+
+        userIds = users?.map(user => user.id) || [];
+      }
+
+      if (userIds.length === 0) return [];
+
+      const notifications = userIds.map(userId => ({
+        user_id: userId,
+        type: 'system',
+        title: title,
+        message: message,
+        data: {},
+        priority: priority
+      }));
+
+      const { data, error } = await supabase
+        .from('notifications')
+        .insert(notifications)
+        .select();
+
+      if (error) throw error;
+      
+      console.log(`✅ Notificação do sistema enviada para ${userIds.length} usuários selecionados`);
+      return data;
+    } catch (error) {
+      console.error('Erro ao notificar sistema:', error);
       throw error;
     }
   }

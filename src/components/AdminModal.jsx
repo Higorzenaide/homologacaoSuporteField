@@ -1,8 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CategoriaSelector from './CategoriaSelector';
 import QuestionarioModal from './QuestionarioModal';
+import NotificationTargetSelector from './NotificationTargetSelector';
+import useNotificationSelector from '../hooks/useNotificationSelector';
+import notificationService from '../services/notificationService';
 
 const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [] }) => {
+  const {
+    isNotificationSelectorOpen,
+    notificationConfig,
+    openNotificationSelector,
+    closeNotificationSelector,
+    handleNotificationConfirm
+  } = useNotificationSelector();
   const [formData, setFormData] = useState({
     titulo: '',
     categoria: '',
@@ -14,7 +24,9 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
     logo_url: '',
     obrigatorio: false,
     prazo_limite: '',
-    criarQuestionario: false
+    criarQuestionario: false,
+    enviarNotificacao: true,
+    tipoNotificacao: 'selected' // 'all', 'selected', 'none'
   });
   
   const [file, setFile] = useState(null);
@@ -23,6 +35,7 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showQuestionarioModal, setShowQuestionarioModal] = useState(false);
   const [questionarioData, setQuestionarioData] = useState(null);
+  const [selectedNotificationUsers, setSelectedNotificationUsers] = useState([]);
   const editorRef = useRef(null);
 
   // Carregar dados do item em edição
@@ -167,6 +180,47 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
     handleInputChange('tags', formData.tags.filter(tag => tag !== tagToRemove));
   };
 
+  const handleNotifications = async (savedData) => {
+    try {
+      let userIds = null;
+      
+      switch (formData.tipoNotificacao) {
+        case 'all':
+          // null significa todos os usuários ativos (comportamento padrão)
+          userIds = null;
+          break;
+        case 'selected':
+          userIds = selectedNotificationUsers;
+          break;
+        case 'none':
+          return; // Não enviar notificações
+      }
+
+      if (type === 'treinamento') {
+        await notificationService.notifyNewTreinamento(savedData, userIds);
+      } else if (type === 'noticia') {
+        await notificationService.notifyNewNoticia(savedData, userIds);
+      }
+      
+      console.log(`✅ Notificações enviadas com sucesso para ${userIds ? userIds.length : 'todos os'} usuários`);
+    } catch (error) {
+      console.error('❌ Erro ao enviar notificações:', error);
+      // Não falhar o processo de criação por erro de notificação
+    }
+  };
+
+  const handleSelectNotificationUsers = () => {
+    const config = {
+      title: `Selecionar Usuários para ${type === 'treinamento' ? 'Treinamento' : 'Notícia'}`,
+      subtitle: `Escolha quais usuários devem ser notificados sobre ${type === 'treinamento' ? 'este treinamento' : 'esta notícia'}`
+    };
+    
+    openNotificationSelector((selectedUserIds) => {
+      setSelectedNotificationUsers(selectedUserIds);
+      handleInputChange('tipoNotificacao', 'selected');
+    }, config);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -181,7 +235,11 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
       // Salvar treinamento primeiro
       const success = await onSave(formData, file, questionarioData);
       
-      if (success) {
+      if (success && success.data) {
+        // Enviar notificações se solicitado
+        if (formData.enviarNotificacao && formData.tipoNotificacao !== 'none') {
+          await handleNotifications(success.data);
+        }
         // Reset form
         setFormData({
           titulo: '',
@@ -701,6 +759,119 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
             </div>
           )}
 
+          {/* Configurações de Notificação */}
+          <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <h3 className="text-lg font-medium text-blue-900 flex items-center space-x-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17H4l5 5v-5z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12h18" />
+              </svg>
+              <span>Configurações de Notificação</span>
+            </h3>
+            
+            {/* Checkbox para enviar notificação */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="enviarNotificacao"
+                checked={formData.enviarNotificacao}
+                onChange={(e) => handleInputChange('enviarNotificacao', e.target.checked)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="enviarNotificacao" className="text-sm font-medium text-gray-700">
+                Enviar notificação aos usuários
+              </label>
+            </div>
+            
+            {/* Opções de tipo de notificação */}
+            {formData.enviarNotificacao && (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600">Quem deve receber a notificação?</p>
+                
+                <div className="space-y-2">
+                  {/* Todos os usuários */}
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tipoNotificacao"
+                      value="all"
+                      checked={formData.tipoNotificacao === 'all'}
+                      onChange={(e) => handleInputChange('tipoNotificacao', e.target.value)}
+                      className="text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">Todos os usuários ativos</span>
+                  </label>
+                  
+                  {/* Usuários selecionados */}
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tipoNotificacao"
+                      value="selected"
+                      checked={formData.tipoNotificacao === 'selected'}
+                      onChange={(e) => handleInputChange('tipoNotificacao', e.target.value)}
+                      className="text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">
+                      Usuários específicos 
+                      {selectedNotificationUsers.length > 0 && (
+                        <span className="text-blue-600 font-medium ml-1">
+                          ({selectedNotificationUsers.length} selecionados)
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                  
+                  {/* Nenhuma notificação */}
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tipoNotificacao"
+                      value="none"
+                      checked={formData.tipoNotificacao === 'none'}
+                      onChange={(e) => handleInputChange('tipoNotificacao', e.target.value)}
+                      className="text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-gray-700">Não enviar notificações</span>
+                  </label>
+                </div>
+                
+                {/* Botão para selecionar usuários */}
+                {formData.tipoNotificacao === 'selected' && (
+                  <button
+                    type="button"
+                    onClick={handleSelectNotificationUsers}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                  >
+                    {selectedNotificationUsers.length > 0 
+                      ? `Alterar Seleção (${selectedNotificationUsers.length} usuários)`
+                      : 'Selecionar Usuários'
+                    }
+                  </button>
+                )}
+                
+                {/* Resumo da economia de processamento */}
+                {(formData.tipoNotificacao === 'selected' && selectedNotificationUsers.length > 0) || formData.tipoNotificacao === 'none' ? (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-sm text-green-800 font-medium">Economia de Processamento</span>
+                    </div>
+                    <p className="text-sm text-green-700 mt-1">
+                      {formData.tipoNotificacao === 'none' 
+                        ? 'Nenhuma notificação será enviada, economizando 100% do processamento.'
+                        : `Notificações serão enviadas apenas para ${selectedNotificationUsers.length} usuários selecionados.`
+                      }
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </div>
+
           {/* Botões */}
           <div className="flex gap-3 pt-4">
             <button
@@ -731,6 +902,15 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
           onSave={handleQuestionarioSave}
         />
       )}
+
+      {/* Modal de Seleção de Usuários para Notificação */}
+      <NotificationTargetSelector
+        isOpen={isNotificationSelectorOpen}
+        onClose={closeNotificationSelector}
+        onConfirm={handleNotificationConfirm}
+        title={notificationConfig.title}
+        subtitle={notificationConfig.subtitle}
+      />
     </div>
   );
 };
