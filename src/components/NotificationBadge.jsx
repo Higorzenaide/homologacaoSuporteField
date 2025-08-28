@@ -222,6 +222,9 @@ const NotificationBadge = () => {
 
   const handleNotificationClick = async (notification) => {
     try {
+      // Marcar como lida quando clicada
+      await markAsRead(notification.id);
+
       // Registrar analytics de clique na notificação com retry
       if (user) {
         await executeWithRetry(
@@ -236,9 +239,39 @@ const NotificationBadge = () => {
         );
       }
 
+      // Fechar o dropdown de notificações
+      setIsOpen(false);
+
       // Se a notificação tem uma URL de ação, navegar para ela
       if (notification.data?.action_url) {
-        window.location.href = notification.data.action_url;
+        const url = notification.data.action_url;
+        console.log('🔍 Navegando para:', url);
+
+        // Parse da URL para extrair página e parâmetros
+        const urlParts = url.split('/').filter(part => part.length > 0);
+        
+        if (urlParts.length === 1) {
+          // URLs simples como /treinamentos
+          const page = urlParts[0];
+          if (window.navigateToPage) {
+            window.navigateToPage(page);
+          } else {
+            window.location.href = url;
+          }
+        } else if (urlParts.length === 2) {
+          // URLs com parâmetros como /treinamentos/58
+          const page = urlParts[0];
+          const id = urlParts[1];
+          
+          if (window.navigateToPage && !isNaN(id)) {
+            window.navigateToPage(page, { id: parseInt(id) });
+          } else {
+            window.location.href = url;
+          }
+        } else {
+          // Fallback para URLs mais complexas
+          window.location.href = url;
+        }
       }
     } catch (error) {
       console.error('Erro ao processar clique na notificação:', error);

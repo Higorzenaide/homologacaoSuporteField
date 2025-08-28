@@ -307,17 +307,60 @@ export const recusarQuestionario = async (questionarioId, usuarioId) => {
   try {
     console.log('🔍 Registrando recusa do questionário:', { questionarioId, usuarioId });
     
-    const { data, error } = await supabase
+    // Primeiro, verificar se já existe uma sessão para este usuário e questionário
+    const { data: sessoesExistentes, error: consultaError } = await supabase
       .from('sessoes_questionarios')
-      .insert([{
-        questionario_id: questionarioId,
-        usuario_id: usuarioId,
-        status: 'recusado',
-        recusou_responder: true,
-        tentativa: 1
-      }])
-      .select()
-      .single();
+      .select('*')
+      .eq('questionario_id', questionarioId)
+      .eq('usuario_id', usuarioId)
+      .order('created_at', { ascending: false });
+
+    if (consultaError && consultaError.code !== 'PGRST116') {
+      throw consultaError;
+    }
+
+    let data;
+    let error;
+
+    if (sessoesExistentes && sessoesExistentes.length > 0) {
+      // Se existe sessão, atualizar a mais recente para "recusado"
+      const sessaoMaisRecente = sessoesExistentes[0];
+      console.log('🔍 Atualizando sessão existente para recusado:', sessaoMaisRecente.id);
+      
+      const resultado = await supabase
+        .from('sessoes_questionarios')
+        .update({
+          status: 'recusado',
+          recusou_responder: true,
+          data_conclusao: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', sessaoMaisRecente.id)
+        .select()
+        .single();
+      
+      data = resultado.data;
+      error = resultado.error;
+    } else {
+      // Se não existe sessão, criar uma nova
+      console.log('🔍 Criando nova sessão com status recusado');
+      
+      const resultado = await supabase
+        .from('sessoes_questionarios')
+        .insert([{
+          questionario_id: questionarioId,
+          usuario_id: usuarioId,
+          status: 'recusado',
+          recusou_responder: true,
+          tentativa: 1,
+          data_conclusao: new Date().toISOString()
+        }])
+        .select()
+        .single();
+      
+      data = resultado.data;
+      error = resultado.error;
+    }
 
     if (error) throw error;
     

@@ -16,7 +16,7 @@ import { FullPageLoader, InlineLoader } from '../components/LoadingSpinner';
 
 import ConfirmModal from '../components/ConfirmModal';
 
-const Treinamentos = () => {
+const Treinamentos = ({ pageParams }) => {
   const { isAdmin, user } = useAuth();
   const [treinamentos, setTreinamentos] = useState([]);
   const [categorias, setCategorias] = useState([]);
@@ -37,6 +37,18 @@ const Treinamentos = () => {
   useEffect(() => {
     carregarDados();
   }, []);
+
+  // Efeito para abrir treinamento específico quando vindo de notificação
+  useEffect(() => {
+    if (pageParams?.id && treinamentos.length > 0) {
+      const treinamentoEspecifico = treinamentos.find(t => t.id === pageParams.id);
+      if (treinamentoEspecifico) {
+        console.log('🔍 Abrindo treinamento específico da notificação:', treinamentoEspecifico);
+        setSelectedTreinamento(treinamentoEspecifico);
+        setShowTreinamentoModal(true);
+      }
+    }
+  }, [pageParams, treinamentos]);
 
   // Timer para o modal de sucesso
   useEffect(() => {

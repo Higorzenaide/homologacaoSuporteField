@@ -10,6 +10,25 @@
 
 **Solução:** Execute o seguinte script SQL:
 
+### 2. Erro de Chave Duplicada ao Recusar Questionário
+
+**Problema:** Erro `'duplicate key value violates unique constraint "sessoes_questionarios_questionario_id_usuario_id_tentativa_key"'`
+
+**Causa:** A função `recusarQuestionario` sempre tentava inserir uma nova sessão com `tentativa: 1`, mesmo quando já existia uma sessão anterior para o usuário.
+
+**Solução:** Modificada a lógica da função para:
+- Verificar se já existe uma sessão para o usuário
+- Se existir, atualizar a sessão existente para status "recusado"
+- Se não existir, criar uma nova sessão
+
+### 3. Erro de Constraint "recusado" no Status (RESOLVIDO)
+
+**Problema:** Erro `'new row for relation "sessoes_questionarios" violates check constraint "sessoes_questionarios_status_check"'`
+
+**Causa:** A constraint da tabela `sessoes_questionarios` não incluía o status "recusado".
+
+**Solução:** Execute o seguinte script SQL:
+
 ```sql
 -- Remover a constraint atual
 ALTER TABLE sessoes_questionarios 
@@ -21,7 +40,7 @@ ADD CONSTRAINT sessoes_questionarios_status_check
 CHECK (status IN ('iniciado', 'em_progresso', 'concluido', 'abandonado', 'recusado'));
 ```
 
-### 2. Substituição de window.confirm por Modal Personalizado
+### 4. Substituição de window.confirm por Modal Personalizado
 
 **Problema:** Uso de `window.confirm()` que não oferece uma experiência de usuário personalizada.
 
@@ -30,7 +49,7 @@ CHECK (status IN ('iniciado', 'em_progresso', 'concluido', 'abandonado', 'recusa
 - Substituído `window.confirm` por modal personalizado no `ResponderQuestionarioModal.jsx`
 - Adicionado visual mais informativo e consistente com o design do sistema
 
-### 3. Melhoria na Validação de Perguntas Obrigatórias
+### 5. Melhoria na Validação de Perguntas Obrigatórias
 
 **Problema:** Uso de `alert()` para mostrar erro de pergunta obrigatória.
 
@@ -48,6 +67,11 @@ CHECK (status IN ('iniciado', 'em_progresso', 'concluido', 'abandonado', 'recusa
    - Substituição de `window.confirm()` por modal personalizado
    - Melhoria na validação de perguntas obrigatórias
    - Adicionado estado para controlar o modal de confirmação
+
+3. **src/services/questionariosService.js** (MODIFICADO)
+   - Função `recusarQuestionario` reescrita para evitar conflitos de chave única
+   - Lógica inteligente que atualiza sessão existente ou cria nova conforme necessário
+   - Melhor tratamento de erros e logs mais informativos
 
 ## Instruções de Deploy
 
@@ -76,6 +100,12 @@ CHECK (status IN ('iniciado', 'em_progresso', 'concluido', 'abandonado', 'recusa
 ✅ **Correção de Bugs de Banco**
 - Status "recusado" agora é aceito pela constraint
 - Questionários podem ser recusados sem erro
+- Eliminado conflito de chave única na tabela de sessões
+
+✅ **Lógica Inteligente de Recusa**
+- Sistema verifica se sessão já existe antes de criar nova
+- Atualiza sessão existente ao invés de tentar criar duplicada
+- Melhor controle de tentativas e status
 
 ## Testado e Funcional
 
@@ -83,3 +113,5 @@ CHECK (status IN ('iniciado', 'em_progresso', 'concluido', 'abandonado', 'recusa
 - ✅ Modal personalizado com boa UX
 - ✅ Validações integradas à interface
 - ✅ Sem mais erros de constraint no banco
+- ✅ Sem mais erros de chave duplicada
+- ✅ Lógica robusta para diferentes cenários de uso
