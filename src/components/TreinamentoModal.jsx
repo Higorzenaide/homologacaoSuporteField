@@ -146,10 +146,11 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-3xl max-w-5xl w-full max-h-[95vh] overflow-hidden shadow-2xl border border-gray-100 transform transition-all duration-300">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start justify-center z-50 p-2 sm:p-4 overflow-y-auto">
+        <div className="bg-white rounded-2xl sm:rounded-3xl max-w-5xl w-full min-h-fit my-2 sm:my-4 lg:my-8 shadow-2xl border border-gray-100 transform transition-all duration-300 
+               min-h-[calc(100vh-1rem)] sm:min-h-fit sm:max-h-[calc(100vh-2rem)] lg:max-h-[calc(100vh-4rem)]">
           {/* Header Corporativo Melhorado */}
-          <div className={`relative bg-gradient-to-br ${getCategoriaColor(treinamento.categoria)} p-8 text-white overflow-hidden`}>
+          <div className={`relative bg-gradient-to-br ${getCategoriaColor(treinamento.categoria)} p-4 sm:p-6 lg:p-8 text-white overflow-hidden`}>
             {/* Padrões geométricos de fundo */}
             <div className="absolute inset-0 opacity-10">
               <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full -mr-20 -mt-20"></div>
@@ -164,12 +165,12 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
             <div className="absolute inset-0 bg-gradient-to-br from-black/10 to-black/20"></div>
             
             <div className="relative z-10">
-              <div className="flex justify-between items-start mb-8">
-                <div className="flex items-start space-x-6 flex-1 pr-4">
+              <div className="flex justify-between items-start mb-4 sm:mb-6 lg:mb-8">
+                <div className="flex items-start space-x-3 sm:space-x-4 lg:space-x-6 flex-1 pr-4">
                   {/* Logo do treinamento melhorado */}
                   <div className="flex-shrink-0">
                     {treinamento.logo_url ? (
-                      <div className="w-24 h-24 bg-white/20 rounded-2xl p-4 backdrop-blur-sm border border-white/30 shadow-lg">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-white/20 rounded-2xl p-3 sm:p-4 backdrop-blur-sm border border-white/30 shadow-lg">
                         <img 
                           src={treinamento.logo_url} 
                           alt="Logo do treinamento"
@@ -177,8 +178,8 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
                         />
                       </div>
                     ) : (
-                      <div className="w-24 h-24 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-lg">
-                        <svg className="w-12 h-12 text-white/90" fill="currentColor" viewBox="0 0 24 24">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/30 shadow-lg">
+                        <svg className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 text-white/90" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
                         </svg>
                       </div>
@@ -199,12 +200,12 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
                     </div>
                     
                     {/* Título melhorado */}
-                    <h2 className="text-4xl font-bold leading-tight mb-4 text-white drop-shadow-sm">
+                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight mb-4 text-white drop-shadow-sm">
                       {treinamento.titulo}
                     </h2>
                     
                     {/* Informações básicas em grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-white/90">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 text-white/90">
                       <div className="flex items-center space-x-3 bg-white/10 rounded-xl px-4 py-3 backdrop-blur-sm">
                         <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -301,9 +302,9 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
           </div>
 
           {/* Conteúdo Melhorado */}
-          <div className="p-8 max-h-[60vh] overflow-y-auto bg-gradient-to-b from-white to-gray-50/30">
+          <div className="p-4 sm:p-6 lg:p-8 bg-gradient-to-b from-white to-gray-50/30">
             {activeTab === 'detalhes' && (
-              <div className="space-y-8">
+              <div className="space-y-4 sm:space-y-6 lg:space-y-8">
                 {/* Descrição melhorada */}
                 {treinamento.descricao && (
                   <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
@@ -375,7 +376,7 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
                     </div>
                     <h3 className="text-xl font-bold text-gray-900">Estatísticas</h3>
                   </div>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                     <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 text-center border border-blue-200">
                       <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-3">
                         <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
