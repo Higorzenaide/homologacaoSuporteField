@@ -69,13 +69,13 @@ const ResponderQuestionarioModal = ({
     }
   }, [isOpen]);
 
-  const carregarQuestionario = async () => {
+  const carregarQuestionario = async (forceModoRefazer = false) => {
     setLoading(true);
     setError('');
 
     try {
       // Verificar se já respondeu (mas só se não estiver no modo refazer)
-      if (!modoRefazer) {
+      if (!forceModoRefazer && !modoRefazer) {
         const { jaRespondido: respondido, data: dadosResposta } = await verificarQuestionarioRespondido(
           treinamento.id, 
           user.id
@@ -128,7 +128,7 @@ const ResponderQuestionarioModal = ({
       setTempoInicio(Date.now());
       
       // Se estava no modo refazer, ativar forçar questionário agora que carregou
-      if (modoRefazer) {
+      if (forceModoRefazer || modoRefazer) {
         setForcarQuestionario(true);
       }
 
@@ -449,8 +449,8 @@ const ResponderQuestionarioModal = ({
                 setSessaoId(null);
                 setModoRefazer(true);
                 
-                // Carregar questionário - vai forçar questionário quando carregar
-                carregarQuestionario();
+                // Carregar questionário forçando modo refazer
+                carregarQuestionario(true);
               }}
               className="px-8 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition-colors font-semibold"
             >
