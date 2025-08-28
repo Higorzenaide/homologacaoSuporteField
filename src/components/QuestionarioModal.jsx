@@ -239,9 +239,9 @@ const QuestionarioModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden shadow-2xl">
+      <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[95vh] shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white flex-shrink-0 rounded-t-2xl">
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-2xl font-bold">
@@ -273,7 +273,7 @@ const QuestionarioModal = ({
           </div>
         </div>
 
-        <div className="p-6 max-h-[calc(95vh-120px)] overflow-y-auto">
+        <div className="p-6 flex-1 overflow-y-auto">
           {/* Erros */}
           {erros.length > 0 && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
@@ -610,7 +610,7 @@ const QuestionarioModal = ({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 p-6 bg-gray-50">
+        <div className="border-t border-gray-200 p-6 bg-gray-50 flex-shrink-0 rounded-b-2xl">
           {questionario.perguntas.length > 0 && (
             <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-center space-x-2">
