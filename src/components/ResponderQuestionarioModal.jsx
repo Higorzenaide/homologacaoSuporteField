@@ -30,6 +30,7 @@ const ResponderQuestionarioModal = ({
   const [mostrarResultado, setMostrarResultado] = useState(false);
   const [tempoInicio, setTempoInicio] = useState(Date.now());
   const [modoRefazer, setModoRefazer] = useState(false);
+  const [forcarQuestionario, setForcarQuestionario] = useState(false);
 
   // Helper para fazer parse seguro das opções de resposta
   const parseOpcoes = (opcoes_resposta) => {
@@ -125,6 +126,7 @@ const ResponderQuestionarioModal = ({
       setError('Erro ao carregar questionário. Tente novamente.');
     } finally {
       setLoading(false);
+      setForcarQuestionario(false); // Reset do flag forçar questionário
     }
   };
 
@@ -425,14 +427,21 @@ const ResponderQuestionarioModal = ({
               onClick={() => {
                 // Reset para refazer
                 console.log('🔄 Iniciando refazer questionário');
+                
+                // Primeiro força exibição do questionário
+                setForcarQuestionario(true);
+                
+                // Reset todos os estados
                 setMostrarResultado(false);
                 setJaRespondido(false);
                 setPerguntaAtual(0);
                 setRespostas({});
                 setResultado(null);
                 setTempoInicio(Date.now());
-                setModoRefazer(true); // Ativar modo refazer
-                // Carregar novamente para nova tentativa
+                setSessaoId(null);
+                setModoRefazer(true);
+                
+                // Carregar questionário
                 carregarQuestionario();
               }}
               className="px-8 py-3 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition-colors font-semibold"
@@ -527,14 +536,22 @@ const ResponderQuestionarioModal = ({
             </div>
           )}
 
-          {!loading && !error && (mostrarResultado || jaRespondido) && (
-            console.log('🔍 Renderizando RESULTADO - mostrarResultado:', mostrarResultado, 'jaRespondido:', jaRespondido),
-            renderResultado()
-          )}
+          {!loading && !error && (mostrarResultado || jaRespondido) && !forcarQuestionario && renderResultado()}
 
-          {!loading && !error && !mostrarResultado && questionario && !jaRespondido && (
-            console.log('🔍 Renderizando QUESTIONÁRIO - mostrarResultado:', mostrarResultado, 'jaRespondido:', jaRespondido, 'questionario:', !!questionario),
+          {!loading && !error && (!mostrarResultado && questionario && !jaRespondido) || forcarQuestionario && (
             <>
+              {/* Indicador de modo questionário */}
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
+                <div className="flex items-center space-x-2">
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-green-800 font-medium">
+                    ✅ Modo Questionário Ativo - Responda as perguntas abaixo
+                  </p>
+                </div>
+              </div>
+
               {/* Aviso de questionário obrigatório */}
               {questionario.obrigatorio && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
