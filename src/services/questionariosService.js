@@ -267,22 +267,30 @@ export const verificarQuestionarioRespondido = async (treinamentoId, usuarioId) 
     console.log('🔍 Questionário encontrado ID:', questionario.id);
 
     // Agora verificar se o usuário já respondeu
+    console.log('🔍 Buscando sessões para questionário ID:', questionario.id, 'usuário:', usuarioId);
+    
     const { data, error } = await supabase
       .from('sessoes_questionarios')
-      .select('status, data_conclusao, percentual_acerto, pontuacao_total, pontuacao_maxima')
+      .select('id, status, data_conclusao, percentual_acerto, pontuacao_total, pontuacao_maxima, created_at')
       .eq('questionario_id', questionario.id)
       .eq('usuario_id', usuarioId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+      .order('created_at', { ascending: false });
+
+    console.log('🔍 Todas as sessões encontradas:', data);
+    console.log('🔍 Erro na consulta:', error);
 
     if (error && error.code !== 'PGRST116') throw error;
 
-    const jaRespondido = data?.status === 'concluido';
-    console.log('🔍 Resultado verificação resposta:', { data, jaRespondido });
+    // Pegar a sessão mais recente
+    const sessaoRecente = data && data.length > 0 ? data[0] : null;
+    const jaRespondido = sessaoRecente?.status === 'concluido';
+    
+    console.log('🔍 Sessão mais recente:', sessaoRecente);
+    console.log('🔍 Status da sessão:', sessaoRecente?.status);
+    console.log('🔍 Já respondido (status = concluido):', jaRespondido);
 
     return { 
-      data: data || null, 
+      data: sessaoRecente || null, 
       jaRespondido,
       error: null 
     };
