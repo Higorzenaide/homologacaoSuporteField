@@ -8,7 +8,6 @@ import { listarCategorias as listarCategoriasFeedback } from './categoriasFeedba
 import { getCategoriasAtivas as getCategoriasTreinamentos } from './categoriasTreinamentosService';
 import { getCategoriasNoticias } from './noticiasService';
 import { obterEstatisticas } from './estatisticasService';
-import { supabase } from '../lib/supabase';
 
 // ==========================================
 // HOOKS DE CACHE PARA ENTIDADES PRINCIPAIS
