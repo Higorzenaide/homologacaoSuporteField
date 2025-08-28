@@ -15,11 +15,12 @@ import { obterEstatisticas } from './estatisticasService';
 
 // Hook para treinamentos com cache
 export const useCachedTreinamentos = (filters = {}) => {
-  return useCache(
+  const cacheResult = useCache(
     'treinamentos',
     async () => {
       const result = await getTreinamentos();
-      return result.data || result;
+      const data = result.data || result;
+      return Array.isArray(data) ? data : [];
     },
     {
       ttl: 2 * 60 * 1000, // 2 minutos
@@ -27,6 +28,12 @@ export const useCachedTreinamentos = (filters = {}) => {
       staleWhileRevalidate: true
     }
   );
+
+  // Garantir que sempre retorna um array
+  return {
+    ...cacheResult,
+    data: Array.isArray(cacheResult.data) ? cacheResult.data : []
+  };
 };
 
 // Hook para notícias com cache
@@ -47,7 +54,7 @@ export const useCachedNoticias = (filters = {}) => {
 
 // Hook para usuários com cache
 export const useCachedUsuarios = () => {
-  return useCache(
+  const cacheResult = useCache(
     'users_v3', // Versão nova para forçar invalidação
     async () => {
       console.log('🔍 [USUÁRIOS] Iniciando busca de usuários...');
@@ -62,7 +69,7 @@ export const useCachedUsuarios = () => {
         if (!rpcError && rpcData) {
           const duration = Date.now() - startTime;
           console.log(`✅ [USUÁRIOS] RPC sucesso: ${rpcData.length} usuários em ${duration}ms`);
-          return rpcData;
+          return Array.isArray(rpcData) ? rpcData : [];
         }
         console.log('⚠️ [USUÁRIOS] RPC falhou, usando consulta direta');
       } catch (e) {
@@ -81,13 +88,19 @@ export const useCachedUsuarios = () => {
       const duration = Date.now() - startTime;
       console.log(`✅ [USUÁRIOS] Consulta direta sucesso: ${data?.length || 0} usuários em ${duration}ms`);
       
-      return data || [];
+      return Array.isArray(data) ? data : [];
     },
     {
       ttl: 10 * 60 * 1000, // 10 minutos (dados de usuários mudam pouco)
       staleWhileRevalidate: true
     }
   );
+
+  // Garantir que sempre retorna um array
+  return {
+    ...cacheResult,
+    data: Array.isArray(cacheResult.data) ? cacheResult.data : []
+  };
 };
 
 // Hook para categorias de feedback com cache

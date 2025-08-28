@@ -257,7 +257,7 @@ const Treinamentos = ({ pageParams }) => {
     setSuccess('');
   };
 
-  const treinamentosFiltrados = treinamentos.filter(treinamento => {
+  const treinamentosFiltrados = (treinamentos || []).filter(treinamento => {
     console.log('Debug filtro - Treinamento:', treinamento.titulo, 'Categoria:', treinamento.categoria, 'Filtro:', filtroCategoria);
     
     // Filtro por categoria - comparação mais flexível

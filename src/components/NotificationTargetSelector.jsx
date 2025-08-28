@@ -44,6 +44,12 @@ const NotificationTargetSelector = ({
 
 
   const applyFilters = () => {
+    // Verificar se users é válido antes de usar
+    if (!users || !Array.isArray(users)) {
+      setFilteredUsers([]);
+      return;
+    }
+
     let filtered = [...users];
 
     // Aplicar filtro de busca
@@ -104,7 +110,7 @@ const NotificationTargetSelector = ({
   };
 
   const handleConfirm = () => {
-    const selectedUserData = users.filter(user => selectedUsers.includes(user.id));
+    const selectedUserData = (users || []).filter(user => selectedUsers.includes(user.id));
     onConfirm(selectedUsers, selectedUserData);
     onClose();
   };
