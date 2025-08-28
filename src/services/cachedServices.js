@@ -291,7 +291,7 @@ export const preloadEssentialData = async () => {
       // Pré-carregar categorias (dados quase estáticos)
       getCategoriasTreinamentos(),
       getCategoriasNoticias(),
-      listarCategoriasFeedback(),
+      categoriasFeedbackService.listarCategorias(),
       
       // Pré-carregar estatísticas
       obterEstatisticas()
