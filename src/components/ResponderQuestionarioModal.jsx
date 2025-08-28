@@ -390,7 +390,7 @@ const ResponderQuestionarioModal = ({
               <div className="text-sm text-gray-600">Pontos Possíveis</div>
             </div>
             <div className="text-center">
-              <div className={`text-2xl font-bold ${acertou ? 'text-green-600' : 'text-yellow-600'}`}>
+              <div className={`text-2xl font-bold ${aprovado ? 'text-green-600' : 'text-red-600'}`}>
                 {percentual.toFixed(1)}%
               </div>
               <div className="text-sm text-gray-600">Aproveitamento</div>
