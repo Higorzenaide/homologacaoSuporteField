@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ComentariosSection from './ComentariosSection';
 import CurtidasButton from './CurtidasButton';
-import PDFViewer from './PDFViewer';
+
 import ResponderQuestionarioModal from './ResponderQuestionarioModal';
 import { contarComentarios } from '../services/comentariosService';
 import { contarCurtidas } from '../services/curtidasService';
@@ -11,7 +11,6 @@ import { useAuth } from '../contexts/AuthContext';
 const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('detalhes');
-  const [showPDFViewer, setShowPDFViewer] = useState(false);
   const [totalComentarios, setTotalComentarios] = useState(0);
   const [totalCurtidas, setTotalCurtidas] = useState(0);
   const [showQuestionarioModal, setShowQuestionarioModal] = useState(false);
@@ -76,8 +75,7 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
       return;
     }
     
-    setShowPDFViewer(true);
-    // Abrir em nova aba também
+    // Apenas abrir em nova aba, sem visualizador interno
     if (treinamento.arquivo_url) {
       window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
     }
@@ -86,8 +84,7 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
   const handleQuestionarioComplete = (resultado) => {
     setJaRespondeuQuestionario(true);
     setShowQuestionarioModal(false);
-    // Após completar o questionário, abrir o PDF
-    setShowPDFViewer(true);
+    // Após completar o questionário, abrir o PDF apenas em nova aba
     if (treinamento.arquivo_url) {
       window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
     }
@@ -484,17 +481,7 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
         </div>
       </div>
 
-      {/* PDF Viewer Modal */}
-      {showPDFViewer && (
-        <PDFViewer
-          isOpen={showPDFViewer}
-          onClose={() => setShowPDFViewer(false)}
-          pdfData={{
-            url: treinamento.arquivo_url,
-            title: treinamento.titulo
-          }}
-        />
-      )}
+
 
       {/* Questionário Modal */}
       {showQuestionarioModal && (

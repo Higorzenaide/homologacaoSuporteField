@@ -12,7 +12,7 @@ import GerenciadorCategoriasFeedback from '../components/GerenciadorCategoriasFe
 import AnalyticsQuestionarios from '../components/AnalyticsQuestionarios';
 import AnimatedBackground from '../components/AnimatedBackground';
 import { FullPageLoader, InlineLoader } from '../components/LoadingSpinner';
-import PDFViewer from '../components/PDFViewer';
+
 import ConfirmModal from '../components/ConfirmModal';
 
 const Treinamentos = () => {
@@ -24,8 +24,6 @@ const Treinamentos = () => {
   const [busca, setBusca] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [showPDFViewer, setShowPDFViewer] = useState(false);
-  const [selectedPDF, setSelectedPDF] = useState(null);
   const [showTreinamentoModal, setShowTreinamentoModal] = useState(false);
   const [selectedTreinamento, setSelectedTreinamento] = useState(null);
   const [showGerenciadorCategorias, setShowGerenciadorCategorias] = useState(false);
@@ -89,9 +87,7 @@ const Treinamentos = () => {
       console.error('Erro ao incrementar visualizações:', error);
     }
 
-    setSelectedPDF(treinamento);
-    setShowPDFViewer(true);
-    // Abrir em nova aba também
+    // Apenas abrir em nova aba, sem visualizador interno
     if (treinamento.arquivo_url) {
       window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
     }
@@ -461,16 +457,7 @@ const Treinamentos = () => {
         />
       )}
 
-      {showPDFViewer && (
-        <PDFViewer
-          isOpen={showPDFViewer}
-          onClose={() => setShowPDFViewer(false)}
-          pdfData={{
-            url: selectedPDF?.arquivo_url,
-            title: selectedPDF?.titulo
-          }}
-        />
-      )}
+
 
       {showTreinamentoModal && (
         <TreinamentoModal
