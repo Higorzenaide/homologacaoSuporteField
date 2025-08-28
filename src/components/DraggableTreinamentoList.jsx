@@ -16,6 +16,9 @@ const DraggableTreinamentoList = ({
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
+  // Garantir que sempre temos um array válido
+  const safeTreinamentos = Array.isArray(treinamentos) ? treinamentos : [];
+
   const handleDragStart = (e, index) => {
     if (!isDragEnabled) return;
     
@@ -51,7 +54,7 @@ const DraggableTreinamentoList = ({
     }
 
     // Criar nova ordem dos treinamentos
-    const reorderedTreinamentos = Array.from(treinamentos);
+    const reorderedTreinamentos = Array.from(safeTreinamentos);
     const [movedItem] = reorderedTreinamentos.splice(draggedIndex, 1);
     reorderedTreinamentos.splice(dropIndex, 0, movedItem);
 
@@ -92,7 +95,7 @@ const DraggableTreinamentoList = ({
     // Renderização normal sem drag and drop
     return (
       <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-        {treinamentos.map((treinamento, index) => (
+        {safeTreinamentos.map((treinamento, index) => (
           <div
             key={treinamento.id}
             className="animate-fade-in-up"
@@ -137,7 +140,7 @@ const DraggableTreinamentoList = ({
 
       {/* Grid com drag-and-drop nativo HTML5 */}
       <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-        {treinamentos.map((treinamento, index) => (
+        {safeTreinamentos.map((treinamento, index) => (
           <div
             key={treinamento.id}
             draggable={isDragEnabled && !isUpdating}

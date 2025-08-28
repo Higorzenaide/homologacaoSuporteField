@@ -102,7 +102,7 @@ const NotificationTargetSelector = ({
   };
 
   const selectAll = () => {
-    setSelectedUsers(filteredUsers.map(user => user.id));
+    setSelectedUsers((filteredUsers || []).map(user => user.id));
   };
 
   const selectNone = () => {

@@ -102,7 +102,7 @@ const Treinamentos = ({ pageParams }) => {
       
       // Atualizar o estado local para refletir a mudança imediatamente
       setTreinamentos(prev => 
-        prev.map(t => 
+        (prev || []).map(t => 
           t.id === treinamento.id 
             ? { ...t, visualizacoes: (t.visualizacoes || 0) + 1 }
             : t
@@ -468,7 +468,7 @@ const Treinamentos = ({ pageParams }) => {
                 className="block w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white text-lg"
               >
                 <option value="">Todas as categorias</option>
-                {categorias.map((categoria) => (
+                {(categorias || []).map((categoria) => (
                   <option key={categoria.id} value={categoria.nome}>
                     {categoria.nome}
                   </option>
