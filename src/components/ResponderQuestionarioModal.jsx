@@ -51,6 +51,16 @@ const ResponderQuestionarioModal = ({
     }
   }, [isOpen, treinamento, user]);
 
+  // Prevenir scroll da página quando modal aberto
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = 'unset';
+      };
+    }
+  }, [isOpen]);
+
   const carregarQuestionario = async () => {
     setLoading(true);
     setError('');
@@ -434,8 +444,8 @@ const ResponderQuestionarioModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[95vh] overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-hidden">
+      <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[95vh] overflow-hidden shadow-2xl flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-r from-red-500 to-red-600 p-6 text-white">
           <div className="flex justify-between items-center">
@@ -475,7 +485,7 @@ const ResponderQuestionarioModal = ({
         </div>
 
         {/* Conteúdo */}
-        <div className="p-6 max-h-[calc(95vh-120px)] overflow-y-auto">
+        <div className="p-6 flex-1 overflow-y-auto overscroll-contain">
           {loading && (
             <div className="text-center py-12">
               <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
