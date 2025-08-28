@@ -13,6 +13,7 @@ import LinksImportantes from './pages/LinksImportantes';
 import Usuarios from './pages/Usuarios';
 import InserirFeedback from './pages/InserirFeedback';
 import VisualizarFeedbacks from './pages/VisualizarFeedbacks';
+import './utils/testRealtimeNotifications'; // Expor funções de teste globalmente
 import './App.css';
 
 function App() {

@@ -64,6 +64,10 @@ const VisualizarFeedbacks = () => {
 
   // Filtrar colaboradores baseado na busca
   const colaboradoresFiltrados = useMemo(() => {
+    if (!usuarios || !Array.isArray(usuarios)) {
+      return [];
+    }
+    
     if (!buscaColaborador.trim()) {
       return usuarios;
     }
@@ -88,8 +92,22 @@ const VisualizarFeedbacks = () => {
         if (feedbacksError) {
           console.error('Erro ao carregar feedbacks:', feedbacksError);
         } else {
-          setFeedbacks(feedbacksData || []);
-          setFeedbacksOriginais(feedbacksData || []);
+          // Processar dados para estrutura esperada
+          const feedbacksProcessados = (feedbacksData || []).map(feedback => ({
+            ...feedback,
+            // Campos da estrutura antiga para compatibilidade
+            usuario_nome: feedback.usuario?.nome || '',
+            usuario_email: feedback.usuario?.email || '',
+            usuario_setor: feedback.usuario?.setor || '',
+            categoria_nome: feedback.categoria?.nome || '',
+            categoria_cor: feedback.categoria?.cor || '#6B7280',
+            admin_nome: feedback.admin?.nome || '',
+            // Garantir que feedback_respostas seja sempre um array
+            feedback_respostas: feedback.feedback_respostas || []
+          }));
+          
+          setFeedbacks(feedbacksProcessados);
+          setFeedbacksOriginais(feedbacksProcessados);
         }
 
         // Carregar usuários
@@ -152,7 +170,21 @@ const VisualizarFeedbacks = () => {
       if (error) {
         setMessage({ type: 'error', text: error });
       } else {
-        setFeedbacks(data || []);
+        // Processar dados para estrutura esperada
+        const feedbacksProcessados = (data || []).map(feedback => ({
+          ...feedback,
+          // Campos da estrutura antiga para compatibilidade
+          usuario_nome: feedback.usuario?.nome || '',
+          usuario_email: feedback.usuario?.email || '',
+          usuario_setor: feedback.usuario?.setor || '',
+          categoria_nome: feedback.categoria?.nome || '',
+          categoria_cor: feedback.categoria?.cor || '#6B7280',
+          admin_nome: feedback.admin?.nome || '',
+          // Garantir que feedback_respostas seja sempre um array
+          feedback_respostas: feedback.feedback_respostas || []
+        }));
+        
+        setFeedbacks(feedbacksProcessados);
         setMessage({ type: '', text: '' });
       }
     } catch (error) {
@@ -212,6 +244,10 @@ const VisualizarFeedbacks = () => {
   
   // Gráfico de pizza - usar categorias reais
   const dadosGraficoCategoria = useMemo(() => {
+    if (!feedbacks || !Array.isArray(feedbacks)) {
+      return [];
+    }
+    
     const categoriaCount = {};
     
     feedbacks.forEach(feedback => {
@@ -233,6 +269,10 @@ const VisualizarFeedbacks = () => {
 
   // CORRIGIDO: Gráfico mensal - usar categorias reais, não tipos artificiais
   const dadosGraficoMensal = useMemo(() => {
+    if (!feedbacks || !Array.isArray(feedbacks)) {
+      return [];
+    }
+    
     const feedbacksPorMes = {};
     
     feedbacks.forEach(feedback => {
@@ -277,6 +317,10 @@ const VisualizarFeedbacks = () => {
 
   // Cores para o gráfico mensal baseadas nas categorias reais
   const coresGraficoMensal = useMemo(() => {
+    if (!categorias || !Array.isArray(categorias)) {
+      return {};
+    }
+    
     const cores = {};
     categorias.forEach(categoria => {
       cores[categoria.nome] = categoria.cor;
@@ -286,6 +330,10 @@ const VisualizarFeedbacks = () => {
 
   // Estatísticas por usuário - usar categorias reais
   const estatisticasPorUsuario = useMemo(() => {
+    if (!feedbacks || !Array.isArray(feedbacks)) {
+      return [];
+    }
+    
     const estatisticas = {};
     
     feedbacks.forEach(feedback => {
@@ -315,6 +363,16 @@ const VisualizarFeedbacks = () => {
 
   // Resumo geral - usar categorias reais
   const resumoGeral = useMemo(() => {
+    if (!feedbacks || !Array.isArray(feedbacks)) {
+      return {
+        total: 0,
+        colaboradoresComFeedback: 0,
+        categoriasUsadas: 0,
+        categoriasMaisUsadas: '',
+        feedbacksPorCategoria: {}
+      };
+    }
+    
     const total = feedbacks.length;
     const colaboradoresComFeedback = new Set(feedbacks.map(f => f.usuario_id)).size;
     const categoriasUsadas = new Set(feedbacks.map(f => f.categoria_id)).size;
@@ -612,6 +670,7 @@ const VisualizarFeedbacks = () => {
                       <h3 className="font-semibold text-gray-900 mb-2">Relato</h3>
                       <p className="text-gray-700 leading-relaxed">{feedback.relato}</p>
                     </div>
+
 
                     {/* Resposta do usuário ao feedback */}
                     {feedback.usuario_pode_ver && feedback.feedback_respostas && feedback.feedback_respostas.length > 0 && (

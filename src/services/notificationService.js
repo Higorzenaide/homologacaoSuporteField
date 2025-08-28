@@ -531,6 +531,45 @@ class NotificationService {
     }
     return null;
   }
+
+  // Notificar usuário sobre feedback recebido
+  async notifyUserFeedback(feedbackData) {
+    try {
+      // Só criar notificação se o feedback for visível para o usuário
+      if (!feedbackData.usuario_pode_ver) {
+        return null;
+      }
+
+      const notification = {
+        user_id: feedbackData.usuario_id,
+        type: 'feedback',
+        title: 'Você recebeu um feedback',
+        message: `Você recebeu um novo feedback na categoria "${feedbackData.categoria_nome || 'Geral'}". Verifique em seu perfil.`,
+        data: {
+          feedback_id: feedbackData.id,
+          categoria_nome: feedbackData.categoria_nome,
+          categoria_cor: feedbackData.categoria_cor,
+          nome_avaliador: feedbackData.nome_avaliador,
+          action_url: '/perfil' // Redireciona para o perfil onde pode ver o feedback
+        },
+        priority: 'high' // Feedback é importante
+      };
+
+      const { data, error } = await supabase
+        .from('notifications')
+        .insert([notification])
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      console.log('✅ Notificação de feedback criada:', data);
+      return data;
+    } catch (error) {
+      console.error('❌ Erro ao notificar sobre feedback:', error);
+      return null;
+    }
+  }
 }
 
 export default new NotificationService();

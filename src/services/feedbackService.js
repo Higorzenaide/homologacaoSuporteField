@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import notificationService from './notificationService';
 
 // Serviço para gerenciamento de feedbacks
 export const feedbackService = {
@@ -6,9 +7,24 @@ export const feedbackService = {
   async listarFeedbacks(filtros = {}) {
     try {
       let query = supabase
-        .from('feedbacks_completos')
+        .from('feedbacks')
         .select(`
           *,
+          usuario:usuarios!usuario_id (
+            id,
+            nome,
+            email,
+            setor
+          ),
+          categoria:categorias_feedback!categoria_id (
+            id,
+            nome,
+            cor
+          ),
+          admin:usuarios!admin_id (
+            id,
+            nome
+          ),
           feedback_respostas (
             id,
             tipo_resposta,
@@ -74,6 +90,27 @@ export const feedbackService = {
         .single();
 
       if (error) throw error;
+      
+      // Se o feedback foi criado com sucesso e é visível para o usuário, criar notificação
+      if (data && data.usuario_pode_ver) {
+        try {
+          // Criar dados estruturados para a notificação
+          const notificationData = {
+            id: data.id,
+            usuario_id: data.usuario_id,
+            usuario_pode_ver: data.usuario_pode_ver,
+            categoria_nome: data.categoria?.nome,
+            categoria_cor: data.categoria?.cor,
+            nome_avaliador: data.nome_avaliador
+          };
+          
+          await notificationService.notifyUserFeedback(notificationData);
+        } catch (notifError) {
+          console.error('Erro ao criar notificação de feedback:', notifError);
+          // Não falha o processo se a notificação der erro
+        }
+      }
+      
       return { data, error: null };
     } catch (error) {
       console.error('Erro ao criar feedback:', error);

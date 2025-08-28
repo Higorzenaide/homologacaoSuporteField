@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, X, Settings, Check, AlertCircle, Clock, BookOpen, Newspaper } from 'lucide-react';
+import { Bell, X, Settings, Check, AlertCircle, Clock, BookOpen, Newspaper, MessageSquare } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
@@ -17,11 +17,12 @@ const NotificationBadge = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
-  // Carregar notificações
+  // Carregar notificações e configurar realtime
   useEffect(() => {
     if (user) {
       loadNotifications();
-      setupRealtimeSubscription();
+      const cleanup = setupRealtimeSubscription();
+      return cleanup;
     }
   }, [user]);
 
@@ -51,15 +52,27 @@ const NotificationBadge = () => {
   const setupRealtimeSubscription = () => {
     if (!user) return;
 
+    console.log('🔄 Configurando subscription realtime para notificações...');
+
     const channel = supabase
-      .channel('notifications')
+      .channel(`notifications_${user.id}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'notifications',
         filter: `user_id=eq.${user.id}`
       }, (payload) => {
-        setNotifications(prev => [payload.new, ...prev]);
+        console.log('📨 Nova notificação recebida em tempo real:', payload.new);
+        
+        // Adicionar nova notificação no topo da lista
+        setNotifications(prev => {
+          // Evitar duplicatas
+          const exists = prev.find(n => n.id === payload.new.id);
+          if (exists) return prev;
+          
+          return [payload.new, ...prev.slice(0, 19)]; // Manter apenas 20 notificações
+        });
+        
         setUnreadCount(prev => prev + 1);
         
         // Mostrar notificação do navegador se permitido
@@ -70,10 +83,41 @@ const NotificationBadge = () => {
             tag: payload.new.id
           });
         }
+
+        // Toast notification visual
+        if (showToast) {
+          showToast({
+            type: 'info',
+            title: payload.new.title,
+            message: payload.new.message,
+            duration: 5000
+          });
+        }
       })
-      .subscribe();
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${user.id}`
+      }, (payload) => {
+        console.log('🔄 Notificação atualizada:', payload.new);
+        
+        // Atualizar notificação existente
+        setNotifications(prev => 
+          prev.map(n => n.id === payload.new.id ? payload.new : n)
+        );
+        
+        // Se foi marcada como lida, decrementar contador
+        if (payload.old.read === false && payload.new.read === true) {
+          setUnreadCount(prev => Math.max(0, prev - 1));
+        }
+      })
+      .subscribe((status) => {
+        console.log('📡 Status da subscription de notificações:', status);
+      });
 
     return () => {
+      console.log('🔌 Desconectando subscription de notificações...');
       supabase.removeChannel(channel);
     };
   };
@@ -247,6 +291,13 @@ const NotificationBadge = () => {
         const url = notification.data.action_url;
         console.log('🔍 Navegando para:', url);
 
+        // Caso especial: notificação de feedback abre modal de perfil
+        if (notification.type === 'feedback' && url === '/perfil') {
+          // Disparar evento personalizado para abrir modal de perfil
+          window.dispatchEvent(new CustomEvent('openUserProfile'));
+          return;
+        }
+
         // Parse da URL para extrair página e parâmetros
         const urlParts = url.split('/').filter(part => part.length > 0);
         
@@ -292,6 +343,8 @@ const NotificationBadge = () => {
         return <AlertCircle className="w-4 h-4 text-red-500" />;
       case 'custom_reminder':
         return <Bell className="w-4 h-4 text-indigo-500" />;
+      case 'feedback':
+        return <MessageSquare className="w-4 h-4 text-yellow-500" />;
       default:
         return <Bell className="w-4 h-4 text-gray-500" />;
     }
@@ -311,6 +364,8 @@ const NotificationBadge = () => {
         return 'border-l-red-500 bg-red-50';
       case 'custom_reminder':
         return 'border-l-indigo-500 bg-indigo-50';
+      case 'feedback':
+        return 'border-l-yellow-500 bg-yellow-50';
       default:
         return 'border-l-gray-500 bg-gray-50';
     }

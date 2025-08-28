@@ -24,6 +24,16 @@ const Header = ({ currentPage, setCurrentPage }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Escutar evento para abrir modal de perfil (vindo das notificações)
+  useEffect(() => {
+    const handleOpenProfile = () => {
+      setShowProfile(true);
+    };
+    
+    window.addEventListener('openUserProfile', handleOpenProfile);
+    return () => window.removeEventListener('openUserProfile', handleOpenProfile);
+  }, []);
+
   const navItems = [
     { id: 'home', label: 'Início', icon: '🏠', desc: 'Página inicial' },
     { id: 'treinamentos', label: 'Treinamentos', icon: '📚', desc: 'Materiais de estudo' },
@@ -148,25 +158,11 @@ const Header = ({ currentPage, setCurrentPage }) => {
                 </div>
               )}
 
-              {/* Profile Button */}
-              {user && (
-                <div className="flex-shrink-0">
-                  <button
-                    onClick={() => setShowProfile(true)}
-                    className="relative p-2 text-gray-700 hover:text-blue-600 transition-colors rounded-lg hover:bg-blue-50"
-                    title="Meu Perfil"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </button>
-                </div>
-              )}
-              
+
               {/* User Menu */}
               {user ? (
                 <div className="flex-shrink-0">
-                  <UserMenu />
+                  <UserMenu onOpenProfile={() => setShowProfile(true)} />
                 </div>
               ) : (
                 <div className="flex-shrink-0">

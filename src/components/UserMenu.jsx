@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
-const UserMenu = () => {
+const UserMenu = ({ onOpenProfile }) => {
   const { user, userProfile, isAdmin, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -22,7 +22,7 @@ const UserMenu = () => {
           {userProfile?.nome?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase()}
         </div>
         <span className="hidden md:block text-sm font-medium">
-          {userProfile?.nome || user.email}
+          {userProfile?.nome?.split(' ')[0] || user.email?.split('@')[0]}
         </span>
         <svg
           className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
@@ -69,7 +69,7 @@ const UserMenu = () => {
               <div className="py-1">
                 <button
                   onClick={() => {
-                    // TODO: Implementar modal de perfil
+                    onOpenProfile && onOpenProfile();
                     setIsOpen(false);
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
@@ -79,21 +79,6 @@ const UserMenu = () => {
                   </svg>
                   Meu Perfil
                 </button>
-
-                {isAdmin && (
-                  <button
-                    onClick={() => {
-                      // TODO: Navegar para página de usuários
-                      setIsOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                  >
-                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                    </svg>
-                    Gerenciar Usuários
-                  </button>
-                )}
 
                 <div className="border-t border-gray-100 my-1"></div>
 
