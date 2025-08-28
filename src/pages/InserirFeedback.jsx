@@ -25,7 +25,8 @@ const InserirFeedback = () => {
     usuario_id: '',
     categoria_id: '',
     relato: '',
-    nome_avaliador: ''
+    nome_avaliador: '',
+    usuario_pode_ver: false
   });
 
   // Filtrar colaboradores baseado na busca
@@ -311,6 +312,26 @@ const InserirFeedback = () => {
                 </div>
               </div>
 
+              {/* Checkbox de visibilidade */}
+              <div className="flex items-center space-x-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <input
+                  type="checkbox"
+                  id="usuario_pode_ver"
+                  checked={formData.usuario_pode_ver}
+                  onChange={(e) => handleInputChange('usuario_pode_ver', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="usuario_pode_ver" className="text-sm font-medium text-blue-900 cursor-pointer">
+                  O usuário pode ver este feedback?
+                </label>
+                <div className="text-xs text-blue-700 mt-1">
+                  {formData.usuario_pode_ver ? 
+                    "✅ O colaborador poderá ver este feedback em seu perfil" : 
+                    "🔒 Este feedback será privado (apenas admins visualizam)"
+                  }
+                </div>
+              </div>
+
               {/* Botões */}
               <div className="flex justify-end space-x-4 pt-4">
                 <Button
@@ -321,7 +342,8 @@ const InserirFeedback = () => {
                       usuario_id: '',
                       categoria_id: '',
                       relato: '',
-                      nome_avaliador: ''
+                      nome_avaliador: '',
+                      usuario_pode_ver: false
                     });
                     setBuscaColaborador('');
                     setMessage({ type: '', text: '' });

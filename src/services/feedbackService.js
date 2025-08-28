@@ -7,7 +7,16 @@ export const feedbackService = {
     try {
       let query = supabase
         .from('feedbacks_completos')
-        .select('*');
+        .select(`
+          *,
+          feedback_respostas (
+            id,
+            tipo_resposta,
+            motivo_discordancia,
+            created_at,
+            updated_at
+          )
+        `);
 
       // Aplicar filtros
       if (filtros.usuario_id) {
@@ -53,7 +62,8 @@ export const feedbackService = {
           categoria_id: dadosFeedback.categoria_id,
           relato: dadosFeedback.relato,
           nome_avaliador: dadosFeedback.nome_avaliador,
-          admin_id: dadosFeedback.admin_id
+          admin_id: dadosFeedback.admin_id,
+          usuario_pode_ver: dadosFeedback.usuario_pode_ver || false
         }])
         .select(`
           *,
