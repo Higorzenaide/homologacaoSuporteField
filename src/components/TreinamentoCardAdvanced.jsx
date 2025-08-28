@@ -363,8 +363,8 @@ const TreinamentoCardAdvanced = ({
       <div
         className={`
         absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 
-        transform -skew-x-12 transition-all duration-1000 pointer-events-none
-        ${isHovered ? "opacity-10 translate-x-full" : "-translate-x-full"}
+        transform -skew-x-12 transition-all duration-700 ease-out pointer-events-none
+        ${isHovered ? "opacity-8 translate-x-full" : "-translate-x-full"}
       `}
       ></div>
 

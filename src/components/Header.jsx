@@ -82,7 +82,7 @@ const Header = ({ currentPage, setCurrentPage }) => {
                   />
                 </div>
                 {/* Efeito de brilho */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-all duration-600 ease-out"></div>
               </div>
               <div className="transform transition-all duration-300 group-hover:translate-x-1">
                 <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-red-600 bg-clip-text text-transparent">

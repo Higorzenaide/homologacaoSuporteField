@@ -118,18 +118,26 @@ const Treinamentos = () => {
       
       // Se foi criado/editado um questionário, criar ele agora
       if (questionarioData && treinamentoResult.data) {
+        console.log('🔍 Dados do questionário:', questionarioData);
+        console.log('🔍 ID do treinamento:', treinamentoResult.data.id);
+        
         try {
           const questionarioResult = await criarQuestionario(treinamentoResult.data.id, questionarioData);
+          console.log('🔍 Resultado do questionário:', questionarioResult);
+          
           if (questionarioResult.error) {
-            console.error('Erro ao criar questionário:', questionarioResult.error);
-            setError('Treinamento salvo, mas houve erro ao criar o questionário');
+            console.error('❌ Erro ao criar questionário:', questionarioResult.error);
+            setError('Treinamento salvo, mas houve erro ao criar o questionário: ' + JSON.stringify(questionarioResult.error));
           } else {
+            console.log('✅ Questionário criado com sucesso!');
             setSuccess(prev => prev + ' Questionário criado com sucesso!');
           }
         } catch (questionarioError) {
-          console.error('Erro ao criar questionário:', questionarioError);
-          setError('Treinamento salvo, mas houve erro ao criar o questionário');
+          console.error('❌ Erro ao criar questionário (catch):', questionarioError);
+          setError('Treinamento salvo, mas houve erro ao criar o questionário: ' + questionarioError.message);
         }
+      } else {
+        console.log('🔍 Sem dados de questionário para criar', { questionarioData, treinamentoResult: treinamentoResult?.data });
       }
       
       // Fechar modal e limpar estado de edição

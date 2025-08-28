@@ -202,20 +202,22 @@ const QuestionarioModal = ({
     setErros([]);
 
     try {
-      let resultado;
-      
       if (questionarioExistente) {
-        resultado = await atualizarQuestionario(questionarioExistente.id, questionario);
+        // Se está editando um questionário existente, salvar no banco
+        const resultado = await atualizarQuestionario(questionarioExistente.id, questionario);
+        if (resultado.error) {
+          throw resultado.error;
+        }
+
+        if (onSave) {
+          onSave(resultado.data);
+        }
       } else {
-        resultado = await criarQuestionario(treinamentoId, questionario);
-      }
-
-      if (resultado.error) {
-        throw resultado.error;
-      }
-
-      if (onSave) {
-        onSave(resultado.data);
+        // Se está criando um novo questionário, apenas salvar os dados localmente
+        // O questionário será criado no banco quando o treinamento for salvo
+        if (onSave) {
+          onSave(questionario);
+        }
       }
 
       onClose();

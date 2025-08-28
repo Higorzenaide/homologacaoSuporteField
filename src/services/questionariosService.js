@@ -9,7 +9,11 @@ import { supabase } from '../lib/supabase';
  */
 export const criarQuestionario = async (treinamentoId, dadosQuestionario) => {
   try {
+    console.log('🔍 criarQuestionario - entrada:', { treinamentoId, dadosQuestionario });
+    
     const { titulo, descricao, obrigatorio = true, perguntas = [] } = dadosQuestionario;
+
+    console.log('🔍 Dados extraídos:', { titulo, descricao, obrigatorio, perguntas: perguntas.length });
 
     // Criar o questionário
     const { data: questionario, error: questionarioError } = await supabase
@@ -23,6 +27,8 @@ export const criarQuestionario = async (treinamentoId, dadosQuestionario) => {
       }])
       .select()
       .single();
+
+    console.log('🔍 Resultado inserção questionário:', { questionario, questionarioError });
 
     if (questionarioError) throw questionarioError;
 
@@ -39,16 +45,21 @@ export const criarQuestionario = async (treinamentoId, dadosQuestionario) => {
         obrigatoria: pergunta.obrigatoria !== false
       }));
 
+      console.log('🔍 Dados das perguntas a inserir:', perguntasData);
+
       const { error: perguntasError } = await supabase
         .from('perguntas_questionarios')
         .insert(perguntasData);
 
+      console.log('🔍 Resultado inserção perguntas:', { perguntasError });
+
       if (perguntasError) throw perguntasError;
     }
 
+    console.log('✅ Questionário criado com sucesso:', questionario);
     return { data: questionario, error: null };
   } catch (error) {
-    console.error('Erro ao criar questionário:', error);
+    console.error('❌ Erro ao criar questionário:', error);
     return { data: null, error };
   }
 };

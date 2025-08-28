@@ -103,7 +103,7 @@ const TreinamentoCard = ({
       }}
     >
       {/* Efeito de brilho no hover */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-20 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-all duration-1000"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-15 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-all duration-700 ease-out"></div>
       
       {/* Header do Card com Gradiente Dinâmico */}
       <div className="relative bg-gradient-to-br from-red-600 via-red-700 to-red-800 p-6 text-white overflow-hidden">
