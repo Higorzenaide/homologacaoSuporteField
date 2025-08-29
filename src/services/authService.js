@@ -162,11 +162,49 @@ export class AuthService {
 
   // Fazer logout
   logout() {
-    this.clearUserData();
-    return {
-      success: true,
-      error: null
-    };
+    try {
+      // Limpar timers globais se existirem
+      if (window.loginTimer) {
+        clearTimeout(window.loginTimer);
+        delete window.loginTimer;
+      }
+      
+      if (window.refreshTimer) {
+        clearTimeout(window.refreshTimer);
+        delete window.refreshTimer;
+      }
+
+      // Limpar dados do usuário
+      this.clearUserData();
+      
+      // Forçar limpeza do localStorage
+      try {
+        localStorage.removeItem('userSession');
+        localStorage.removeItem('userToken');
+        localStorage.removeItem('authData');
+        localStorage.removeItem('curtidas_cache');
+      } catch (error) {
+        console.warn('Erro ao limpar localStorage:', error);
+      }
+
+      // Limpar dados da instância
+      this.currentUser = null;
+      this.isAuthenticated = false;
+      
+      return {
+        success: true,
+        error: null
+      };
+    } catch (error) {
+      console.error('Erro durante logout:', error);
+      // Mesmo com erro, tentar limpar o máximo possível
+      this.currentUser = null;
+      this.isAuthenticated = false;
+      return {
+        success: false,
+        error: error.message
+      };
+    }
   }
 
   // Verificar se usuário está logado

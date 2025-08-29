@@ -1,13 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const UserMenu = ({ onOpenProfile }) => {
   const { user, userProfile, isAdmin, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const isMountedRef = useRef(true);
+
+  // Cleanup quando componente desmonta
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const handleSignOut = async () => {
-    await signOut();
-    setIsOpen(false);
+    try {
+      // Fechar menu imediatamente
+      if (isMountedRef.current) {
+        setIsOpen(false);
+      }
+      
+      // Executar logout após pequeno delay para evitar conflitos
+      setTimeout(() => {
+        signOut();
+      }, 50);
+    } catch (error) {
+      console.error('Erro no logout:', error);
+      // Mesmo com erro, fechar menu se ainda montado
+      if (isMountedRef.current) {
+        setIsOpen(false);
+      }
+    }
   };
 
   if (!user) return null;
@@ -15,7 +38,11 @@ const UserMenu = ({ onOpenProfile }) => {
   return (
     <div className="relative">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          if (isMountedRef.current) {
+            setIsOpen(!isOpen);
+          }
+        }}
         className="flex items-center space-x-2 text-gray-700 hover:text-red-600 focus:outline-none"
       >
         <div className="w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
@@ -39,7 +66,11 @@ const UserMenu = ({ onOpenProfile }) => {
           {/* Overlay para fechar o menu */}
           <div
             className="fixed inset-0 z-10"
-            onClick={() => setIsOpen(false)}
+            onClick={() => {
+              if (isMountedRef.current) {
+                setIsOpen(false);
+              }
+            }}
           />
           
           {/* Menu dropdown */}
@@ -70,7 +101,9 @@ const UserMenu = ({ onOpenProfile }) => {
                 <button
                   onClick={() => {
                     onOpenProfile && onOpenProfile();
-                    setIsOpen(false);
+                    if (isMountedRef.current) {
+                      setIsOpen(false);
+                    }
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
                 >

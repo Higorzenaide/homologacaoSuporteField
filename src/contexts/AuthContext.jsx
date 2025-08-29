@@ -108,9 +108,43 @@ export const AuthProvider = ({ children }) => {
 
   // Função de logout
   const logout = () => {
-    authService.logout();
-    setUser(null);
-    setIsAuthenticated(false);
+    try {
+      // Limpar qualquer timeout ou interval ativo
+      if (window.logoutTimer) {
+        clearTimeout(window.logoutTimer);
+        delete window.logoutTimer;
+      }
+
+      // Limpar subscriptions do Supabase se existirem
+      if (window.supabaseSubscription) {
+        window.supabaseSubscription.unsubscribe();
+        delete window.supabaseSubscription;
+      }
+
+      // Executar logout do serviço
+      authService.logout();
+      
+      // Limpar estados locais imediatamente
+      setUser(null);
+      setIsAuthenticated(false);
+      setShowFirstLoginModal(false);
+      setLoading(false);
+
+      // Forçar redirecionamento para página inicial
+      setTimeout(() => {
+        if (window.location.pathname !== '/') {
+          window.location.href = '/';
+        }
+      }, 100);
+      
+    } catch (error) {
+      console.error('Erro durante logout:', error);
+      // Mesmo com erro, limpar estados
+      setUser(null);
+      setIsAuthenticated(false);
+      setShowFirstLoginModal(false);
+      setLoading(false);
+    }
   };
 
   // Função para lidar com conclusão do primeiro login

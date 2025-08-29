@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Bell, X, Settings, Check, AlertCircle, Clock, BookOpen, Newspaper, MessageSquare } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -16,6 +16,19 @@ const NotificationBadge = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const isMountedRef = useRef(true);
+  const subscriptionRef = useRef(null);
+
+  // Cleanup quando componente desmonta
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+        subscriptionRef.current = null;
+      }
+    };
+  }, []);
 
   // Carregar notificações e configurar realtime
   useEffect(() => {
@@ -23,13 +36,26 @@ const NotificationBadge = () => {
       loadNotifications();
       const cleanup = setupRealtimeSubscription();
       return cleanup;
+    } else {
+      // Limpar quando não há usuário
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+        subscriptionRef.current = null;
+      }
+      if (isMountedRef.current) {
+        setNotifications([]);
+        setUnreadCount(0);
+      }
     }
   }, [user]);
 
   const loadNotifications = async () => {
-    if (!user) return;
+    if (!user || !isMountedRef.current) return;
     
-    setIsLoading(true);
+    if (isMountedRef.current) {
+      setIsLoading(true);
+    }
+    
     try {
       const { data, error } = await supabase
         .from('notifications')
@@ -40,17 +66,21 @@ const NotificationBadge = () => {
 
       if (error) throw error;
 
-      setNotifications(data || []);
-      setUnreadCount(data?.filter(n => !n.read).length || 0);
+      if (isMountedRef.current) {
+        setNotifications(data || []);
+        setUnreadCount(data?.filter(n => !n.read).length || 0);
+      }
     } catch (error) {
       console.error('Erro ao carregar notificações:', error);
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
   const setupRealtimeSubscription = () => {
-    if (!user) return;
+    if (!user || !isMountedRef.current) return;
 
     console.log('🔄 Configurando subscription realtime para notificações...');
 
@@ -62,6 +92,8 @@ const NotificationBadge = () => {
         table: 'notifications',
         filter: `user_id=eq.${user.id}`
       }, (payload) => {
+        if (!isMountedRef.current) return;
+        
         console.log('📨 Nova notificação recebida em tempo real:', payload.new);
         
         // Adicionar nova notificação no topo da lista
@@ -93,6 +125,8 @@ const NotificationBadge = () => {
         table: 'notifications',
         filter: `user_id=eq.${user.id}`
       }, (payload) => {
+        if (!isMountedRef.current) return;
+        
         console.log('🔄 Notificação atualizada:', payload.new);
         
         // Atualizar notificação existente
@@ -109,19 +143,33 @@ const NotificationBadge = () => {
         console.log('📡 Status da subscription de notificações:', status);
       });
 
+    // Salvar referência para cleanup
+    subscriptionRef.current = channel;
+    
+    // Salvar também globalmente para o AuthContext
+    window.supabaseSubscription = channel;
+
     return () => {
       console.log('🔌 Desconectando subscription de notificações...');
-      supabase.removeChannel(channel);
+      if (channel) {
+        channel.unsubscribe();
+      }
+      subscriptionRef.current = null;
+      if (window.supabaseSubscription === channel) {
+        delete window.supabaseSubscription;
+      }
     };
   };
 
   const markAsRead = async (notificationId) => {
+    if (!isMountedRef.current) return;
+    
     try {
       // Primeiro, otimisticamente atualiza a UI
       const notificationToUpdate = notifications.find(n => n.id === notificationId);
       const wasUnread = notificationToUpdate && !notificationToUpdate.read;
       
-      if (wasUnread) {
+      if (wasUnread && isMountedRef.current) {
         setNotifications(prev => 
           prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
         );
