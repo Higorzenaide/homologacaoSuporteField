@@ -103,8 +103,9 @@ function App() {
           <main>
             {renderPage()}
           </main>
-          <CacheMonitor />
-          <PerformanceMonitor />
+          {/* Monitores de desenvolvimento - descomente para testar */}
+          {/* <CacheMonitor /> */}
+          {/* <PerformanceMonitor /> */}
         </div>
       </AuthProvider>
     </ToastProvider>

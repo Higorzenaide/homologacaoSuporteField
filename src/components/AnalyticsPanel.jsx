@@ -83,15 +83,15 @@ const AnalyticsPanel = ({ isOpen, onClose }) => {
   };
 
   const StatCard = ({ title, value, icon: Icon, color = 'blue', subtitle }) => (
-    <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
+    <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105">
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-          {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
+        <div className="flex-1">
+          <p className="text-sm font-medium text-gray-600 mb-2">{title}</p>
+          <p className="text-3xl font-bold text-gray-900 mb-1">{value}</p>
+          {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
         </div>
-        <div className={`p-3 rounded-lg bg-${color}-100`}>
-          <Icon className={`w-6 h-6 text-${color}-600`} />
+        <div className={`p-4 rounded-xl bg-gradient-to-br from-${color}-100 to-${color}-200 shadow-md`}>
+          <Icon className={`w-7 h-7 text-${color}-600`} />
         </div>
       </div>
     </div>
@@ -99,36 +99,41 @@ const AnalyticsPanel = ({ isOpen, onClose }) => {
 
   const EngagementCard = ({ item, type, onClick }) => (
     <div 
-      className="bg-white rounded-lg p-4 shadow-md border border-gray-100 hover:shadow-lg transition-shadow cursor-pointer"
+      className="bg-white rounded-xl p-6 shadow-md border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:scale-105 cursor-pointer group"
       onClick={() => onClick(type, item[type]?.id)}
     >
-      <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-        {item[type]?.titulo}
-      </h3>
-      <div className="flex items-center justify-between text-sm text-gray-600">
-        <div className="flex items-center space-x-4">
-          <span className="flex items-center">
-            <Eye className="w-4 h-4 mr-1" />
-            {item.views}
-          </span>
-          <span className="flex items-center">
-            <Heart className="w-4 h-4 mr-1" />
-            {item.likes}
-          </span>
-          <span className="flex items-center">
-            <MessageCircle className="w-4 h-4 mr-1" />
-            {item.comments}
-          </span>
-          {type === 'treinamento' && (
-            <span className="flex items-center">
-              <CheckCircle className="w-4 h-4 mr-1" />
-              {item.completed}
-            </span>
-          )}
-        </div>
-        <span className="text-xs text-gray-500">
+      <div className="flex items-start justify-between mb-4">
+        <h3 className="font-bold text-gray-900 text-lg line-clamp-2 group-hover:text-red-600 transition-colors">
+          {item[type]?.titulo}
+        </h3>
+        <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">
           {formatDate(item[type]?.created_at)}
-        </span>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="flex items-center space-x-2 text-blue-600">
+          <Eye className="w-4 h-4" />
+          <span className="font-medium">{item.views}</span>
+          <span className="text-gray-500">visualizações</span>
+        </div>
+        <div className="flex items-center space-x-2 text-red-600">
+          <Heart className="w-4 h-4" />
+          <span className="font-medium">{item.likes}</span>
+          <span className="text-gray-500">curtidas</span>
+        </div>
+        <div className="flex items-center space-x-2 text-green-600">
+          <MessageCircle className="w-4 h-4" />
+          <span className="font-medium">{item.comments}</span>
+          <span className="text-gray-500">comentários</span>
+        </div>
+        {type === 'treinamento' && (
+          <div className="flex items-center space-x-2 text-purple-600">
+            <CheckCircle className="w-4 h-4" />
+            <span className="font-medium">{item.completed}</span>
+            <span className="text-gray-500">concluídos</span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -175,7 +180,7 @@ const AnalyticsPanel = ({ isOpen, onClose }) => {
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-7xl max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-blue-600">
+        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-red-500 to-red-600">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <BarChart3 className="w-6 h-6 text-white" />
@@ -221,7 +226,7 @@ const AnalyticsPanel = ({ isOpen, onClose }) => {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center space-x-2 px-6 py-4 font-medium transition-colors ${
                 activeTab === tab.id
-                  ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                  ? 'text-red-600 border-b-2 border-red-600 bg-red-50'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
@@ -235,14 +240,17 @@ const AnalyticsPanel = ({ isOpen, onClose }) => {
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <RefreshCw className="w-8 h-8 animate-spin text-blue-600" />
+              <RefreshCw className="w-8 h-8 animate-spin text-red-600" />
               <span className="ml-3 text-gray-600">Carregando analytics...</span>
             </div>
           ) : (
             <>
               {activeTab === 'overview' && analytics && (
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900">Resumo dos Últimos {dateRange} Dias</h3>
+                <div className="space-y-8">
+                  <div className="text-center">
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">Resumo dos Últimos {dateRange} Dias</h3>
+                    <p className="text-gray-600">Acompanhe o desempenho e engajamento da sua plataforma</p>
+                  </div>
                   
                   {/* Stats Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -277,9 +285,14 @@ const AnalyticsPanel = ({ isOpen, onClose }) => {
                   </div>
 
                   {/* Top Content */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="text-md font-semibold text-gray-900 mb-4">Top Notícias por Engajamento</h4>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="bg-gray-50 rounded-xl p-6">
+                      <div className="flex items-center space-x-2 mb-6">
+                        <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                          <Eye className="w-5 h-5 text-green-600" />
+                        </div>
+                        <h4 className="text-lg font-bold text-gray-900">Top Notícias por Engajamento</h4>
+                      </div>
                       <div className="space-y-3">
                         {topNoticias.slice(0, 5).map((item, index) => (
                           <EngagementCard
@@ -291,8 +304,13 @@ const AnalyticsPanel = ({ isOpen, onClose }) => {
                         ))}
                       </div>
                     </div>
-                    <div>
-                      <h4 className="text-md font-semibold text-gray-900 mb-4">Top Treinamentos por Engajamento</h4>
+                    <div className="bg-gray-50 rounded-xl p-6">
+                      <div className="flex items-center space-x-2 mb-6">
+                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                          <CheckCircle className="w-5 h-5 text-purple-600" />
+                        </div>
+                        <h4 className="text-lg font-bold text-gray-900">Top Treinamentos por Engajamento</h4>
+                      </div>
                       <div className="space-y-3">
                         {topTreinamentos.slice(0, 5).map((item, index) => (
                           <EngagementCard
@@ -309,9 +327,12 @@ const AnalyticsPanel = ({ isOpen, onClose }) => {
               )}
 
               {activeTab === 'noticias' && (
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900">Analytics de Notícias</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-8">
+                  <div className="text-center">
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">Analytics de Notícias</h3>
+                    <p className="text-gray-600">Desempenho detalhado de todas as notícias publicadas</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {topNoticias.map((item, index) => (
                       <EngagementCard
                         key={index}
@@ -325,9 +346,12 @@ const AnalyticsPanel = ({ isOpen, onClose }) => {
               )}
 
               {activeTab === 'treinamentos' && (
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900">Analytics de Treinamentos</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-8">
+                  <div className="text-center">
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">Analytics de Treinamentos</h3>
+                    <p className="text-gray-600">Análise detalhada do engajamento e conclusão de treinamentos</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {topTreinamentos.map((item, index) => (
                       <EngagementCard
                         key={index}

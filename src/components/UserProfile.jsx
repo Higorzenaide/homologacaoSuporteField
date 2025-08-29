@@ -104,7 +104,7 @@ const UserProfile = ({ isOpen, onClose }) => {
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
+        <div className="bg-gradient-to-r from-red-500 to-red-600 text-white p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
@@ -112,8 +112,8 @@ const UserProfile = ({ isOpen, onClose }) => {
               </div>
               <div>
                 <h2 className="text-2xl font-bold">{user?.nome}</h2>
-                <p className="text-blue-100">{user?.cargo || 'Colaborador'}</p>
-                <p className="text-sm text-blue-200">{user?.email}</p>
+                <p className="text-red-100">{user?.cargo || 'Colaborador'}</p>
+                <p className="text-sm text-red-200">{user?.email}</p>
               </div>
             </div>
             <button
@@ -140,7 +140,7 @@ const UserProfile = ({ isOpen, onClose }) => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors flex items-center space-x-2 ${
                     activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
+                      ? 'border-red-500 text-red-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700'
                   }`}
                 >
@@ -156,7 +156,7 @@ const UserProfile = ({ isOpen, onClose }) => {
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
               <span className="ml-3 text-gray-600">Carregando...</span>
             </div>
           ) : (
@@ -166,10 +166,10 @@ const UserProfile = ({ isOpen, onClose }) => {
                 <div className="space-y-6">
                   {/* Stats Cards */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-blue-50 rounded-xl p-4 text-center">
-                      <MessageCircle className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                      <div className="text-2xl font-bold text-blue-700">{profileData.total_comentarios}</div>
-                      <div className="text-sm text-blue-600">Comentários</div>
+                    <div className="bg-red-50 rounded-xl p-4 text-center">
+                      <MessageCircle className="w-8 h-8 text-red-600 mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-red-700">{profileData.total_comentarios}</div>
+                      <div className="text-sm text-red-600">Comentários</div>
                     </div>
                     
                     <div className="bg-red-50 rounded-xl p-4 text-center">
@@ -178,18 +178,18 @@ const UserProfile = ({ isOpen, onClose }) => {
                       <div className="text-sm text-red-600">Curtidas</div>
                     </div>
                     
-                    <div className="bg-green-50 rounded-xl p-4 text-center">
-                      <BookOpen className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                      <div className="text-2xl font-bold text-green-700">{profileData.total_questionarios}</div>
-                      <div className="text-sm text-green-600">Questionários</div>
+                    <div className="bg-blue-50 rounded-xl p-4 text-center">
+                      <BookOpen className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-blue-700">{profileData.total_questionarios}</div>
+                      <div className="text-sm text-blue-600">Questionários</div>
                     </div>
                     
-                    <div className="bg-yellow-50 rounded-xl p-4 text-center">
-                      <Star className="w-8 h-8 text-yellow-600 mx-auto mb-2" />
+                    <div className="bg-green-50 rounded-xl p-4 text-center">
+                      <Star className="w-8 h-8 text-green-600 mx-auto mb-2" />
                       <div className={`text-2xl font-bold ${getScoreColor(profileData.media_notas_questionarios)}`}>
                         {profileData.media_notas_questionarios?.toFixed(1) || '0.0'}%
                       </div>
-                      <div className="text-sm text-yellow-600">Média</div>
+                      <div className="text-sm text-green-600">Média</div>
                     </div>
                   </div>
 
