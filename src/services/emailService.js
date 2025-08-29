@@ -1,57 +1,70 @@
-// Serviço de envio de emails via Gmail SMTP
-// Para usar este serviço, você precisa configurar uma "App Password" no Gmail
+// Serviço de envio de emails via Gmail
+// Como aplicações frontend não podem se conectar diretamente ao SMTP,
+// usamos APIs externas ou serviços de email
 
 class EmailService {
   constructor() {
-    this.smtpConfig = {
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, // true para 465, false para outras portas
-      auth: {
-        user: import.meta.env.VITE_EMAIL_USER, // seu email do Gmail
-        pass: import.meta.env.VITE_EMAIL_APP_PASSWORD // App Password do Gmail
-      }
+    this.emailConfig = {
+      user: import.meta.env.VITE_EMAIL_USER,
+      password: import.meta.env.VITE_EMAIL_APP_PASSWORD,
+      from: import.meta.env.VITE_EMAIL_FROM || import.meta.env.VITE_EMAIL_USER
     };
   }
 
-  // Enviar email usando a API do Supabase (opção 1 - mais simples)
-  async sendEmailViaSupabase(to, subject, htmlContent, textContent = null) {
+  // Enviar email usando EmailJS (opção 1 - recomendada para frontend)
+  async sendEmailViaEmailJS(to, subject, htmlContent, textContent = null) {
     try {
-      // Usar a função RPC do Supabase para enviar emails
-      const { data, error } = await supabase.rpc('send_notification_email', {
-        recipient_email: to,
-        email_subject: subject,
-        html_content: htmlContent,
-        text_content: textContent || this.htmlToText(htmlContent)
-      });
+      // EmailJS é um serviço que permite envio de emails do frontend
+      // Você precisa criar uma conta em https://www.emailjs.com/
+      
+      if (!window.emailjs) {
+        throw new Error('EmailJS não está carregado. Adicione o script no index.html');
+      }
 
-      if (error) throw error;
-      return { success: true, data };
+      const templateParams = {
+        to_email: to,
+        subject: subject,
+        html_content: htmlContent,
+        text_content: textContent || this.htmlToText(htmlContent),
+        from_name: 'Suporte Field',
+        from_email: this.emailConfig.from
+      };
+
+      const result = await window.emailjs.send(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        templateParams,
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      );
+
+      return { success: true, data: result };
     } catch (error) {
-      console.error('Erro ao enviar email via Supabase:', error);
+      console.error('Erro ao enviar email via EmailJS:', error);
       return { success: false, error: error.message };
     }
   }
 
-  // Enviar email usando API externa (opção 2 - mais controle)
-  async sendEmailViaAPI(to, subject, htmlContent, textContent = null) {
+  // Enviar email usando Formspree (opção 2 - simples e gratuito)
+  async sendEmailViaFormspree(to, subject, htmlContent, textContent = null) {
     try {
-      const emailData = {
-        to: to,
-        subject: subject,
-        html: htmlContent,
-        text: textContent || this.htmlToText(htmlContent),
-        from: import.meta.env.VITE_EMAIL_FROM || 'suporte@desktop.com.br'
-      };
+      const formspreeEndpoint = import.meta.env.VITE_FORMSPREE_ENDPOINT;
+      
+      if (!formspreeEndpoint) {
+        throw new Error('VITE_FORMSPREE_ENDPOINT não configurado');
+      }
 
-      // Usar um endpoint do seu backend ou serviço de email
-      const response = await fetch('/api/send-email', {
+      const formData = new FormData();
+      formData.append('email', to);
+      formData.append('subject', subject);
+      formData.append('message', textContent || this.htmlToText(htmlContent));
+      formData.append('_replyto', this.emailConfig.from);
+
+      const response = await fetch(formspreeEndpoint, {
         method: 'POST',
+        body: formData,
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_EMAIL_API_KEY}`
-        },
-        body: JSON.stringify(emailData)
+          'Accept': 'application/json'
+        }
       });
 
       if (!response.ok) {
@@ -61,7 +74,77 @@ class EmailService {
       const result = await response.json();
       return { success: true, data: result };
     } catch (error) {
-      console.error('Erro ao enviar email via API:', error);
+      console.error('Erro ao enviar email via Formspree:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Enviar email usando Web3Forms (opção 3 - gratuito e simples)
+  async sendEmailViaWeb3Forms(to, subject, htmlContent, textContent = null) {
+    try {
+      const web3formsKey = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY;
+      
+      if (!web3formsKey) {
+        throw new Error('VITE_WEB3FORMS_ACCESS_KEY não configurado');
+      }
+
+      const formData = new FormData();
+      formData.append('access_key', web3formsKey);
+      formData.append('email', to);
+      formData.append('subject', subject);
+      formData.append('message', textContent || this.htmlToText(htmlContent));
+      formData.append('from_name', 'Suporte Field');
+      formData.append('from_email', this.emailConfig.from);
+
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        return { success: true, data: result };
+      } else {
+        throw new Error(result.message || 'Erro desconhecido');
+      }
+    } catch (error) {
+      console.error('Erro ao enviar email via Web3Forms:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Enviar email usando Vercel API + Nodemailer (opção preferida)
+  async sendEmailViaNodemailer(to, subject, htmlContent, textContent = null) {
+    try {
+      const emailData = {
+        to: to,
+        subject: subject,
+        html: htmlContent,
+        text: textContent || this.htmlToText(htmlContent)
+      };
+
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(emailData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      return { success: true, data: result };
+    } catch (error) {
+      console.error('Erro ao enviar email via Nodemailer:', error);
       return { success: false, error: error.message };
     }
   }
@@ -71,26 +154,32 @@ class EmailService {
     try {
       const emailContent = this.buildEmailTemplate(userName, notification);
       
-      // Tentar enviar via Supabase primeiro, depois via API como fallback
-      let result = await this.sendEmailViaSupabase(
-        userEmail,
-        notification.title,
-        emailContent.html,
-        emailContent.text
-      );
+      // Tentar diferentes métodos de envio em ordem de preferência
+      const methods = [
+        () => this.sendEmailViaNodemailer(userEmail, notification.title, emailContent.html, emailContent.text),
+        () => this.sendEmailViaWeb3Forms(userEmail, notification.title, emailContent.html, emailContent.text),
+        () => this.sendEmailViaEmailJS(userEmail, notification.title, emailContent.html, emailContent.text),
+        () => this.sendEmailViaFormspree(userEmail, notification.title, emailContent.html, emailContent.text)
+      ];
 
-      // Se falhar, tentar via API externa
-      if (!result.success) {
-        console.log('Tentando envio via API externa...');
-        result = await this.sendEmailViaAPI(
-          userEmail,
-          notification.title,
-          emailContent.html,
-          emailContent.text
-        );
+      let lastError = null;
+
+      for (const method of methods) {
+        try {
+          const result = await method();
+          if (result.success) {
+            return result;
+          }
+          lastError = result.error;
+        } catch (error) {
+          console.log('Método de envio falhou, tentando próximo...', error.message);
+          lastError = error.message;
+          continue;
+        }
       }
 
-      return result;
+      // Se todos os métodos falharam
+      throw new Error(lastError || 'Todos os métodos de envio falharam');
     } catch (error) {
       console.error('Erro no envio de email:', error);
       return { success: false, error: error.message };
@@ -309,7 +398,13 @@ class EmailService {
 
   // Verificar se o email está habilitado
   isEmailEnabled() {
-    return !!(import.meta.env.VITE_EMAIL_USER && import.meta.env.VITE_EMAIL_APP_PASSWORD);
+    // Verificar se pelo menos um método de envio está configurado
+    const hasNodemailer = true; // API sempre disponível (usa variáveis de ambiente do servidor)
+    const hasWeb3Forms = !!import.meta.env.VITE_WEB3FORMS_ACCESS_KEY;
+    const hasEmailJS = !!(import.meta.env.VITE_EMAILJS_SERVICE_ID && import.meta.env.VITE_EMAILJS_TEMPLATE_ID);
+    const hasFormspree = !!import.meta.env.VITE_FORMSPREE_ENDPOINT;
+    
+    return hasNodemailer || hasWeb3Forms || hasEmailJS || hasFormspree;
   }
 
   // Enviar email de teste

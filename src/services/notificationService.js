@@ -2,6 +2,30 @@ import { supabase } from '../lib/supabase';
 import emailService from './emailService';
 
 class NotificationService {
+  constructor() {
+    // Configurações anti-spam
+    this.emailConfig = {
+      maxEmailsPerMinute: 20,      // Máximo de emails por minuto
+      maxEmailsPerHour: 100,       // Máximo de emails por hora
+      minDelayBetweenEmails: 1500, // Delay mínimo (1.5 segundos)
+      maxDelayBetweenEmails: 10000 // Delay máximo (10 segundos)
+    };
+    
+    // Controle de rate limiting
+    this.emailsSentThisMinute = 0;
+    this.emailsSentThisHour = 0;
+    this.lastEmailSentAt = 0;
+    
+    // Reset contadores a cada minuto/hora
+    setInterval(() => {
+      this.emailsSentThisMinute = 0;
+    }, 60000); // 1 minuto
+    
+    setInterval(() => {
+      this.emailsSentThisHour = 0;
+    }, 3600000); // 1 hora
+  }
+
   // Criar uma nova notificação
   async createNotification(notificationData, sendEmail = true) {
     try {
@@ -601,9 +625,57 @@ class NotificationService {
     }
   }
 
+  // Verificar se pode enviar email (rate limiting)
+  canSendEmail() {
+    const now = Date.now();
+    
+    // Verificar limite por minuto
+    if (this.emailsSentThisMinute >= this.emailConfig.maxEmailsPerMinute) {
+      return { 
+        canSend: false, 
+        reason: `Limite de ${this.emailConfig.maxEmailsPerMinute} emails por minuto atingido` 
+      };
+    }
+    
+    // Verificar limite por hora
+    if (this.emailsSentThisHour >= this.emailConfig.maxEmailsPerHour) {
+      return { 
+        canSend: false, 
+        reason: `Limite de ${this.emailConfig.maxEmailsPerHour} emails por hora atingido` 
+      };
+    }
+    
+    // Verificar delay mínimo entre emails
+    const timeSinceLastEmail = now - this.lastEmailSentAt;
+    if (timeSinceLastEmail < this.emailConfig.minDelayBetweenEmails) {
+      const waitTime = this.emailConfig.minDelayBetweenEmails - timeSinceLastEmail;
+      return { 
+        canSend: false, 
+        reason: `Aguardar ${waitTime}ms antes do próximo email`,
+        waitTime 
+      };
+    }
+    
+    return { canSend: true };
+  }
+
+  // Registrar envio de email
+  registerEmailSent() {
+    this.emailsSentThisMinute++;
+    this.emailsSentThisHour++;
+    this.lastEmailSentAt = Date.now();
+  }
+
   // Enviar notificação por email
   async sendEmailNotification(notification) {
     try {
+      // Verificar rate limiting
+      const canSend = this.canSendEmail();
+      if (!canSend.canSend) {
+        console.log(`🚫 Rate limit: ${canSend.reason}`);
+        return { success: false, error: canSend.reason };
+      }
+
       // Buscar dados do usuário
       const { data: user, error: userError } = await supabase
         .from('usuarios')
@@ -636,7 +708,9 @@ class NotificationService {
       );
 
       if (result.success) {
-        console.log(`✅ Email enviado para ${user.email}`);
+        // Registrar envio bem-sucedido
+        this.registerEmailSent();
+        console.log(`✅ Email enviado para ${user.email} (${this.emailsSentThisMinute}/min, ${this.emailsSentThisHour}/hora)`);
       } else {
         console.error(`❌ Falha ao enviar email para ${user.email}:`, result.error);
       }
@@ -651,9 +725,17 @@ class NotificationService {
   // Enviar emails em lote para múltiplas notificações
   async sendBatchEmailNotifications(notifications) {
     const results = [];
+    const totalEmails = notifications.length;
     
-    for (const notification of notifications) {
+    console.log(`📧 Iniciando envio de ${totalEmails} emails com delays anti-spam...`);
+    
+    for (let i = 0; i < notifications.length; i++) {
+      const notification = notifications[i];
+      const currentIndex = i + 1;
+      
       try {
+        console.log(`📤 Enviando email ${currentIndex}/${totalEmails}...`);
+        
         const result = await this.sendEmailNotification(notification);
         results.push({
           notification_id: notification.id,
@@ -662,9 +744,21 @@ class NotificationService {
           error: result.error
         });
         
-        // Pequena pausa entre emails para evitar rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
+        if (result.success) {
+          console.log(`✅ Email ${currentIndex}/${totalEmails} enviado com sucesso`);
+        } else {
+          console.log(`❌ Email ${currentIndex}/${totalEmails} falhou:`, result.error);
+        }
+        
+        // Delay progressivo para evitar detecção de spam
+        if (i < notifications.length - 1) { // Não aplicar delay no último email
+          const delay = this.calculateEmailDelay(currentIndex, totalEmails);
+          console.log(`⏳ Aguardando ${delay}ms antes do próximo email...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+        
       } catch (error) {
+        console.log(`❌ Email ${currentIndex}/${totalEmails} com erro:`, error.message);
         results.push({
           notification_id: notification.id,
           user_id: notification.user_id,
@@ -674,7 +768,45 @@ class NotificationService {
       }
     }
 
+    const successCount = results.filter(r => r.success).length;
+    const failureCount = results.filter(r => !r.success).length;
+    
+    console.log(`📊 Resultado final: ${successCount} sucessos, ${failureCount} falhas de ${totalEmails} emails`);
     return results;
+  }
+
+  // Calcular delay entre emails (progressivo e inteligente)
+  calculateEmailDelay(currentIndex, totalEmails) {
+    // Delays base em milissegundos
+    const baseDelays = {
+      small: 2000,   // 2 segundos para poucos emails
+      medium: 3500,  // 3.5 segundos para quantidade média  
+      large: 5000    // 5 segundos para muitos emails
+    };
+    
+    let baseDelay;
+    
+    // Determinar delay base pela quantidade total
+    if (totalEmails <= 5) {
+      baseDelay = baseDelays.small;
+    } else if (totalEmails <= 15) {
+      baseDelay = baseDelays.medium;
+    } else {
+      baseDelay = baseDelays.large;
+    }
+    
+    // Aumentar delay gradualmente a cada 10 emails
+    const progressiveMultiplier = Math.floor(currentIndex / 10) * 0.5;
+    const progressiveDelay = baseDelay * (1 + progressiveMultiplier);
+    
+    // Adicionar variação aleatória para parecer mais humano (±30%)
+    const randomVariation = 0.3;
+    const randomFactor = 1 + (Math.random() - 0.5) * randomVariation;
+    
+    const finalDelay = Math.round(progressiveDelay * randomFactor);
+    
+    // Garantir limites mínimo e máximo
+    return Math.max(1500, Math.min(10000, finalDelay));
   }
 
   // Atualizar preferências de email do usuário
