@@ -98,14 +98,7 @@ const FirstLoginModal = ({ isOpen, onPasswordChanged, userEmail }) => {
   const validacaoResult = validarSenha(novaSenha);
   const { valida, criterios } = validacaoResult || { valida: false, criterios: {} };
   
-  // Debug
-  if (novaSenha && (!validacaoResult || !validacaoResult.criterios)) {
-    console.log('🔍 DEBUG validação:', {
-      novaSenha: novaSenha.substring(0, 3) + '***',
-      validacaoResult,
-      firstLoginService: typeof firstLoginService
-    });
-  }
+
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>

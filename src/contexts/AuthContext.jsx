@@ -33,13 +33,13 @@ export const AuthProvider = ({ children }) => {
             setIsAuthenticated(true);
             
             // Verificar se é primeiro login
-            console.log('🔍 DEBUG: Dados do usuário após login:', result.user);
-            console.log('🔍 DEBUG: primeiro_login =', result.user.primeiro_login);
+
+
             if (result.user.primeiro_login === true) {
-              console.log('✅ DEBUG: Mostrando modal de primeiro login');
+
               setShowFirstLoginModal(true);
             } else {
-              console.log('❌ DEBUG: Modal não será mostrado. primeiro_login =', result.user.primeiro_login);
+
             }
             
             // Pré-carregar curtidas do usuário
@@ -80,13 +80,13 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(true);
         
         // Verificar se é primeiro login
-        console.log('🔍 DEBUG: Dados do usuário após refresh:', result.user);
-        console.log('🔍 DEBUG: primeiro_login =', result.user.primeiro_login);
+
+
         if (result.user.primeiro_login === true) {
-          console.log('✅ DEBUG: Mostrando modal de primeiro login (refresh)');
+
           setShowFirstLoginModal(true);
         } else {
-          console.log('❌ DEBUG: Modal não será mostrado (refresh). primeiro_login =', result.user.primeiro_login);
+
         }
         
         // Pré-carregar curtidas do usuário
