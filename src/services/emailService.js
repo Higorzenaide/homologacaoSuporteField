@@ -118,15 +118,51 @@ class EmailService {
     }
   }
 
+  // Testar configuração da API
+  async testAPIConfig() {
+    try {
+      console.log('🧪 Testando configuração da API...');
+      
+      const response = await fetch('/api/test-config', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('📊 Configuração da API:', result);
+        return result;
+      } else {
+        console.error('❌ Erro ao testar configuração:', response.status);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Erro na API de teste:', error);
+      return null;
+    }
+  }
+
   // Enviar email usando Vercel API + Nodemailer (opção preferida)
   async sendEmailViaNodemailer(to, subject, htmlContent, textContent = null) {
     try {
+      console.log('📧 Tentando enviar via Nodemailer API para:', to);
+      
+      // Testar configuração primeiro
+      const config = await this.testAPIConfig();
+      if (!config || !config.config.hasEmailUser || !config.config.hasEmailPassword) {
+        throw new Error('Configurações de email não encontradas na API. Verifique as variáveis de ambiente na Vercel.');
+      }
+
       const emailData = {
         to: to,
         subject: subject,
         html: htmlContent,
         text: textContent || this.htmlToText(htmlContent)
       };
+
+      console.log('📤 Enviando requisição para /api/send-email...');
 
       const response = await fetch('/api/send-email', {
         method: 'POST',
@@ -136,15 +172,30 @@ class EmailService {
         body: JSON.stringify(emailData)
       });
 
+      console.log('📥 Resposta da API:', { 
+        status: response.status, 
+        ok: response.ok,
+        statusText: response.statusText 
+      });
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('❌ Erro detalhado da API:', errorData);
+        } catch (parseError) {
+          const errorText = await response.text();
+          console.error('❌ Erro raw da API:', errorText);
+          errorData = { error: `HTTP ${response.status}: ${errorText}` };
+        }
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
+      console.log('✅ Email enviado via Nodemailer:', result);
       return { success: true, data: result };
     } catch (error) {
-      console.error('Erro ao enviar email via Nodemailer:', error);
+      console.error('❌ Erro ao enviar email via Nodemailer:', error);
       return { success: false, error: error.message };
     }
   }
