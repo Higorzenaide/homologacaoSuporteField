@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 // Buscar todas as categorias de treinamentos ativas
 export const getCategoriasAtivas = async () => {
   try {
-    console.log('🔍 Buscando categorias de treinamentos ativas...');
+
     
     const { data, error } = await supabase
       .from('categorias_treinamentos')
@@ -16,7 +16,7 @@ export const getCategoriasAtivas = async () => {
       throw error;
     }
 
-    console.log('✅ Categorias encontradas:', data?.length || 0);
+
     return data || [];
   } catch (error) {
     console.error('❌ Erro no serviço getCategoriasAtivas:', error);
@@ -27,7 +27,7 @@ export const getCategoriasAtivas = async () => {
 // Buscar todas as categorias (incluindo inativas) - para admin
 export const getTodasCategorias = async () => {
   try {
-    console.log('🔍 Buscando todas as categorias de treinamentos...');
+
     
     const { data, error } = await supabase
       .from('categorias_treinamentos')
@@ -39,7 +39,7 @@ export const getTodasCategorias = async () => {
       throw error;
     }
 
-    console.log('✅ Total de categorias encontradas:', data?.length || 0);
+
     return data || [];
   } catch (error) {
     console.error('❌ Erro no serviço getTodasCategorias:', error);
@@ -50,7 +50,7 @@ export const getTodasCategorias = async () => {
 // Buscar categoria por ID
 export const getCategoriaById = async (id) => {
   try {
-    console.log('🔍 Buscando categoria por ID:', id);
+
     
     const { data, error } = await supabase
       .from('categorias_treinamentos')
@@ -63,7 +63,7 @@ export const getCategoriaById = async (id) => {
       throw error;
     }
 
-    console.log('✅ Categoria encontrada:', data?.nome);
+
     return data;
   } catch (error) {
     console.error('❌ Erro no serviço getCategoriaById:', error);
@@ -74,7 +74,7 @@ export const getCategoriaById = async (id) => {
 // Criar nova categoria
 export const criarCategoria = async (categoriaData) => {
   try {
-    console.log('➕ Criando nova categoria:', categoriaData);
+
     
     // Buscar a próxima ordem disponível
     const { data: ultimaCategoria } = await supabase
@@ -106,7 +106,7 @@ export const criarCategoria = async (categoriaData) => {
       throw error;
     }
 
-    console.log('✅ Categoria criada com sucesso:', data.nome);
+
     return data;
   } catch (error) {
     console.error('❌ Erro no serviço criarCategoria:', error);
@@ -117,7 +117,7 @@ export const criarCategoria = async (categoriaData) => {
 // Atualizar categoria
 export const atualizarCategoria = async (id, categoriaData) => {
   try {
-    console.log('📝 Atualizando categoria ID:', id, categoriaData);
+
     
     const { data, error } = await supabase
       .from('categorias_treinamentos')

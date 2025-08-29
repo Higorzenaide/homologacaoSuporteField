@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 // Buscar todas as categorias de notícias ativas
 export const getCategoriasAtivas = async () => {
   try {
-    console.log('🔍 Buscando categorias de notícias ativas...');
+
     
     const { data, error } = await supabase
       .from('categorias_noticias')
@@ -16,7 +16,7 @@ export const getCategoriasAtivas = async () => {
       throw error;
     }
 
-    console.log('✅ Categorias de notícias encontradas:', data?.length || 0);
+
     return data || [];
   } catch (error) {
     console.error('❌ Erro no serviço getCategoriasAtivas (notícias):', error);
@@ -27,7 +27,7 @@ export const getCategoriasAtivas = async () => {
 // Buscar todas as categorias (incluindo inativas) - para admin
 export const getTodasCategorias = async () => {
   try {
-    console.log('🔍 Buscando todas as categorias de notícias...');
+
     
     const { data, error } = await supabase
       .from('categorias_noticias')
@@ -39,7 +39,7 @@ export const getTodasCategorias = async () => {
       throw error;
     }
 
-    console.log('✅ Total de categorias de notícias encontradas:', data?.length || 0);
+
     return data || [];
   } catch (error) {
     console.error('❌ Erro no serviço getTodasCategorias (notícias):', error);
@@ -50,7 +50,7 @@ export const getTodasCategorias = async () => {
 // Buscar categoria por ID
 export const getCategoriaById = async (id) => {
   try {
-    console.log('🔍 Buscando categoria de notícia por ID:', id);
+
     
     const { data, error } = await supabase
       .from('categorias_noticias')
@@ -63,7 +63,7 @@ export const getCategoriaById = async (id) => {
       throw error;
     }
 
-    console.log('✅ Categoria de notícia encontrada:', data?.nome);
+
     return data;
   } catch (error) {
     console.error('❌ Erro no serviço getCategoriaById (notícias):', error);
@@ -74,7 +74,7 @@ export const getCategoriaById = async (id) => {
 // Atualizar categoria (apenas para admin - notícias têm opções mais limitadas)
 export const atualizarCategoria = async (id, categoriaData) => {
   try {
-    console.log('📝 Atualizando categoria de notícia ID:', id, categoriaData);
+
     
     const { data, error } = await supabase
       .from('categorias_noticias')
@@ -88,7 +88,7 @@ export const atualizarCategoria = async (id, categoriaData) => {
       throw error;
     }
 
-    console.log('✅ Categoria de notícia atualizada com sucesso:', data.nome);
+
     return data;
   } catch (error) {
     console.error('❌ Erro no serviço atualizarCategoria (notícias):', error);
@@ -99,7 +99,7 @@ export const atualizarCategoria = async (id, categoriaData) => {
 // Desativar categoria (soft delete)
 export const desativarCategoria = async (id) => {
   try {
-    console.log('🗑️ Desativando categoria de notícia ID:', id);
+
     
     const { data, error } = await supabase
       .from('categorias_noticias')

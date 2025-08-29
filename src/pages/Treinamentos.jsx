@@ -54,7 +54,7 @@ const Treinamentos = ({ pageParams }) => {
     if (pageParams?.id && treinamentos.length > 0) {
       const treinamentoEspecifico = treinamentos.find(t => t.id === pageParams.id);
       if (treinamentoEspecifico) {
-        console.log('🔍 Abrindo treinamento específico da notificação:', treinamentoEspecifico);
+
         setSelectedTreinamento(treinamentoEspecifico);
         setShowTreinamentoModal(true);
       }
@@ -76,7 +76,7 @@ const Treinamentos = ({ pageParams }) => {
   const carregarDados = async () => {
     try {
       await revalidateTreinamentos();
-      console.log('🔄 Dados revalidados via cache');
+
     } catch (error) {
       console.error('Erro ao revalidar dados:', error);
       setError('Erro ao carregar dados');
@@ -84,11 +84,11 @@ const Treinamentos = ({ pageParams }) => {
   };
 
   const handleViewPDF = async (treinamento) => {
-    console.log('🔍 handleViewPDF do card - Verificação em tempo real');
+
 
     // Verificar se há dados suficientes
     if (!treinamento?.id || !user?.id) {
-      console.log('❌ Dados insuficientes para verificação');
+
       if (treinamento.arquivo_url) {
         window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
       }
@@ -110,29 +110,29 @@ const Treinamentos = ({ pageParams }) => {
       );
 
       // Verificar em tempo real se tem questionário
-      console.log('🔍 Verificando questionário em tempo real...');
+
       const { verificarSeTemQuestionario, verificarQuestionarioRespondido } = await import('../services/questionariosService');
       
       const verificacaoQuestionario = await verificarSeTemQuestionario(treinamento.id);
-      console.log('🔍 Resultado verificação em tempo real:', verificacaoQuestionario);
+
 
       // SEMPRE abrir o PDF em nova aba primeiro
-      console.log('🎯 Abrindo PDF em nova aba');
+
       if (treinamento.arquivo_url) {
         window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
       }
 
       // Se tem questionário obrigatório, verificar se precisa responder
       if (verificacaoQuestionario.temQuestionario && verificacaoQuestionario.obrigatorio) {
-        console.log('🔍 Verificando se já respondeu...');
+
         const verificacaoResposta = await verificarQuestionarioRespondido(treinamento.id, user.id);
-        console.log('🔍 Resultado verificação resposta:', verificacaoResposta);
+
 
         const jaRespondido = verificacaoResposta.jaRespondido;
         const percentualAcerto = verificacaoResposta.data?.percentual_acerto || 0;
         
-        console.log('🔍 Já respondido:', jaRespondido);
-        console.log('🔍 Percentual de acerto:', percentualAcerto);
+
+
 
         // Abrir modal se:
         // 1. Nunca respondeu (!jaRespondido)
@@ -141,15 +141,15 @@ const Treinamentos = ({ pageParams }) => {
 
         if (deveAbrirModal) {
           if (!jaRespondido) {
-            console.log('🎯 ABRINDO QUESTIONÁRIO - primeira vez');
+
           } else {
-            console.log('🎯 ABRINDO QUESTIONÁRIO - refazer (nota < 90%)');
+
           }
           // Definir o treinamento e abrir modal
           setSelectedTreinamento(treinamento);
           setShowQuestionarioModal(true);
         } else {
-          console.log('ℹ️ Usuário já passou no questionário (≥ 90%)');
+
         }
       }
     } catch (error) {
@@ -182,18 +182,18 @@ const Treinamentos = ({ pageParams }) => {
       
       // Se foi criado/editado um questionário, criar ele agora
       if (questionarioData && treinamentoResult.data) {
-        console.log('🔍 Dados do questionário:', questionarioData);
-        console.log('🔍 ID do treinamento:', treinamentoResult.data.id);
+
+
         
         try {
           const questionarioResult = await criarQuestionario(treinamentoResult.data.id, questionarioData);
-          console.log('🔍 Resultado do questionário:', questionarioResult);
+
           
           if (questionarioResult.error) {
             console.error('❌ Erro ao criar questionário:', questionarioResult.error);
             setError('Treinamento salvo, mas houve erro ao criar o questionário: ' + JSON.stringify(questionarioResult.error));
           } else {
-            console.log('✅ Questionário criado com sucesso!');
+
             setSuccess(prev => prev + ' Questionário criado com sucesso!');
           }
         } catch (questionarioError) {
@@ -201,7 +201,7 @@ const Treinamentos = ({ pageParams }) => {
           setError('Treinamento salvo, mas houve erro ao criar o questionário: ' + questionarioError.message);
         }
       } else {
-        console.log('🔍 Sem dados de questionário para criar', { questionarioData, treinamentoResult: treinamentoResult?.data });
+
       }
       
       // Fechar modal e limpar estado de edição
@@ -258,7 +258,7 @@ const Treinamentos = ({ pageParams }) => {
   };
 
   const treinamentosFiltrados = (treinamentos || []).filter(treinamento => {
-    console.log('Debug filtro - Treinamento:', treinamento.titulo, 'Categoria:', treinamento.categoria, 'Filtro:', filtroCategoria);
+
     
     // Filtro por categoria - comparação mais flexível
     const matchCategoria = !filtroCategoria || 
@@ -272,7 +272,7 @@ const Treinamentos = ({ pageParams }) => {
       treinamento.descricao?.toLowerCase().includes(busca.toLowerCase()) ||
       treinamento.tags?.some(tag => tag.toLowerCase().includes(busca.toLowerCase()));
     
-    console.log('Debug filtro - Match categoria:', matchCategoria, 'Match busca:', matchBusca);
+
     return matchCategoria && matchBusca;
   });
 
@@ -593,7 +593,7 @@ const Treinamentos = ({ pageParams }) => {
             setSelectedTreinamento(null);
           }}
           onComplete={(resultado) => {
-            console.log('✅ Questionário concluído do card!', resultado);
+
             setShowQuestionarioModal(false);
             setSelectedTreinamento(null);
           }}

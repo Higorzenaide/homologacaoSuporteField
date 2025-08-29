@@ -9,11 +9,7 @@ import { supabase } from '../lib/supabase';
  */
 export const criarQuestionario = async (treinamentoId, dadosQuestionario) => {
   try {
-    console.log('🔍 criarQuestionario - entrada:', { treinamentoId, dadosQuestionario });
-    
     const { titulo, descricao, obrigatorio = true, perguntas = [] } = dadosQuestionario;
-
-    console.log('🔍 Dados extraídos:', { titulo, descricao, obrigatorio, perguntas: perguntas.length });
 
     // Criar o questionário
     const { data: questionario, error: questionarioError } = await supabase
@@ -28,7 +24,7 @@ export const criarQuestionario = async (treinamentoId, dadosQuestionario) => {
       .select()
       .single();
 
-    console.log('🔍 Resultado inserção questionário:', { questionario, questionarioError });
+
 
     if (questionarioError) throw questionarioError;
 
@@ -45,18 +41,13 @@ export const criarQuestionario = async (treinamentoId, dadosQuestionario) => {
         obrigatoria: pergunta.obrigatoria !== false
       }));
 
-      console.log('🔍 Dados das perguntas a inserir:', perguntasData);
-
       const { error: perguntasError } = await supabase
         .from('perguntas_questionarios')
         .insert(perguntasData);
 
-      console.log('🔍 Resultado inserção perguntas:', { perguntasError });
-
       if (perguntasError) throw perguntasError;
     }
 
-    console.log('✅ Questionário criado com sucesso:', questionario);
     return { data: questionario, error: null };
   } catch (error) {
     console.error('❌ Erro ao criar questionário:', error);
@@ -100,7 +91,7 @@ export const buscarQuestionarioPorTreinamento = async (treinamentoId) => {
  */
 export const verificarSeTemQuestionario = async (treinamentoId) => {
   try {
-    console.log('🔍 verificarSeTemQuestionario - treinamentoId:', treinamentoId);
+
     
     const { data, error } = await supabase
       .from('questionarios_treinamentos')
@@ -109,7 +100,7 @@ export const verificarSeTemQuestionario = async (treinamentoId) => {
       .eq('ativo', true)
       .single();
 
-    console.log('🔍 Dados retornados da query:', { data, error });
+
 
     if (error && error.code !== 'PGRST116') throw error;
 
@@ -120,7 +111,7 @@ export const verificarSeTemQuestionario = async (treinamentoId) => {
       error: null 
     };
 
-    console.log('🔍 Resultado final verificarSeTemQuestionario:', resultado);
+
     return resultado;
   } catch (error) {
     console.error('❌ Erro ao verificar questionário:', error);
@@ -244,7 +235,7 @@ export const excluirQuestionario = async (questionarioId) => {
  */
 export const verificarQuestionarioRespondido = async (treinamentoId, usuarioId) => {
   try {
-    console.log('🔍 verificarQuestionarioRespondido:', { treinamentoId, usuarioId });
+
     
     // Primeiro buscar o questionário pelo treinamento
     const { data: questionario, error: questionarioError } = await supabase
@@ -260,14 +251,14 @@ export const verificarQuestionarioRespondido = async (treinamentoId, usuarioId) 
     }
 
     if (!questionario) {
-      console.log('ℹ️ Nenhum questionário encontrado para este treinamento');
+
       return { data: null, jaRespondido: false, error: null };
     }
 
-    console.log('🔍 Questionário encontrado ID:', questionario.id);
+
 
     // Agora verificar se o usuário já respondeu
-    console.log('🔍 Buscando sessões para questionário ID:', questionario.id, 'usuário:', usuarioId);
+
     
     const { data, error } = await supabase
       .from('sessoes_questionarios')
@@ -276,8 +267,8 @@ export const verificarQuestionarioRespondido = async (treinamentoId, usuarioId) 
       .eq('usuario_id', usuarioId)
       .order('created_at', { ascending: false });
 
-    console.log('🔍 Todas as sessões encontradas:', data);
-    console.log('🔍 Erro na consulta:', error);
+
+
 
     if (error && error.code !== 'PGRST116') throw error;
 
@@ -285,9 +276,9 @@ export const verificarQuestionarioRespondido = async (treinamentoId, usuarioId) 
     const sessaoRecente = data && data.length > 0 ? data[0] : null;
     const jaRespondido = sessaoRecente?.status === 'concluido';
     
-    console.log('🔍 Sessão mais recente:', sessaoRecente);
-    console.log('🔍 Status da sessão:', sessaoRecente?.status);
-    console.log('🔍 Já respondido (status = concluido):', jaRespondido);
+
+
+
 
     return { 
       data: sessaoRecente || null, 
@@ -305,7 +296,7 @@ export const verificarQuestionarioRespondido = async (treinamentoId, usuarioId) 
  */
 export const recusarQuestionario = async (questionarioId, usuarioId) => {
   try {
-    console.log('🔍 Registrando recusa do questionário:', { questionarioId, usuarioId });
+
     
     // Primeiro, verificar se já existe uma sessão para este usuário e questionário
     const { data: sessoesExistentes, error: consultaError } = await supabase
@@ -325,7 +316,7 @@ export const recusarQuestionario = async (questionarioId, usuarioId) => {
     if (sessoesExistentes && sessoesExistentes.length > 0) {
       // Se existe sessão, atualizar a mais recente para "recusado"
       const sessaoMaisRecente = sessoesExistentes[0];
-      console.log('🔍 Atualizando sessão existente para recusado:', sessaoMaisRecente.id);
+
       
       const resultado = await supabase
         .from('sessoes_questionarios')
@@ -343,7 +334,7 @@ export const recusarQuestionario = async (questionarioId, usuarioId) => {
       error = resultado.error;
     } else {
       // Se não existe sessão, criar uma nova
-      console.log('🔍 Criando nova sessão com status recusado');
+
       
       const resultado = await supabase
         .from('sessoes_questionarios')
@@ -364,7 +355,7 @@ export const recusarQuestionario = async (questionarioId, usuarioId) => {
 
     if (error) throw error;
     
-    console.log('✅ Recusa registrada com sucesso:', data);
+
     return { data, error: null };
   } catch (error) {
     console.error('❌ Erro ao registrar recusa:', error);
@@ -377,7 +368,7 @@ export const recusarQuestionario = async (questionarioId, usuarioId) => {
  */
 export const iniciarSessaoQuestionario = async (questionarioId, usuarioId) => {
   try {
-    console.log('🔍 Iniciando sessão questionário:', { questionarioId, usuarioId });
+
     
     // Buscar todas as sessões para contar tentativas
     const { data: sessoesAnteriores } = await supabase
@@ -390,7 +381,7 @@ export const iniciarSessaoQuestionario = async (questionarioId, usuarioId) => {
     // Verificar se já existe uma sessão ativa (não concluída)
     const sessaoAtiva = sessoesAnteriores?.find(s => s.status === 'iniciado');
     if (sessaoAtiva) {
-      console.log('🔍 Sessão ativa encontrada:', sessaoAtiva);
+
       return { data: sessaoAtiva, error: null };
     }
 
@@ -400,7 +391,7 @@ export const iniciarSessaoQuestionario = async (questionarioId, usuarioId) => {
     ).length || 0;
 
     const novaTentativa = tentativasAnteriores + 1;
-    console.log('🔍 Nova tentativa:', novaTentativa);
+
 
     // Criar nova sessão
     const { data, error } = await supabase
@@ -416,7 +407,7 @@ export const iniciarSessaoQuestionario = async (questionarioId, usuarioId) => {
 
     if (error) throw error;
     
-    console.log('✅ Nova sessão criada:', data);
+
     return { data, error: null };
   } catch (error) {
     console.error('❌ Erro ao iniciar sessão:', error);
@@ -429,17 +420,17 @@ export const iniciarSessaoQuestionario = async (questionarioId, usuarioId) => {
  */
 export const salvarResposta = async (questionarioId, perguntaId, usuarioId, resposta, tempoResposta = null) => {
   try {
-    console.log('🔍 Salvando resposta:', { questionarioId, perguntaId, resposta });
+
     
     // Buscar dados da pergunta para verificar se está correta
-    console.log('🔍 Buscando pergunta ID:', perguntaId);
+
     const { data: pergunta, error: perguntaError } = await supabase
       .from('perguntas_questionarios')
       .select('resposta_correta, pontuacao, tipo_resposta')
       .eq('id', perguntaId)
       .single();
       
-    console.log('🔍 Resultado da busca:', { pergunta, perguntaError });
+
 
     if (perguntaError) {
       console.error('❌ Erro ao buscar pergunta:', perguntaError);
@@ -467,12 +458,7 @@ export const salvarResposta = async (questionarioId, perguntaId, usuarioId, resp
 
     const pontosObtidos = correta ? (pergunta.pontuacao || 1) : 0;
     
-    console.log('🔍 Avaliação:', { 
-      resposta: respostaStr, 
-      respostaCorreta: respostaCorretaStr, 
-      correta, 
-      pontosObtidos 
-    });
+
 
     const { data, error } = await supabase
       .from('respostas_questionarios')
@@ -492,7 +478,7 @@ export const salvarResposta = async (questionarioId, perguntaId, usuarioId, resp
 
     if (error) throw error;
     
-    console.log('✅ Resposta salva:', data);
+
     return { data, error: null };
   } catch (error) {
     console.error('❌ Erro ao salvar resposta:', error);
@@ -568,7 +554,7 @@ export const finalizarQuestionario = async (questionarioId, usuarioId) => {
  */
 export const buscarEstatisticasQuestionario = async (questionarioId) => {
   try {
-    console.log('🔍 buscarEstatisticasQuestionario - questionarioId:', questionarioId);
+
     
     let { data, error } = await supabase
       .from('relatorio_questionarios')
@@ -578,7 +564,7 @@ export const buscarEstatisticasQuestionario = async (questionarioId) => {
 
     // Se a view não existir, criar dados básicos
     if (error && error.code === '42P01') { // Tabela não existe
-      console.log('ℹ️ View relatório não existe, criando dados básicos');
+
       
       const { data: questionario, error: questionarioError } = await supabase
         .from('questionarios_treinamentos')
@@ -601,7 +587,7 @@ export const buscarEstatisticasQuestionario = async (questionarioId) => {
       throw error;
     }
 
-    console.log('✅ Estatísticas encontradas:', data);
+
     return { data: data || null, error: null };
   } catch (error) {
     console.error('❌ Erro ao buscar estatísticas:', error);
@@ -614,7 +600,7 @@ export const buscarEstatisticasQuestionario = async (questionarioId) => {
  */
 export const buscarPerformanceUsuarios = async (questionarioId) => {
   try {
-    console.log('🔍 buscarPerformanceUsuarios - questionarioId:', questionarioId);
+
     
     let { data, error } = await supabase
       .from('performance_usuarios_questionarios')
@@ -624,7 +610,7 @@ export const buscarPerformanceUsuarios = async (questionarioId) => {
 
     // Se a view não existir, buscar dados das tabelas básicas
     if (error && error.code === '42P01') { // Tabela não existe
-      console.log('ℹ️ View performance não existe, buscando dados das tabelas básicas');
+
       
       const { data: sessoes, error: sessoesError } = await supabase
         .from('sessoes_questionarios')
@@ -650,7 +636,7 @@ export const buscarPerformanceUsuarios = async (questionarioId) => {
       throw error;
     }
 
-    console.log('✅ Performance usuários encontrada:', data?.length || 0);
+
     return { data: data || [], error: null };
   } catch (error) {
     console.error('❌ Erro ao buscar performance dos usuários:', error);
@@ -663,7 +649,7 @@ export const buscarPerformanceUsuarios = async (questionarioId) => {
  */
 export const buscarRelatorioPorPergunta = async (questionarioId) => {
   try {
-    console.log('🔍 buscarRelatorioPorPergunta - questionarioId:', questionarioId);
+
     
     // Buscar todas as perguntas
     const { data: perguntas, error: perguntasError } = await supabase
@@ -678,7 +664,7 @@ export const buscarRelatorioPorPergunta = async (questionarioId) => {
     }
 
     if (!perguntas || perguntas.length === 0) {
-      console.log('ℹ️ Nenhuma pergunta encontrada para este questionário');
+
       return { data: [], error: null };
     }
 
@@ -720,7 +706,7 @@ export const buscarRelatorioPorPergunta = async (questionarioId) => {
               }).length;
             });
           } catch (e) {
-            console.log('⚠️ Erro ao analisar opções da pergunta:', e);
+
             // Se der erro no parse, continuar sem análise de opções
           }
         }
@@ -750,7 +736,7 @@ export const buscarRelatorioPorPergunta = async (questionarioId) => {
  */
 export const buscarTodosQuestionarios = async () => {
   try {
-    console.log('🔍 buscarTodosQuestionarios - iniciando...');
+
     
     // Tentar buscar dados da view primeiro, se não existir, buscar dados básicos
     let { data, error } = await supabase
@@ -760,7 +746,7 @@ export const buscarTodosQuestionarios = async () => {
 
     // Se a view não existir, buscar dados das tabelas básicas
     if (error && error.code === '42P01') { // Tabela não existe
-      console.log('ℹ️ View não existe, buscando dados das tabelas básicas');
+
       
       const { data: questionarios, error: questionariosError } = await supabase
         .from('questionarios_treinamentos')
@@ -791,7 +777,7 @@ export const buscarTodosQuestionarios = async () => {
       throw error;
     }
 
-    console.log('✅ Questionários encontrados:', data?.length || 0);
+
     return { data: data || [], error: null };
   } catch (error) {
     console.error('❌ Erro ao buscar questionários:', error);

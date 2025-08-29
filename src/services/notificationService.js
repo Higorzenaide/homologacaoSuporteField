@@ -247,7 +247,7 @@ class NotificationService {
       if (trainingsError) {
         // Se der erro por coluna não existir, buscar todos os treinamentos ativos
         if (trainingsError.code === '42703' && trainingsError.message.includes('obrigatorio')) {
-          console.log('Coluna obrigatorio não existe ainda. Buscando todos os treinamentos ativos.');
+
           const { data: allTrainings, error: allError } = await supabase
             .from('treinamentos')
             .select('*')
@@ -455,13 +455,13 @@ class NotificationService {
       
       // Enviar emails se solicitado e serviço habilitado
       if (sendEmail && emailService.isEmailEnabled()) {
-        console.log(`📧 Enviando emails para ${data.length} notificações...`);
+
         this.sendBatchEmailNotifications(data).catch(emailError => {
           console.error('Erro ao enviar emails em lote:', emailError);
         });
       }
       
-      console.log(`✅ Notificação sobre notícia enviada para ${userIds.length} usuários selecionados${sendEmail ? ' (com email)' : ' (sem email)'}`);
+
       return data;
     } catch (error) {
       console.error('Erro ao notificar sobre nova notícia:', error);
@@ -508,13 +508,13 @@ class NotificationService {
       
       // Enviar emails se solicitado e serviço habilitado
       if (sendEmail && emailService.isEmailEnabled()) {
-        console.log(`📧 Enviando emails para ${data.length} notificações...`);
+
         this.sendBatchEmailNotifications(data).catch(emailError => {
           console.error('Erro ao enviar emails em lote:', emailError);
         });
       }
       
-      console.log(`✅ Notificação sobre treinamento enviada para ${userIds.length} usuários selecionados${sendEmail ? ' (com email)' : ' (sem email)'}`);
+
       return data;
     } catch (error) {
       console.error('Erro ao notificar sobre novo treinamento:', error);
@@ -555,7 +555,7 @@ class NotificationService {
 
       if (error) throw error;
       
-      console.log(`✅ Notificação do sistema enviada para ${userIds.length} usuários selecionados`);
+
       return data;
     } catch (error) {
       console.error('Erro ao notificar sistema:', error);
@@ -590,7 +590,7 @@ class NotificationService {
         return null;
       }
 
-      console.log('📤 Criando notificação de feedback via RPC:', feedbackData);
+
 
       // Usar função RPC para bypassar RLS
       const { data, error } = await supabase
@@ -605,7 +605,7 @@ class NotificationService {
       if (error) throw error;
 
       if (data && data.success) {
-        console.log('✅ Notificação de feedback criada via RPC:', data.notification);
+
         
         // Enviar email para o feedback se habilitado
         if (emailService.isEmailEnabled()) {
@@ -672,7 +672,7 @@ class NotificationService {
       // Verificar rate limiting
       const canSend = this.canSendEmail();
       if (!canSend.canSend) {
-        console.log(`🚫 Rate limit: ${canSend.reason}`);
+
         return { success: false, error: canSend.reason };
       }
 
@@ -690,13 +690,13 @@ class NotificationService {
 
       // Verificar se o usuário tem email e quer receber notificações
       if (!user.email) {
-        console.log('Usuário não tem email cadastrado');
+
         return { success: false, error: 'Email não cadastrado' };
       }
 
       // Se a coluna email_notifications_enabled existir, verificar preferência
       if (user.email_notifications_enabled === false) {
-        console.log('Usuário desabilitou notificações por email');
+
         return { success: false, error: 'Notificações por email desabilitadas' };
       }
 
@@ -710,7 +710,7 @@ class NotificationService {
       if (result.success) {
         // Registrar envio bem-sucedido
         this.registerEmailSent();
-        console.log(`✅ Email enviado para ${user.email} (${this.emailsSentThisMinute}/min, ${this.emailsSentThisHour}/hora)`);
+
       } else {
         console.error(`❌ Falha ao enviar email para ${user.email}:`, result.error);
       }
@@ -734,7 +734,7 @@ class NotificationService {
       const currentIndex = i + 1;
       
       try {
-        console.log(`📤 Enviando email ${currentIndex}/${totalEmails}...`);
+
         
         const result = await this.sendEmailNotification(notification);
         results.push({
@@ -745,20 +745,20 @@ class NotificationService {
         });
         
         if (result.success) {
-          console.log(`✅ Email ${currentIndex}/${totalEmails} enviado com sucesso`);
+
         } else {
-          console.log(`❌ Email ${currentIndex}/${totalEmails} falhou:`, result.error);
+
         }
         
         // Delay progressivo para evitar detecção de spam
         if (i < notifications.length - 1) { // Não aplicar delay no último email
           const delay = this.calculateEmailDelay(currentIndex, totalEmails);
-          console.log(`⏳ Aguardando ${delay}ms antes do próximo email...`);
+
           await new Promise(resolve => setTimeout(resolve, delay));
         }
         
       } catch (error) {
-        console.log(`❌ Email ${currentIndex}/${totalEmails} com erro:`, error.message);
+
         results.push({
           notification_id: notification.id,
           user_id: notification.user_id,

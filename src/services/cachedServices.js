@@ -57,27 +57,27 @@ export const useCachedUsuarios = () => {
   const cacheResult = useCache(
     'users_v3', // Versão nova para forçar invalidação
     async () => {
-      console.log('🔍 [USUÁRIOS] Iniciando busca de usuários...');
+
       const startTime = Date.now();
       
       try {
         // Tentar usar função RPC primeiro (garante estrutura correta)
-        console.log('🔍 [USUÁRIOS] Tentando RPC get_usuarios_for_notifications...');
+
         const { data: rpcData, error: rpcError } = await supabase
           .rpc('get_usuarios_for_notifications');
         
         if (!rpcError && rpcData) {
           const duration = Date.now() - startTime;
-          console.log(`✅ [USUÁRIOS] RPC sucesso: ${rpcData.length} usuários em ${duration}ms`);
+
           return Array.isArray(rpcData) ? rpcData : [];
         }
-        console.log('⚠️ [USUÁRIOS] RPC falhou, usando consulta direta');
+
       } catch (e) {
-        console.log('⚠️ [USUÁRIOS] RPC não disponível, usando consulta direta');
+
       }
       
       // Fallback: consulta direta para garantir que usa ultimo_acesso
-      console.log('🔍 [USUÁRIOS] Executando consulta direta na tabela usuarios...');
+
       const { data, error } = await supabase
         .from('usuarios')
         .select('id, nome, email, ativo, tipo_usuario, ultimo_acesso, created_at')
@@ -86,7 +86,7 @@ export const useCachedUsuarios = () => {
       if (error) throw error;
       
       const duration = Date.now() - startTime;
-      console.log(`✅ [USUÁRIOS] Consulta direta sucesso: ${data?.length || 0} usuários em ${duration}ms`);
+
       
       return Array.isArray(data) ? data : [];
     },
@@ -268,12 +268,12 @@ export const useCachedLikes = (type, itemId, userId) => {
 // Invalidar cache quando criar/editar/deletar treinamento
 export const invalidateTreinamentosCache = () => {
   // Implementar invalidação específica se necessário
-  console.log('🔄 Cache de treinamentos invalidado');
+
 };
 
 // Invalidar cache quando criar/editar/deletar notícia
 export const invalidateNoticiasCache = () => {
-  console.log('🔄 Cache de notícias invalidado');
+
 };
 
 // Invalidar cache quando há nova notificação

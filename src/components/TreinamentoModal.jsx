@@ -36,17 +36,17 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
           }
 
           // Verificar se tem questionário
-          console.log('🔍 Verificando questionário para treinamento:', treinamento.id);
+
           const { temQuestionario: hasQuestionario, obrigatorio } = await verificarSeTemQuestionario(treinamento.id);
-          console.log('🔍 Resultado verificação:', { hasQuestionario, obrigatorio });
+
           setTemQuestionario(hasQuestionario);
           setQuestionarioObrigatorio(obrigatorio);
 
           // Se tem questionário, verificar se já respondeu
           if (hasQuestionario) {
-            console.log('🔍 Verificando se usuário já respondeu questionário');
+
             const { jaRespondido } = await verificarQuestionarioRespondido(treinamento.id, user.id);
-            console.log('🔍 Já respondeu:', jaRespondido);
+
             setJaRespondeuQuestionario(jaRespondido);
           }
         } catch (error) {
@@ -73,10 +73,10 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
   };
 
   const handleViewPDF = async () => {
-    console.log('🔍 handleViewPDF - Verificação em tempo real');
+
 
     if (!treinamento?.id || !user?.id) {
-      console.log('❌ Dados insuficientes para verificação');
+
       if (treinamento.arquivo_url) {
         window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
       }
@@ -85,12 +85,12 @@ const TreinamentoModal = ({ treinamento, isOpen, onClose }) => {
 
     try {
       // Verificar em tempo real se tem questionário
-      console.log('🔍 Verificando questionário em tempo real...');
+
       const verificacaoQuestionario = await verificarSeTemQuestionario(treinamento.id);
-      console.log('🔍 Resultado verificação em tempo real:', verificacaoQuestionario);
+
 
       // SEMPRE abrir o PDF em nova aba primeiro
-      console.log('🎯 Abrindo PDF em nova aba');
+
       if (treinamento.arquivo_url) {
         window.open(treinamento.arquivo_url, '_blank', 'noopener,noreferrer');
       }
