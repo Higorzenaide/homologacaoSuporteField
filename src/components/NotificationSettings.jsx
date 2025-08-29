@@ -205,8 +205,6 @@ const NotificationSettings = ({ isOpen, onClose }) => {
                   </div>
                 </div>
               </div>
-                </div>
-              </div>
 
               {/* Teste de Notificação */}
               {permissionStatus === 'granted' && (
