@@ -269,13 +269,17 @@ class SecurityService {
 
       // Log no banco (se configurado)
       if (supabase) {
-        await supabase.from('user_actions').insert({
-          user_id: userId,
-          action: event,
-          details: logData.details,
-          ip_address: logData.ip_address,
-          user_agent: logData.user_agent
-        }).catch(err => console.warn('Failed to log to database:', err));
+        try {
+          await supabase.from('user_actions').insert({
+            user_id: userId,
+            action: event,
+            details: logData.details,
+            ip_address: logData.ip_address,
+            user_agent: logData.user_agent
+          });
+        } catch (err) {
+          console.warn('Failed to log to database:', err);
+        }
       }
 
       return true;
