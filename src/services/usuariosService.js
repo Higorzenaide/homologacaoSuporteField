@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import emailService from './emailService';
+import securityService from './securityService';
 
 // Serviço para gerenciamento de usuários
 export const usuariosService = {
@@ -22,14 +23,29 @@ export const usuariosService = {
   // Criar novo usuário
   async criarUsuario(dadosUsuario) {
     try {
+      // Validação de segurança completa
+      const validation = securityService.validateUserData(dadosUsuario, false);
+      if (!validation.valid) {
+        return { data: null, error: validation.errors.join(', ') };
+      }
+
+      // Usar dados sanitizados
+      const sanitizedData = validation.sanitizedData;
+
+      // Log da tentativa de criação
+      securityService.logSecurityEvent('USER_CREATE_ATTEMPT', null, { 
+        email: sanitizedData.email,
+        tipo: sanitizedData.tipo_usuario 
+      });
+
       const { data, error } = await supabase
-        .rpc('create_user', {
-          user_email: dadosUsuario.email,
-          user_password: dadosUsuario.senha,
-          user_nome: dadosUsuario.nome,
-          user_cargo: dadosUsuario.cargo || null,
-          user_telefone: dadosUsuario.telefone || null,
-          user_tipo: dadosUsuario.tipo_usuario || 'usuario'
+        .rpc('create_user_secure', {
+          user_email: sanitizedData.email,
+          user_password: sanitizedData.senha,
+          user_nome: sanitizedData.nome,
+          user_cargo: sanitizedData.cargo || null,
+          user_telefone: sanitizedData.telefone || null,
+          user_tipo: sanitizedData.tipo_usuario || 'usuario'
         });
 
       if (error) throw error;

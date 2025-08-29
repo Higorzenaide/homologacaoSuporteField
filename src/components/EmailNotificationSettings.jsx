@@ -19,9 +19,9 @@ export default function EmailNotificationSettings() {
 
   
   const [preferences, setPreferences] = useState({
-    emailEnabled: true,
-    frequency: 'immediate',
-    types: []
+    emailEnabled: true,        // Sempre TRUE
+    frequency: 'immediate',    // Sempre IMEDIATO
+    types: ['training_required', 'training_reminder', 'training_new', 'news', 'system', 'feedback'] // Sempre TODOS ATIVADOS
   });
 
   const notificationTypes = [
@@ -79,10 +79,18 @@ export default function EmailNotificationSettings() {
     try {
       setLoading(true);
       const userPreferences = await notificationService.getUserEmailPreferences(user.id);
-      setPreferences(userPreferences);
+      
+      // Sempre garantir que email está ativado, frequência é imediata e todos os tipos estão ativados
+      const allTypes = notificationTypes.map(type => type.id);
+      setPreferences({
+        ...userPreferences,
+        emailEnabled: true,        // Sempre TRUE
+        frequency: 'immediate',    // Sempre IMEDIATO
+        types: allTypes           // Sempre TODOS OS TIPOS ATIVADOS
+      });
     } catch (error) {
       console.error('Erro ao carregar preferências:', error);
-      showToast('Erro ao carregar preferências de email', 'error');
+      showError('Erro ao carregar preferências de email');
     } finally {
       setLoading(false);
     }
@@ -93,7 +101,17 @@ export default function EmailNotificationSettings() {
     
     try {
       setSaving(true);
-      const result = await notificationService.updateEmailPreferences(user.id, preferences);
+      
+      // Sempre salvar com email ativado, frequência imediata e todos os tipos
+      const allTypes = notificationTypes.map(type => type.id);
+      const preferencesToSave = {
+        ...preferences,
+        emailEnabled: true,        // Sempre TRUE
+        frequency: 'immediate',    // Sempre IMEDIATO
+        types: allTypes           // Sempre TODOS OS TIPOS ATIVADOS
+      };
+      
+      const result = await notificationService.updateEmailPreferences(user.id, preferencesToSave);
       
       if (result.success) {
         showSuccess('Preferências salvas com sucesso!');
@@ -108,14 +126,7 @@ export default function EmailNotificationSettings() {
     }
   };
 
-  const handleTypeToggle = (typeId) => {
-    setPreferences(prev => ({
-      ...prev,
-      types: prev.types.includes(typeId)
-        ? prev.types.filter(id => id !== typeId)
-        : [...prev.types, typeId]
-    }));
-  };
+  // Função removida - tipos sempre ativados
 
   const isEmailServiceEnabled = emailService.isEmailEnabled();
 
@@ -165,78 +176,52 @@ export default function EmailNotificationSettings() {
           </div>
         )}
 
-        {/* Toggle principal */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label className="text-base font-medium">Receber notificações por email</Label>
-            <p className="text-sm text-muted-foreground">
-              Ativar ou desativar todas as notificações por email
-            </p>
+        {/* Informação sobre configurações automáticas */}
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+              <Mail className="w-4 h-4 text-green-600" />
+            </div>
+            <div>
+              <h4 className="font-medium text-green-900">Emails Ativados Automaticamente</h4>
+              <p className="text-sm text-green-700">
+                Você receberá notificações por email imediatamente quando criadas. 
+                Configure abaixo quais tipos deseja receber.
+              </p>
+            </div>
           </div>
-          <Switch
-            checked={preferences.emailEnabled}
-            onCheckedChange={(checked) => 
-              setPreferences(prev => ({ ...prev, emailEnabled: checked }))
-            }
-            disabled={!isEmailServiceEnabled}
-          />
         </div>
 
-        {preferences.emailEnabled && isEmailServiceEnabled && (
+        {isEmailServiceEnabled && (
           <>
-            {/* Frequência */}
-            <div className="space-y-3">
-              <Label className="text-base font-medium flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Frequência de envio
-              </Label>
-              <Select
-                value={preferences.frequency}
-                onValueChange={(value) => 
-                  setPreferences(prev => ({ ...prev, frequency: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a frequência" />
-                </SelectTrigger>
-                <SelectContent>
-                  {frequencyOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div>
-                        <div className="font-medium">{option.label}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {option.description}
-                        </div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Tipos de notificação */}
+            {/* Tipos de notificação - Sempre Ativados */}
             <div className="space-y-3">
               <Label className="text-base font-medium flex items-center gap-2">
                 <Bell className="h-4 w-4" />
-                Tipos de notificação
+                Tipos de notificação ativados
               </Label>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                <p className="text-sm text-blue-700">
+                  ✅ Todos os tipos de notificação estão ativados automaticamente para garantir que você não perca informações importantes.
+                </p>
+              </div>
               <div className="space-y-3">
                 {notificationTypes.map(type => (
-                  <div key={type.id} className="flex items-start space-x-3">
-                    <Checkbox
-                      id={type.id}
-                      checked={preferences.types.includes(type.id)}
-                      onCheckedChange={() => handleTypeToggle(type.id)}
-                    />
-                    <div className="grid gap-1.5 leading-none">
-                      <Label
-                        htmlFor={type.id}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
-                      >
+                  <div key={type.id} className="flex items-start space-x-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="w-5 h-5 bg-green-500 rounded-sm flex items-center justify-center mt-0.5">
+                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="grid gap-1.5 leading-none flex-1">
+                      <div className="text-sm font-medium leading-none flex items-center gap-2 text-green-800">
                         <span>{type.icon}</span>
                         {type.label}
-                      </Label>
-                      <p className="text-xs text-muted-foreground">
+                        <span className="ml-auto bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
+                          Ativo
+                        </span>
+                      </div>
+                      <p className="text-xs text-green-600">
                         {type.description}
                       </p>
                     </div>
@@ -244,8 +229,6 @@ export default function EmailNotificationSettings() {
                 ))}
               </div>
             </div>
-
-
           </>
         )}
 

@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import securityService from './securityService';
 
 // Serviço de autenticação personalizada usando tabela de usuários
 export class AuthService {
@@ -43,11 +44,44 @@ export class AuthService {
   // Fazer login
   async login(email, password) {
     try {
-      // Chamar função do Supabase para autenticar
+      // Validações de segurança
+      if (!securityService.isValidEmail(email)) {
+        return { success: false, user: null, error: 'Email inválido' };
+      }
+
+      if (!password || password.length < 6) {
+        return { success: false, user: null, error: 'Senha inválida' };
+      }
+
+      // Rate limiting
+      const clientIP = securityService.getClientIP();
+      const rateLimit = securityService.checkRateLimit(`login_${clientIP}_${email}`, 5, 15 * 60 * 1000);
+      
+      if (!rateLimit.allowed) {
+        securityService.logSecurityEvent('LOGIN_RATE_LIMIT_EXCEEDED', null, { 
+          email, 
+          ip: clientIP,
+          attempts: rateLimit.count 
+        });
+        return { 
+          success: false, 
+          user: null, 
+          error: `Muitas tentativas de login. Tente novamente em ${rateLimit.timeLeftMin} minutos.` 
+        };
+      }
+
+      // Sanitizar entradas
+      const sanitizedEmail = securityService.sanitizeInput(email);
+      const sanitizedPassword = securityService.sanitizeInput(password);
+
+      // Log da tentativa
+      securityService.logSecurityEvent('LOGIN_ATTEMPT', null, { email: sanitizedEmail, ip: clientIP });
+
+      // Chamar função do Supabase para autenticar (nova função segura)
       const { data, error } = await supabase
-        .rpc('authenticate_user', {
-          user_email: email,
-          user_password: password
+        .rpc('authenticate_user_secure', {
+          user_email: sanitizedEmail,
+          user_password: sanitizedPassword
         });
 
       if (error) {
@@ -59,6 +93,16 @@ export class AuthService {
         const user = data[0];
         
         if (user.success && user.ativo) {
+          // Limpar rate limit em caso de sucesso
+          securityService.clearRateLimit(`login_${clientIP}_${email}`);
+
+          // Log de sucesso
+          securityService.logSecurityEvent('LOGIN_SUCCESS', user.id, { 
+            email: sanitizedEmail, 
+            ip: clientIP,
+            userAgent: securityService.getUserAgent()
+          });
+
           // Atualizar último acesso
           await supabase.rpc('update_last_access_by_id', {
             user_id: user.id
@@ -86,6 +130,13 @@ export class AuthService {
             error: null
           };
         } else {
+          // Log de falha
+          securityService.logSecurityEvent('LOGIN_FAILED', null, { 
+            email: sanitizedEmail, 
+            ip: clientIP,
+            reason: user.ativo ? 'invalid_credentials' : 'inactive_user'
+          });
+
           return {
             success: false,
             user: null,

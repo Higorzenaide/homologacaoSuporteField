@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import securityService from './securityService';
 
 // Serviço para gerenciar primeiro login e alteração de senha
 // (Para sistema de auth personalizado, não Supabase Auth)
@@ -9,10 +10,25 @@ class FirstLoginService {
     try {
       console.log('🔑 Alterando senha para usuário:', userId);
       
-      // Chamar função RPC personalizada
-      const { data, error } = await supabase.rpc('update_user_password_first_login', {
-        user_id_param: userId,
-        new_password: newPassword
+      // Validações de segurança
+      if (!securityService.isValidUUID(userId)) {
+        return { success: false, error: 'ID de usuário inválido' };
+      }
+
+      const passwordValidation = securityService.validatePassword(newPassword);
+      if (!passwordValidation.valida) {
+        return { success: false, error: 'Senha não atende aos critérios de segurança' };
+      }
+
+      // Log da tentativa
+      securityService.logSecurityEvent('PASSWORD_CHANGE_ATTEMPT', userId, { 
+        reason: 'first_login'
+      });
+
+      // Chamar função RPC personalizada (nova versão segura)
+      const { data, error } = await supabase.rpc('update_user_password_first_login_secure', {
+        p_user_id: userId,
+        p_new_password: newPassword
       });
 
       if (error) {
@@ -27,12 +43,25 @@ class FirstLoginService {
         
         if (result.success) {
           console.log('✅ Senha alterada com sucesso');
+          
+          // Log de sucesso
+          securityService.logSecurityEvent('PASSWORD_CHANGED_SUCCESS', userId, { 
+            reason: 'first_login'
+          });
+          
           return {
             success: true,
             message: result.message
           };
         } else {
           console.error('❌ Falha na alteração:', result.message);
+          
+          // Log de falha
+          securityService.logSecurityEvent('PASSWORD_CHANGE_FAILED', userId, { 
+            reason: 'first_login',
+            error: result.message
+          });
+          
           return {
             success: false,
             error: result.message
@@ -73,17 +102,9 @@ class FirstLoginService {
     }
   }
 
-  // Validar critérios de senha
+  // Validar critérios de senha (delegando para securityService)
   validatePassword(password) {
-    const criterios = {
-      tamanho: password.length >= 6,
-      maiuscula: /[A-Z]/.test(password),
-      numero: /[0-9]/.test(password),
-      especial: /[!@#$%^&*(),.?":{}|<>]/.test(password)
-    };
-
-    const valida = Object.values(criterios).every(criterio => criterio);
-    return { valida, criterios };
+    return securityService.validatePassword(password);
   }
 }
 

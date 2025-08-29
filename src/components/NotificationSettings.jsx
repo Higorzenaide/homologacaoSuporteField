@@ -79,12 +79,21 @@ const NotificationSettings = ({ isOpen, onClose }) => {
     
     setIsSaving(true);
     try {
+      // Sempre salvar com todas as configurações ativadas (exceto as que o usuário controla)
+      const settingsToSave = {
+        user_id: user.id,
+        email_notifications: true,        // Sempre ativo
+        push_notifications: settings.push_notifications, // Controlado pelo usuário
+        training_reminders: true,         // Sempre ativo
+        system_notifications: true,       // Sempre ativo
+        reminder_frequency: 'daily',      // Padrão
+        quiet_hours_start: '22:00',       // Padrão
+        quiet_hours_end: '08:00'          // Padrão
+      };
+
       const { error } = await supabase
         .from('notification_settings')
-        .upsert({
-          user_id: user.id,
-          ...settings
-        });
+        .upsert(settingsToSave);
 
       if (error) throw error;
 
@@ -182,146 +191,20 @@ const NotificationSettings = ({ isOpen, onClose }) => {
                 </div>
               </div>
 
-              {/* Configurações de Notificação */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
-                  <Bell className="w-5 h-5" />
-                  <span>Tipos de Notificação</span>
-                </h3>
-
-                <div className="space-y-4">
-                  {/* Notificações por Email */}
-                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Mail className="w-5 h-5 text-gray-600" />
-                      <div>
-                        <h4 className="font-medium text-gray-900">Notificações por Email</h4>
-                        <p className="text-sm text-gray-600">Receber notificações por email</p>
-                      </div>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={settings.email_notifications}
-                        onChange={(e) => handleChange('email_notifications', e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                    </label>
+              {/* Informação sobre configurações automáticas */}
+              <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <Settings className="w-4 h-4 text-green-600" />
                   </div>
-
-                  {/* Notificações Push */}
-                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Smartphone className="w-5 h-5 text-gray-600" />
-                      <div>
-                        <h4 className="font-medium text-gray-900">Notificações Push</h4>
-                        <p className="text-sm text-gray-600">Receber notificações no navegador</p>
-                      </div>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={settings.push_notifications}
-                        onChange={(e) => handleChange('push_notifications', e.target.checked)}
-                        className="sr-only peer"
-                        disabled={permissionStatus !== 'granted'}
-                      />
-                      <div className={`w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600 ${permissionStatus !== 'granted' ? 'opacity-50' : ''}`}></div>
-                    </label>
-                  </div>
-
-                  {/* Lembretes de Treinamento */}
-                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Bell className="w-5 h-5 text-gray-600" />
-                      <div>
-                        <h4 className="font-medium text-gray-900">Lembretes de Treinamento</h4>
-                        <p className="text-sm text-gray-600">Lembretes sobre treinamentos pendentes</p>
-                      </div>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={settings.training_reminders}
-                        onChange={(e) => handleChange('training_reminders', e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                    </label>
-                  </div>
-
-                  {/* Notificações do Sistema */}
-                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Settings className="w-5 h-5 text-gray-600" />
-                      <div>
-                        <h4 className="font-medium text-gray-900">Notificações do Sistema</h4>
-                        <p className="text-sm text-gray-600">Atualizações e manutenções do sistema</p>
-                      </div>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={settings.system_notifications}
-                        onChange={(e) => handleChange('system_notifications', e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                    </label>
+                  <div>
+                    <h4 className="font-medium text-green-900">Configurações Automáticas</h4>
+                    <p className="text-sm text-green-700">
+                      Suas outras preferências de notificação estão ativadas automaticamente e funcionando em segundo plano.
+                    </p>
                   </div>
                 </div>
               </div>
-
-              {/* Configurações Avançadas */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
-                  <Clock className="w-5 h-5" />
-                  <span>Configurações Avançadas</span>
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Frequência de Lembretes */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Frequência de Lembretes
-                    </label>
-                    <select
-                      value={settings.reminder_frequency}
-                      onChange={(e) => handleChange('reminder_frequency', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                    >
-                      <option value="daily">Diário</option>
-                      <option value="weekly">Semanal</option>
-                      <option value="never">Nunca</option>
-                    </select>
-                  </div>
-
-                  {/* Horário Silencioso - Início */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Início do Horário Silencioso
-                    </label>
-                    <input
-                      type="time"
-                      value={settings.quiet_hours_start}
-                      onChange={(e) => handleChange('quiet_hours_start', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  {/* Horário Silencioso - Fim */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Fim do Horário Silencioso
-                    </label>
-                    <input
-                      type="time"
-                      value={settings.quiet_hours_end}
-                      onChange={(e) => handleChange('quiet_hours_end', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                    />
-                  </div>
                 </div>
               </div>
 
