@@ -1,5 +1,5 @@
 // api/test-config.js - Testar configurações de email
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   // Headers CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -46,4 +46,4 @@ module.exports = async function handler(req, res) {
       timestamp: new Date().toISOString()
     });
   }
-};
+}

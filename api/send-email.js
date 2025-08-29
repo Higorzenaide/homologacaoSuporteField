@@ -1,7 +1,7 @@
 // api/send-email.js - Vercel Serverless Function
-const nodemailer = require('nodemailer');
+import nodemailer from 'nodemailer';
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   // Adicionar headers CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -120,4 +120,4 @@ module.exports = async function handler(req, res) {
       details: error.code || 'UNKNOWN_ERROR'
     });
   }
-};
+}
