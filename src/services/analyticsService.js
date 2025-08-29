@@ -91,13 +91,62 @@ class AnalyticsService {
 
       if (notificationsError) throw notificationsError;
 
-      // Para cada notificação, buscar seus analytics
+      // Obter total de usuários ativos para calcular escopo
+      const { count: totalActiveUsers } = await supabase
+        .from('usuarios')
+        .select('*', { count: 'exact', head: true })
+        .eq('ativo', true);
+
+      // Para cada notificação, buscar seus analytics e informações de escopo
       const notificationsWithAnalytics = await Promise.all(
         notifications.map(async (notification) => {
           const analytics = await this.getNotificationAnalytics(notification.id);
+          
+          // Contar quantas notificações foram criadas com o mesmo título e message na mesma data
+          const { count: totalRecipients } = await supabase
+            .from('notifications')
+            .select('*', { count: 'exact', head: true })
+            .eq('title', notification.title)
+            .eq('message', notification.message)
+            .gte('created_at', new Date(new Date(notification.created_at).getTime() - 60000).toISOString()) // +/- 1 minuto
+            .lte('created_at', new Date(new Date(notification.created_at).getTime() + 60000).toISOString());
+
+          // Determinar escopo da notificação
+          const scope = {
+            type: totalRecipients >= totalActiveUsers ? 'all_users' : 'specific_users',
+            totalRecipients: totalRecipients || 1,
+            totalActiveUsers: totalActiveUsers || 0,
+            percentage: totalActiveUsers > 0 ? Math.round((totalRecipients / totalActiveUsers) * 100) : 0
+          };
+
+          // Se foi para usuários específicos, buscar quem recebeu
+          let recipients = [];
+          if (scope.type === 'specific_users' && totalRecipients <= 50) {
+            const { data: recipientData } = await supabase
+              .from('notifications')
+              .select(`
+                user_id,
+                usuarios:user_id (
+                  id,
+                  nome,
+                  email,
+                  cargo
+                )
+              `)
+              .eq('title', notification.title)
+              .eq('message', notification.message)
+              .gte('created_at', new Date(new Date(notification.created_at).getTime() - 60000).toISOString())
+              .lte('created_at', new Date(new Date(notification.created_at).getTime() + 60000).toISOString())
+              .limit(50);
+
+            recipients = recipientData || [];
+          }
+
           return {
             ...notification,
-            analytics: analytics || { read: [], clicked: [], dismissed: [], total: 0 }
+            analytics: analytics || { read: [], clicked: [], dismissed: [], total: 0 },
+            scope,
+            recipients
           };
         })
       );

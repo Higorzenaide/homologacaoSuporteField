@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Eye, Users, Clock, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { Eye, Users, Clock, CheckCircle, AlertCircle, X, Globe, UserCheck, Percent } from 'lucide-react';
 import analyticsService from '../services/analyticsService';
 
 const NotificationAnalytics = () => {
@@ -43,15 +43,41 @@ const NotificationAnalytics = () => {
         return <AlertCircle className="w-4 h-4 text-gray-500" />;
       case 'custom_reminder':
         return <Clock className="w-4 h-4 text-purple-500" />;
+      case 'news':
+        return <AlertCircle className="w-4 h-4 text-green-500" />;
+      case 'training_new':
+        return <CheckCircle className="w-4 h-4 text-blue-500" />;
+      case 'feedback':
+        return <AlertCircle className="w-4 h-4 text-purple-500" />;
       default:
         return <AlertCircle className="w-4 h-4 text-gray-500" />;
+    }
+  };
+
+  const getScopeIndicator = (scope) => {
+    if (scope.type === 'all_users') {
+      return (
+        <div className="flex items-center space-x-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+          <Globe className="w-4 h-4" />
+          <span>Todos os usuários</span>
+          <span className="font-semibold">({scope.totalRecipients})</span>
+        </div>
+      );
+    } else {
+      return (
+        <div className="flex items-center space-x-2 px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">
+          <UserCheck className="w-4 h-4" />
+          <span>Usuários específicos</span>
+          <span className="font-semibold">({scope.totalRecipients})</span>
+        </div>
+      );
     }
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
         <span className="ml-3 text-gray-600">Carregando analytics...</span>
       </div>
     );
@@ -63,7 +89,7 @@ const NotificationAnalytics = () => {
         <h2 className="text-2xl font-bold text-gray-900">Analytics de Notificações</h2>
         <button
           onClick={loadNotifications}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
         >
           Atualizar
         </button>
@@ -95,9 +121,20 @@ const NotificationAnalytics = () => {
                   
                   <p className="text-gray-600 mb-3">{notification.message}</p>
                   
+                  {/* Indicador de escopo */}
+                  <div className="mb-3">
+                    {notification.scope && getScopeIndicator(notification.scope)}
+                  </div>
+                  
                   <div className="flex items-center space-x-4 text-sm text-gray-500">
                     <span>{formatDate(notification.created_at)}</span>
                     <span className="capitalize">{notification.type}</span>
+                    {notification.scope && (
+                      <div className="flex items-center space-x-1 text-blue-600">
+                        <Percent className="w-3 h-3" />
+                        <span>{notification.scope.percentage}% dos usuários</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -136,7 +173,7 @@ const NotificationAnalytics = () => {
       {selectedNotification && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-500 to-blue-600">
+            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-red-500 to-red-600">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   {getNotificationIcon(selectedNotification.type)}
@@ -162,6 +199,39 @@ const NotificationAnalytics = () => {
                   <span className="capitalize">Tipo: {selectedNotification.type}</span>
                 </div>
               </div>
+
+              {/* Informações de Escopo */}
+              {selectedNotification.scope && (
+                <div className="mb-6 p-4 bg-gray-50 rounded-xl">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                    <Globe className="w-5 h-5 mr-2" />
+                    Escopo da Notificação
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {selectedNotification.scope.totalRecipients}
+                      </div>
+                      <div className="text-sm text-gray-500">Destinatários</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-600">
+                        {selectedNotification.scope.totalActiveUsers}
+                      </div>
+                      <div className="text-sm text-gray-500">Total de usuários ativos</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {selectedNotification.scope.percentage}%
+                      </div>
+                      <div className="text-sm text-gray-500">Cobertura</div>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    {getScopeIndicator(selectedNotification.scope)}
+                  </div>
+                </div>
+              )}
 
               {/* Estatísticas */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -195,6 +265,40 @@ const NotificationAnalytics = () => {
                   </p>
                 </div>
               </div>
+
+              {/* Lista de destinatários específicos */}
+              {selectedNotification.recipients && selectedNotification.recipients.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
+                    <UserCheck className="w-5 h-5 mr-2" />
+                    Destinatários Específicos ({selectedNotification.recipients.length})
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {selectedNotification.recipients.map((recipient, index) => (
+                      <div key={index} className="flex items-center space-x-3 bg-orange-50 rounded-lg p-3">
+                        <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                          <span className="text-orange-600 font-semibold text-sm">
+                            {recipient.usuarios?.nome?.charAt(0) || 'U'}
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">
+                            {recipient.usuarios?.nome || 'Usuário'}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {recipient.usuarios?.email || 'Email não disponível'}
+                          </p>
+                          {recipient.usuarios?.cargo && (
+                            <p className="text-xs text-orange-600 font-medium">
+                              {recipient.usuarios.cargo}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Lista de usuários que leram */}
               {selectedNotification.analytics.read.length > 0 && (
