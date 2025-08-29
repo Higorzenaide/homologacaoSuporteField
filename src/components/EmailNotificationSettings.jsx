@@ -13,7 +13,7 @@ import { Mail, Send, Settings, Bell, Clock } from 'lucide-react';
 
 export default function EmailNotificationSettings() {
   const { user } = useAuth();
-  const { showToast } = useToast();
+  const { showSuccess, showError } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
@@ -96,13 +96,13 @@ export default function EmailNotificationSettings() {
       const result = await notificationService.updateEmailPreferences(user.id, preferences);
       
       if (result.success) {
-        showToast('Preferências salvas com sucesso!', 'success');
+        showSuccess('Preferências salvas com sucesso!');
       } else {
         throw new Error(result.error);
       }
     } catch (error) {
       console.error('Erro ao salvar preferências:', error);
-      showToast('Erro ao salvar preferências', 'error');
+      showError('Erro ao salvar preferências');
     } finally {
       setSaving(false);
     }
@@ -116,13 +116,13 @@ export default function EmailNotificationSettings() {
       const result = await notificationService.sendTestEmail(user.id);
       
       if (result.success) {
-        showToast('Email de teste enviado com sucesso!', 'success');
+        showSuccess('Email de teste enviado com sucesso!');
       } else {
         throw new Error(result.error);
       }
     } catch (error) {
       console.error('Erro ao enviar email de teste:', error);
-      showToast(`Erro ao enviar email de teste: ${error.message}`, 'error');
+      showError(`Erro ao enviar email de teste: ${error.message}`);
     } finally {
       setTestingEmail(false);
     }

@@ -170,7 +170,10 @@ const Usuarios = () => {
       if (result.error) {
         setError(result.error);
       } else {
-        setSuccess(editingUser ? 'Usuário atualizado com sucesso!' : 'Usuário criado com sucesso!');
+        const successMessage = editingUser 
+          ? 'Usuário atualizado com sucesso!' 
+          : 'Usuário criado com sucesso! 📧 Email de boas-vindas enviado para o novo usuário.';
+        setSuccess(successMessage);
         setShowModal(false);
         setEditingUser(null);
         resetForm();

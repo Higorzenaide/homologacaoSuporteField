@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import emailService from './emailService';
 
 // Serviço para gerenciamento de usuários
 export const usuariosService = {
@@ -35,6 +36,23 @@ export const usuariosService = {
 
       if (data && data.length > 0) {
         const result = data[0];
+        
+        // Se o usuário foi criado com sucesso, enviar email de boas-vindas
+        if (result.success) {
+          console.log('👤 Usuário criado com sucesso, enviando email de boas-vindas...');
+          
+          const userData = {
+            email: dadosUsuario.email,
+            nome: dadosUsuario.nome,
+            senha: dadosUsuario.senha,
+            tipo_usuario: dadosUsuario.tipo_usuario || 'usuario',
+            cargo: dadosUsuario.cargo || null
+          };
+
+          // Enviar email de boas-vindas de forma assíncrona (não bloquear a criação do usuário)
+          this.enviarEmailBoasVindas(userData);
+        }
+        
         return {
           data: result,
           error: result.success ? null : result.message
@@ -45,6 +63,23 @@ export const usuariosService = {
     } catch (error) {
       console.error('Erro ao criar usuário:', error);
       return { data: null, error: error.message };
+    }
+  },
+
+  // Enviar email de boas-vindas (método auxiliar)
+  async enviarEmailBoasVindas(userData) {
+    try {
+      console.log(`📧 Enviando email de boas-vindas para ${userData.email}...`);
+      
+      const resultado = await emailService.sendWelcomeEmail(userData);
+      
+      if (resultado.success) {
+        console.log(`✅ Email de boas-vindas enviado com sucesso para ${userData.email}`);
+      } else {
+        console.warn(`⚠️ Falha ao enviar email de boas-vindas para ${userData.email}:`, resultado.error);
+      }
+    } catch (error) {
+      console.error(`❌ Erro ao enviar email de boas-vindas para ${userData.email}:`, error);
     }
   },
 
