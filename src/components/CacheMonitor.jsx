@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, Database, Clock, AlertTriangle, CheckCircle, RefreshCw, Trash2 } from 'lucide-react';
 import { clearAllCache, clearExpiredCache } from '../hooks/useCache';
-import { clearUserCacheCompletely, diagnosticCacheIssues } from '../utils/clearOldCache';
-import { runCachePerformanceTest, testUserLoadingInHeader } from '../utils/cachePerformanceTest';
+// import { clearUserCacheCompletely, diagnosticCacheIssues } from '../utils/clearOldCache';
+// import { runCachePerformanceTest, testUserLoadingInHeader } from '../utils/cachePerformanceTest';
 import { clearCurtidasCache, getCurtidasCacheStats } from '../services/curtidasOptimizedService';
 
 // Monitor de cache para desenvolvimento e debug
@@ -53,60 +53,60 @@ const CacheMonitor = () => {
   };
 
   const handleClearUserCache = () => {
-    const cleared = clearUserCacheCompletely();
+    // const cleared = clearUserCacheCompletely();
     setRecentActivity(prev => [...prev, {
       id: Date.now(),
-      action: cleared ? 'Cache de usuários limpo (fix ultimo_login)' : 'Erro ao limpar cache de usuários',
+      action: 'Função desabilitada durante limpeza',
       timestamp: new Date(),
-      type: cleared ? 'fix' : 'error'
+      type: 'info'
     }].slice(-10));
   };
 
   const handleDiagnostic = () => {
-    const issues = diagnosticCacheIssues();
+    // const issues = diagnosticCacheIssues();
     setRecentActivity(prev => [...prev, {
       id: Date.now(),
-      action: `Diagnóstico: ${issues.length} problemas encontrados`,
+      action: 'Função de diagnóstico desabilitada durante limpeza',
       timestamp: new Date(),
-      type: issues.length > 0 ? 'warning' : 'success'
+      type: 'info'
     }].slice(-10));
   };
 
   const handlePerformanceTest = async () => {
     setRecentActivity(prev => [...prev, {
       id: Date.now(),
-      action: 'Iniciando teste de performance...',
+      action: 'Teste de performance desabilitado durante limpeza',
       timestamp: new Date(),
       type: 'info'
     }].slice(-10));
 
-    try {
-      await runCachePerformanceTest();
-      setRecentActivity(prev => [...prev, {
-        id: Date.now(),
-        action: 'Teste de performance concluído - veja console',
-        timestamp: new Date(),
-        type: 'success'
-      }].slice(-10));
-    } catch (error) {
-      setRecentActivity(prev => [...prev, {
-        id: Date.now(),
-        action: 'Erro no teste de performance',
-        timestamp: new Date(),
-        type: 'error'
-      }].slice(-10));
-    }
+    // try {
+    //   await runCachePerformanceTest();
+    //   setRecentActivity(prev => [...prev, {
+    //     id: Date.now(),
+    //     action: 'Teste de performance concluído - veja console',
+    //     timestamp: new Date(),
+    //     type: 'success'
+    //   }].slice(-10));
+    // } catch (error) {
+    //   setRecentActivity(prev => [...prev, {
+    //     id: Date.now(),
+    //     action: 'Erro no teste de performance',
+    //     timestamp: new Date(),
+    //     type: 'error'
+    //   }].slice(-10));
+    // }
   };
 
   const handleHeaderTest = () => {
     setRecentActivity(prev => [...prev, {
       id: Date.now(),
-      action: 'Monitor de header ativo por 30s - veja console',
+      action: 'Teste de header desabilitado durante limpeza',
       timestamp: new Date(),
       type: 'info'
     }].slice(-10));
 
-    testUserLoadingInHeader();
+    // testUserLoadingInHeader();
   };
 
   const handleClearExpired = () => {
