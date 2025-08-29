@@ -53,9 +53,9 @@ export const usuariosService = {
       if (data && data.length > 0) {
         const result = data[0];
         
-        // Se o usuário foi criado com sucesso, enviar email de boas-vindas
+        // Se o usuário foi criado com sucesso, configurar dados iniciais
         if (result.success) {
-          console.log('👤 Usuário criado com sucesso, enviando email de boas-vindas...');
+          console.log('👤 Usuário criado com sucesso, configurando dados iniciais...');
           
           const userData = {
             email: dadosUsuario.email,
@@ -64,6 +64,9 @@ export const usuariosService = {
             tipo_usuario: dadosUsuario.tipo_usuario || 'usuario',
             cargo: dadosUsuario.cargo || null
           };
+
+          // Criar configurações de notificação para o novo usuário
+          await this.criarConfiguracaoNotificacao(result.id);
 
           // Enviar email de boas-vindas de forma assíncrona (não bloquear a criação do usuário)
           this.enviarEmailBoasVindas(userData);
@@ -399,6 +402,44 @@ export const usuariosService = {
         error: error.message
       });
       
+      return { data: null, error: error.message };
+    }
+  },
+
+  // Criar configurações de notificação padrão para novo usuário
+  async criarConfiguracaoNotificacao(userId) {
+    try {
+      console.log('🔔 Criando configurações de notificação para usuário:', userId);
+
+      const defaultSettings = {
+        user_id: userId,
+        email_notifications: true,
+        push_notifications: true,
+        training_reminders: true,
+        system_notifications: true,
+        reminder_frequency: 'daily',
+        quiet_hours_start: '22:00',
+        quiet_hours_end: '08:00'
+      };
+
+      const { data, error } = await supabase
+        .from('notification_settings')
+        .insert(defaultSettings)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Erro ao criar configurações de notificação:', error);
+        // Não bloquear a criação do usuário por erro nas configurações
+        return { data: null, error: error.message };
+      }
+
+      console.log('✅ Configurações de notificação criadas:', data);
+      return { data, error: null };
+
+    } catch (error) {
+      console.error('💥 Erro ao criar configurações de notificação:', error);
+      // Não bloquear a criação do usuário por erro nas configurações
       return { data: null, error: error.message };
     }
   }

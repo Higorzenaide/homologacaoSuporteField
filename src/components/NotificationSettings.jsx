@@ -31,17 +31,31 @@ const NotificationSettings = ({ isOpen, onClose }) => {
     
     setIsLoading(true);
     try {
+      console.log('🔍 Carregando configurações de notificação para usuário:', user.id);
+      
       const { data, error } = await supabase
         .from('notification_settings')
         .select('*')
         .eq('user_id', user.id)
         .single();
 
+      console.log('📊 Resposta da consulta:', { data, error });
+
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('❌ Erro na consulta de configurações:', error);
+        
+        // Se a tabela não existe, mostrar erro específico
+        if (error.message.includes('does not exist') || error.code === '42P01') {
+          console.error('💡 A tabela notification_settings não existe. Execute o script de criação.');
+          alert('Erro: Tabela de configurações não encontrada. Contacte o administrador.');
+          return;
+        }
+        
         throw error;
       }
 
       if (data) {
+        console.log('✅ Configurações carregadas:', data);
         setSettings({
           email_notifications: data.email_notifications,
           push_notifications: data.push_notifications,
@@ -51,11 +65,60 @@ const NotificationSettings = ({ isOpen, onClose }) => {
           quiet_hours_start: data.quiet_hours_start,
           quiet_hours_end: data.quiet_hours_end
         });
+      } else {
+        console.log('ℹ️ Nenhuma configuração encontrada, criando padrões...');
+        // Criar configurações padrão para o usuário
+        await createDefaultSettings();
       }
     } catch (error) {
-      console.error('Erro ao carregar configurações:', error);
+      console.error('💥 Erro ao carregar configurações:', error);
+      alert(`Erro ao carregar configurações: ${error.message}`);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const createDefaultSettings = async () => {
+    if (!user) return;
+    
+    console.log('🔧 Criando configurações padrão para usuário:', user.id);
+    
+    try {
+      const defaultSettings = {
+        user_id: user.id,
+        email_notifications: true,
+        push_notifications: true,
+        training_reminders: true,
+        system_notifications: true,
+        reminder_frequency: 'daily',
+        quiet_hours_start: '22:00',
+        quiet_hours_end: '08:00'
+      };
+
+      const { data, error } = await supabase
+        .from('notification_settings')
+        .insert(defaultSettings)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      console.log('✅ Configurações padrão criadas:', data);
+      
+      // Atualizar o estado com as configurações criadas
+      setSettings({
+        email_notifications: data.email_notifications,
+        push_notifications: data.push_notifications,
+        training_reminders: data.training_reminders,
+        system_notifications: data.system_notifications,
+        reminder_frequency: data.reminder_frequency,
+        quiet_hours_start: data.quiet_hours_start,
+        quiet_hours_end: data.quiet_hours_end
+      });
+
+    } catch (error) {
+      console.error('❌ Erro ao criar configurações padrão:', error);
+      // Se falhar, manter configurações padrão no estado local
     }
   };
 
