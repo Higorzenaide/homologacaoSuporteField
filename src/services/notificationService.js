@@ -540,31 +540,27 @@ class NotificationService {
         return null;
       }
 
-      const notification = {
-        user_id: feedbackData.usuario_id,
-        type: 'feedback',
-        title: 'Você recebeu um feedback',
-        message: `Você recebeu um novo feedback na categoria "${feedbackData.categoria_nome || 'Geral'}". Verifique em seu perfil.`,
-        data: {
-          feedback_id: feedbackData.id,
-          categoria_nome: feedbackData.categoria_nome,
-          categoria_cor: feedbackData.categoria_cor,
-          nome_avaliador: feedbackData.nome_avaliador,
-          action_url: '/perfil' // Redireciona para o perfil onde pode ver o feedback
-        },
-        priority: 'high' // Feedback é importante
-      };
+      console.log('📤 Criando notificação de feedback via RPC:', feedbackData);
 
+      // Usar função RPC para bypassar RLS
       const { data, error } = await supabase
-        .from('notifications')
-        .insert([notification])
-        .select('*')
-        .single();
+        .rpc('criar_notificacao_feedback', {
+          usuario_id_param: feedbackData.usuario_id,
+          feedback_id_param: feedbackData.id,
+          categoria_nome_param: feedbackData.categoria_nome || 'Geral',
+          categoria_cor_param: feedbackData.categoria_cor || '#6B7280',
+          nome_avaliador_param: feedbackData.nome_avaliador
+        });
 
       if (error) throw error;
 
-      console.log('✅ Notificação de feedback criada:', data);
-      return data;
+      if (data && data.success) {
+        console.log('✅ Notificação de feedback criada via RPC:', data.notification);
+        return data.notification;
+      } else {
+        console.error('❌ Erro retornado pela função RPC:', data);
+        return null;
+      }
     } catch (error) {
       console.error('❌ Erro ao notificar sobre feedback:', error);
       return null;

@@ -9,7 +9,7 @@ import useNetworkRetry from '../hooks/useNetworkRetry';
 
 const NotificationBadge = () => {
   const { user } = useAuth();
-  const { showError, showSuccess } = useToast();
+  const { showError, showSuccess, showInfo } = useToast();
   const { executeWithRetry, isRetrying } = useNetworkRetry();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -85,14 +85,7 @@ const NotificationBadge = () => {
         }
 
         // Toast notification visual
-        if (showToast) {
-          showToast({
-            type: 'info',
-            title: payload.new.title,
-            message: payload.new.message,
-            duration: 5000
-          });
-        }
+        showInfo(`${payload.new.title}: ${payload.new.message}`, 5000);
       })
       .on('postgres_changes', {
         event: 'UPDATE',
