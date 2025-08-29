@@ -8,14 +8,14 @@ export const verificarCurtidaNoticia = async (noticiaId, usuarioId) => {
       .select('*')
       .eq('noticia_id', noticiaId)
       .eq('usuario_id', usuarioId)
-      .single();
+      .limit(1);
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       console.error('Erro ao verificar curtida:', error);
       return { error: error.message, curtido: false };
     }
 
-    return { curtido: !!data, error: null };
+    return { curtido: data && data.length > 0, error: null };
   } catch (error) {
     console.error('Erro ao verificar curtida:', error);
     return { error: error.message, curtido: false };
@@ -26,13 +26,14 @@ export const verificarCurtidaNoticia = async (noticiaId, usuarioId) => {
 export const toggleCurtidaNoticia = async (noticiaId, usuarioId) => {
   try {
     // Primeiro verificar se já existe
-    const { data: existingCurtida } = await supabase
+    const { data: existingCurtidas } = await supabase
       .from('curtidas_noticias')
       .select('*')
       .eq('noticia_id', noticiaId)
       .eq('usuario_id', usuarioId)
-      .single();
+      .limit(1);
 
+    const existingCurtida = existingCurtidas && existingCurtidas.length > 0 ? existingCurtidas[0] : null;
     let curtido;
     
     if (existingCurtida) {
