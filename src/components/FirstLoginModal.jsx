@@ -5,9 +5,11 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
 import { Eye, EyeOff, Lock, Shield, Key, CheckCircle, Loader2 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import firstLoginService from '../services/firstLoginService';
 
 const FirstLoginModal = ({ isOpen, onPasswordChanged, userEmail }) => {
+  const { user } = useAuth();
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
@@ -16,15 +18,7 @@ const FirstLoginModal = ({ isOpen, onPasswordChanged, userEmail }) => {
   const [error, setError] = useState('');
 
   const validarSenha = (senha) => {
-    const criterios = {
-      tamanho: senha.length >= 6,
-      maiuscula: /[A-Z]/.test(senha),
-      numero: /[0-9]/.test(senha),
-      especial: /[!@#$%^&*(),.?":{}|<>]/.test(senha)
-    };
-
-    const valida = Object.values(criterios).every(criterio => criterio);
-    return { valida, criterios };
+    return firstLoginService.validatePassword(senha);
   };
 
   const handleSubmit = async (e) => {
@@ -44,35 +38,30 @@ const FirstLoginModal = ({ isOpen, onPasswordChanged, userEmail }) => {
         return;
       }
 
-      const { valida, criterios } = validarSenha(novaSenha);
+      const { valida } = validarSenha(novaSenha);
       if (!valida) {
         setError('A senha não atende aos critérios de segurança');
         return;
       }
 
-      // Atualizar senha no Supabase Auth
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: novaSenha
-      });
+      if (!user?.id) {
+        setError('Usuário não identificado');
+        return;
+      }
 
-      if (updateError) throw updateError;
+      // Alterar senha usando o serviço personalizado
+      const result = await firstLoginService.changePassword(user.id, novaSenha);
 
-      // Marcar que o usuário já alterou a senha (primeiro login concluído)
-      const { error: dbError } = await supabase
-        .from('usuarios')
-        .update({ 
-          primeiro_login: false,
-          updated_at: new Date().toISOString()
-        })
-        .eq('email', userEmail);
-
-      if (dbError) throw dbError;
-
-      // Sucesso - chamar callback
-      onPasswordChanged();
+      if (result.success) {
+        console.log('✅ Senha alterada com sucesso!');
+        // Sucesso - chamar callback
+        onPasswordChanged();
+      } else {
+        throw new Error(result.error || 'Erro ao alterar senha');
+      }
       
     } catch (error) {
-      console.error('Erro ao alterar senha:', error);
+      console.error('❌ Erro ao alterar senha:', error);
       setError(error.message || 'Erro ao alterar senha');
     } finally {
       setLoading(false);
