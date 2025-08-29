@@ -336,21 +336,62 @@ export const usuariosService = {
         userId: usuarioId
       });
 
-      const { data, error } = await supabase
-        .from('usuarios')
-        .delete()
-        .eq('id', usuarioId);
+      console.log('🗑️ Tentando excluir usuário via função RPC segura...');
 
-      if (error) throw error;
+      // Tentar usar a função RPC otimizada (CASCADE)
+      try {
+        const { data: rpcData, error: rpcError } = await supabase
+          .rpc('excluir_usuario_cascade', {
+            p_user_id: usuarioId
+          });
 
-      // Log de sucesso
-      securityService.logSecurityEvent('USER_DELETED_SUCCESS', null, { 
-        userId: usuarioId
-      });
+        if (rpcError) throw rpcError;
 
-      return { data, error: null };
+        if (rpcData && rpcData.length > 0) {
+          const result = rpcData[0];
+          
+          if (result.success) {
+            console.log('✅ Usuário excluído via CASCADE:', result.message);
+            console.log('📊 Tabelas afetadas:', result.deleted_tables);
+
+            // Log de sucesso
+            securityService.logSecurityEvent('USER_DELETED_SUCCESS', null, { 
+              userId: usuarioId,
+              method: 'rpc_cascade',
+              affectedTables: result.deleted_tables
+            });
+
+            return { data: result, error: null };
+          } else {
+            throw new Error(result.message);
+          }
+        }
+      } catch (rpcError) {
+        console.warn('⚠️ Função RPC não disponível, usando método manual:', rpcError.message);
+        
+        // Fallback para exclusão manual SIMPLES (CASCADE já configurado)
+        console.log('🔄 Excluindo usuário diretamente (CASCADE ativo)...');
+
+        // Com CASCADE ativo, podemos excluir diretamente da tabela usuarios
+        const { data, error } = await supabase
+          .from('usuarios')
+          .delete()
+          .eq('id', usuarioId);
+
+        if (error) throw error;
+
+        console.log('✅ Usuário excluído com sucesso (método direto via CASCADE)');
+
+        // Log de sucesso
+        securityService.logSecurityEvent('USER_DELETED_SUCCESS', null, { 
+          userId: usuarioId,
+          method: 'direct_cascade'
+        });
+
+        return { data, error: null };
+      }
     } catch (error) {
-      console.error('Erro ao excluir usuário:', error);
+      console.error('❌ Erro ao excluir usuário:', error);
       
       // Log de falha
       securityService.logSecurityEvent('USER_DELETE_FAILED', null, { 
