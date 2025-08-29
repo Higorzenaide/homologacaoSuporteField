@@ -301,12 +301,65 @@ export const usuariosService = {
 
   // Gerar senha temporária
   gerarSenhaTemporaria() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const maiusculas = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const minusculas = 'abcdefghijklmnopqrstuvwxyz';
+    const numeros = '0123456789';
+    const especiais = '!@#$%^&*';
+    
+    // Garantir que a senha tenha pelo menos um de cada tipo
     let senha = '';
-    for (let i = 0; i < 8; i++) {
-      senha += chars.charAt(Math.floor(Math.random() * chars.length));
+    senha += maiusculas.charAt(Math.floor(Math.random() * maiusculas.length));
+    senha += minusculas.charAt(Math.floor(Math.random() * minusculas.length));
+    senha += numeros.charAt(Math.floor(Math.random() * numeros.length));
+    senha += especiais.charAt(Math.floor(Math.random() * especiais.length));
+    
+    // Completar até 10 caracteres com caracteres aleatórios
+    const todosChars = maiusculas + minusculas + numeros + especiais;
+    for (let i = senha.length; i < 10; i++) {
+      senha += todosChars.charAt(Math.floor(Math.random() * todosChars.length));
     }
-    return senha;
+    
+    // Embaralhar a senha para não ter padrão previsível
+    return senha.split('').sort(() => Math.random() - 0.5).join('');
+  },
+
+  // Excluir usuário permanentemente
+  async excluirUsuario(usuarioId) {
+    try {
+      // Validações de segurança
+      if (!securityService.isValidUUID(usuarioId)) {
+        return { data: null, error: 'ID de usuário inválido' };
+      }
+
+      // Log da tentativa de exclusão
+      securityService.logSecurityEvent('USER_DELETE_ATTEMPT', null, { 
+        userId: usuarioId
+      });
+
+      const { data, error } = await supabase
+        .from('usuarios')
+        .delete()
+        .eq('id', usuarioId);
+
+      if (error) throw error;
+
+      // Log de sucesso
+      securityService.logSecurityEvent('USER_DELETED_SUCCESS', null, { 
+        userId: usuarioId
+      });
+
+      return { data, error: null };
+    } catch (error) {
+      console.error('Erro ao excluir usuário:', error);
+      
+      // Log de falha
+      securityService.logSecurityEvent('USER_DELETE_FAILED', null, { 
+        userId: usuarioId,
+        error: error.message
+      });
+      
+      return { data: null, error: error.message };
+    }
   }
 };
 

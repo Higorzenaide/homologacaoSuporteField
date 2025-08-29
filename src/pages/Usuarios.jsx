@@ -17,16 +17,20 @@ import {
   UserCheck, 
   UserX, 
   Mail, 
-  Phone, 
+  Phone,
+  CheckCircle,
+  AlertCircle, 
   Briefcase,
   Shield,
   User,
   Calendar,
   Eye,
   EyeOff,
-  Shuffle
+  Shuffle,
+  Trash2
 } from 'lucide-react';
 import EmailConfirmationModal from '../components/EmailConfirmationModal';
+import securityService from '../services/securityService';
 
 const Usuarios = () => {
   const { isAdmin } = useAuth();
@@ -40,6 +44,9 @@ const Usuarios = () => {
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const [createdUserData, setCreatedUserData] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   
   const [formData, setFormData] = useState({
     email: '',
@@ -238,6 +245,38 @@ const Usuarios = () => {
     } catch (error) {
       setError('Erro ao alterar status do usuário');
     }
+  };
+
+  const handleDeleteUser = (usuario) => {
+    setUserToDelete(usuario);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    
+    setDeleting(true);
+    try {
+      const result = await usuariosService.excluirUsuario(userToDelete.id);
+      
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setSuccess(`Usuário "${userToDelete.nome}" excluído com sucesso!`);
+        carregarUsuarios();
+        setShowDeleteModal(false);
+        setUserToDelete(null);
+      }
+    } catch (error) {
+      setError('Erro ao excluir usuário');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const cancelDeleteUser = () => {
+    setShowDeleteModal(false);
+    setUserToDelete(null);
   };
 
   const resetForm = () => {
@@ -536,6 +575,15 @@ const Usuarios = () => {
                       </>
                     )}
                   </Button>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    onClick={() => handleDeleteUser(usuario)}
+                    className="px-3"
+                    title="Excluir usuário"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -648,7 +696,7 @@ const Usuarios = () => {
                       type={mostrarSenha ? "text" : "password"}
                       value={formData.senha}
                       onChange={(e) => setFormData({ ...formData, senha: e.target.value })}
-                      placeholder="Mínimo 6 caracteres"
+                      placeholder="Clique no ícone para gerar senha segura ou digite sua própria"
                       required={!editingUser}
                     />
                     <button
@@ -664,10 +712,87 @@ const Usuarios = () => {
                     variant="outline"
                     onClick={gerarSenhaTemporaria}
                     className="px-3"
+                    title="Gerar senha segura"
                   >
                     <Shuffle className="h-4 w-4" />
                   </Button>
                 </div>
+                
+                {/* Critérios de senha dinâmicos */}
+                {formData.senha && !editingUser && (() => {
+                  const validation = securityService.validatePassword(formData.senha);
+                  const { valida, criterios } = validation || { valida: false, criterios: {} };
+                  
+                  return (
+                    <div className="mt-3 p-3 bg-gray-50 border rounded-lg">
+                      <div className="text-sm font-medium text-gray-700 mb-2">
+                        Critérios de segurança:
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className={`flex items-center ${criterios?.tamanho ? 'text-green-600' : 'text-red-500'}`}>
+                          {criterios?.tamanho ? (
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 mr-1" />
+                          )}
+                          Mín. 8 caracteres
+                        </div>
+                        
+                        <div className={`flex items-center ${criterios?.maiuscula ? 'text-green-600' : 'text-red-500'}`}>
+                          {criterios?.maiuscula ? (
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 mr-1" />
+                          )}
+                          Letra maiúscula
+                        </div>
+                        
+                        <div className={`flex items-center ${criterios?.minuscula ? 'text-green-600' : 'text-red-500'}`}>
+                          {criterios?.minuscula ? (
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 mr-1" />
+                          )}
+                          Letra minúscula
+                        </div>
+                        
+                        <div className={`flex items-center ${criterios?.numero ? 'text-green-600' : 'text-red-500'}`}>
+                          {criterios?.numero ? (
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 mr-1" />
+                          )}
+                          Número
+                        </div>
+                        
+                        <div className={`flex items-center ${criterios?.especial ? 'text-green-600' : 'text-red-500'}`}>
+                          {criterios?.especial ? (
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 mr-1" />
+                          )}
+                          Caract. especial
+                        </div>
+                        
+                        <div className={`flex items-center ${criterios?.semEspacos ? 'text-green-600' : 'text-red-500'}`}>
+                          {criterios?.semEspacos ? (
+                            <CheckCircle className="w-4 h-4 mr-1" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 mr-1" />
+                          )}
+                          Sem espaços
+                        </div>
+                      </div>
+                      
+                      {valida && (
+                        <div className="mt-2 p-2 bg-green-100 border border-green-300 rounded flex items-center text-green-700">
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          <span className="text-sm font-medium">Senha atende todos os critérios!</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
               <div>
@@ -744,6 +869,109 @@ const Usuarios = () => {
         onClose={() => setShowEmailConfirmation(false)}
         userData={createdUserData}
       />
+
+      {/* Modal de Confirmação de Exclusão */}
+      <Dialog open={showDeleteModal} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="pb-4">
+            <DialogTitle className="flex items-center gap-3 text-red-600">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="h-5 w-5 text-red-600" />
+              </div>
+              Excluir Usuário
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-red-900 mb-1">Ação Irreversível!</h4>
+                  <p className="text-sm text-red-700">
+                    Esta ação não pode ser desfeita. O usuário será permanentemente removido do sistema.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {userToDelete && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <h4 className="font-medium text-gray-900 mb-3">Usuário a ser excluído:</h4>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                    {userToDelete.tipo_usuario === 'admin' ? (
+                      <Shield className="h-5 w-5 text-purple-600" />
+                    ) : (
+                      <User className="h-5 w-5 text-blue-600" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{userToDelete.nome}</p>
+                    <p className="text-sm text-gray-600">{userToDelete.email}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant={userToDelete.tipo_usuario === 'admin' ? 'default' : 'secondary'}>
+                        {userToDelete.tipo_usuario === 'admin' ? 'Administrador' : 'Usuário'}
+                      </Badge>
+                      <Badge variant={userToDelete.ativo ? 'default' : 'destructive'}>
+                        {userToDelete.ativo ? 'Ativo' : 'Inativo'}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <AlertCircle className="h-4 w-4 text-yellow-600" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-yellow-900 mb-1">O que será removido:</h4>
+                  <ul className="text-sm text-yellow-800 space-y-1">
+                    <li>• Dados pessoais e credenciais</li>
+                    <li>• Histórico de atividades</li>
+                    <li>• Associações com treinamentos</li>
+                    <li>• Configurações de notificação</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex space-x-3 pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={cancelDeleteUser}
+              disabled={deleting}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteUser}
+              disabled={deleting}
+              className="flex-1"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Excluir Permanentemente
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
