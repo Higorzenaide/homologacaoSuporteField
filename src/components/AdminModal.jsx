@@ -26,7 +26,8 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
     prazo_limite: '',
     criarQuestionario: false,
     enviarNotificacao: true,
-    tipoNotificacao: 'selected' // 'all', 'selected', 'none'
+    tipoNotificacao: 'selected', // 'all', 'selected', 'none'
+    enviarPorEmail: true // Controla se deve enviar por email também
   });
   
   const [file, setFile] = useState(null);
@@ -201,10 +202,13 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
           return; // Não enviar notificações
       }
 
+      // Determinar se deve enviar por email
+      const sendEmail = formData.enviarPorEmail === true;
+
       if (type === 'treinamento') {
-        await notificationService.notifyNewTreinamento(savedData, userIds);
+        await notificationService.notifyNewTreinamento(savedData, userIds, sendEmail);
       } else if (type === 'noticia') {
-        await notificationService.notifyNewNoticia(savedData, userIds);
+        await notificationService.notifyNewNoticia(savedData, userIds, sendEmail);
       }
       
       console.log(`✅ Notificações enviadas com sucesso para ${userIds ? userIds.length : 'todos os'} usuários`);
@@ -857,6 +861,48 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
                       : 'Selecionar Usuários'
                     }
                   </button>
+                )}
+
+                {/* Opção para enviar por email também */}
+                {formData.tipoNotificacao !== 'none' && (
+                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        id="enviarPorEmail"
+                        checked={formData.enviarPorEmail}
+                        onChange={(e) => handleInputChange('enviarPorEmail', e.target.checked)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="enviarPorEmail" className="flex-1">
+                        <div className="text-sm font-medium text-gray-700 flex items-center space-x-2">
+                          <span>📧</span>
+                          <span>Enviar notificações por email também</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Além das notificações no sistema, enviar emails para os usuários selecionados 
+                          (respeitando as preferências individuais de cada usuário)
+                        </p>
+                      </label>
+                    </div>
+                    
+                    {formData.enviarPorEmail && (
+                      <div className="mt-3 p-3 bg-blue-100 rounded-md">
+                        <div className="flex items-start space-x-2">
+                          <span className="text-blue-600 text-sm">ℹ️</span>
+                          <div className="text-xs text-blue-700">
+                            <p className="font-medium">Como funciona:</p>
+                            <ul className="list-disc list-inside mt-1 space-y-1">
+                              <li>Emails são enviados apenas para usuários que têm email cadastrado</li>
+                              <li>Respeita as configurações individuais de cada usuário</li>
+                              <li>Se um usuário desabilitou emails, não receberá por email</li>
+                              <li>A notificação no sistema sempre funciona, independente do email</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
                 
                 {/* Resumo da economia de processamento */}

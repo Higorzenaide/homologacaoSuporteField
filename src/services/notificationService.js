@@ -1,8 +1,9 @@
 import { supabase } from '../lib/supabase';
+import emailService from './emailService';
 
 class NotificationService {
   // Criar uma nova notificação
-  async createNotification(notificationData) {
+  async createNotification(notificationData, sendEmail = true) {
     try {
       const { data, error } = await supabase
         .from('notifications')
@@ -11,6 +12,15 @@ class NotificationService {
         .single();
 
       if (error) throw error;
+
+      // Enviar email se habilitado e solicitado
+      if (sendEmail && emailService.isEmailEnabled()) {
+        this.sendEmailNotification(data).catch(emailError => {
+          console.error('Erro ao enviar email de notificação:', emailError);
+          // Não falhar a criação da notificação se o email falhar
+        });
+      }
+
       return data;
     } catch (error) {
       console.error('Erro ao criar notificação:', error);
@@ -383,7 +393,7 @@ class NotificationService {
   }
 
   // Notificar sobre nova notícia (com seleção de usuários)
-  async notifyNewNoticia(noticiaData, selectedUserIds = null) {
+  async notifyNewNoticia(noticiaData, selectedUserIds = null, sendEmail = true) {
     try {
       let userIds = selectedUserIds;
       
@@ -419,7 +429,15 @@ class NotificationService {
 
       if (error) throw error;
       
-      console.log(`✅ Notificação sobre notícia enviada para ${userIds.length} usuários selecionados`);
+      // Enviar emails se solicitado e serviço habilitado
+      if (sendEmail && emailService.isEmailEnabled()) {
+        console.log(`📧 Enviando emails para ${data.length} notificações...`);
+        this.sendBatchEmailNotifications(data).catch(emailError => {
+          console.error('Erro ao enviar emails em lote:', emailError);
+        });
+      }
+      
+      console.log(`✅ Notificação sobre notícia enviada para ${userIds.length} usuários selecionados${sendEmail ? ' (com email)' : ' (sem email)'}`);
       return data;
     } catch (error) {
       console.error('Erro ao notificar sobre nova notícia:', error);
@@ -428,7 +446,7 @@ class NotificationService {
   }
 
   // Notificar sobre novo treinamento (não obrigatório, com seleção de usuários)
-  async notifyNewTreinamento(treinamentoData, selectedUserIds = null) {
+  async notifyNewTreinamento(treinamentoData, selectedUserIds = null, sendEmail = true) {
     try {
       let userIds = selectedUserIds;
       
@@ -464,7 +482,15 @@ class NotificationService {
 
       if (error) throw error;
       
-      console.log(`✅ Notificação sobre treinamento enviada para ${userIds.length} usuários selecionados`);
+      // Enviar emails se solicitado e serviço habilitado
+      if (sendEmail && emailService.isEmailEnabled()) {
+        console.log(`📧 Enviando emails para ${data.length} notificações...`);
+        this.sendBatchEmailNotifications(data).catch(emailError => {
+          console.error('Erro ao enviar emails em lote:', emailError);
+        });
+      }
+      
+      console.log(`✅ Notificação sobre treinamento enviada para ${userIds.length} usuários selecionados${sendEmail ? ' (com email)' : ' (sem email)'}`);
       return data;
     } catch (error) {
       console.error('Erro ao notificar sobre novo treinamento:', error);
@@ -556,6 +582,14 @@ class NotificationService {
 
       if (data && data.success) {
         console.log('✅ Notificação de feedback criada via RPC:', data.notification);
+        
+        // Enviar email para o feedback se habilitado
+        if (emailService.isEmailEnabled()) {
+          this.sendEmailNotification(data.notification).catch(emailError => {
+            console.error('Erro ao enviar email de feedback:', emailError);
+          });
+        }
+        
         return data.notification;
       } else {
         console.error('❌ Erro retornado pela função RPC:', data);
@@ -564,6 +598,149 @@ class NotificationService {
     } catch (error) {
       console.error('❌ Erro ao notificar sobre feedback:', error);
       return null;
+    }
+  }
+
+  // Enviar notificação por email
+  async sendEmailNotification(notification) {
+    try {
+      // Buscar dados do usuário
+      const { data: user, error: userError } = await supabase
+        .from('usuarios')
+        .select('email, nome, email_notifications_enabled')
+        .eq('id', notification.user_id)
+        .single();
+
+      if (userError) {
+        console.error('Erro ao buscar dados do usuário:', userError);
+        return { success: false, error: 'Usuário não encontrado' };
+      }
+
+      // Verificar se o usuário tem email e quer receber notificações
+      if (!user.email) {
+        console.log('Usuário não tem email cadastrado');
+        return { success: false, error: 'Email não cadastrado' };
+      }
+
+      // Se a coluna email_notifications_enabled existir, verificar preferência
+      if (user.email_notifications_enabled === false) {
+        console.log('Usuário desabilitou notificações por email');
+        return { success: false, error: 'Notificações por email desabilitadas' };
+      }
+
+      // Enviar o email
+      const result = await emailService.sendNotificationEmail(
+        user.email,
+        user.nome || 'Usuário',
+        notification
+      );
+
+      if (result.success) {
+        console.log(`✅ Email enviado para ${user.email}`);
+      } else {
+        console.error(`❌ Falha ao enviar email para ${user.email}:`, result.error);
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Erro ao processar envio de email:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Enviar emails em lote para múltiplas notificações
+  async sendBatchEmailNotifications(notifications) {
+    const results = [];
+    
+    for (const notification of notifications) {
+      try {
+        const result = await this.sendEmailNotification(notification);
+        results.push({
+          notification_id: notification.id,
+          user_id: notification.user_id,
+          success: result.success,
+          error: result.error
+        });
+        
+        // Pequena pausa entre emails para evitar rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch (error) {
+        results.push({
+          notification_id: notification.id,
+          user_id: notification.user_id,
+          success: false,
+          error: error.message
+        });
+      }
+    }
+
+    return results;
+  }
+
+  // Atualizar preferências de email do usuário
+  async updateEmailPreferences(userId, preferences) {
+    try {
+      const { error } = await supabase
+        .from('usuarios')
+        .update({
+          email_notifications_enabled: preferences.emailEnabled,
+          email_frequency: preferences.frequency || 'immediate', // immediate, daily, weekly
+          email_types: preferences.types || [] // array de tipos que quer receber
+        })
+        .eq('id', userId);
+
+      if (error) throw error;
+      return { success: true };
+    } catch (error) {
+      console.error('Erro ao atualizar preferências de email:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Buscar preferências de email do usuário
+  async getUserEmailPreferences(userId) {
+    try {
+      const { data, error } = await supabase
+        .from('usuarios')
+        .select('email_notifications_enabled, email_frequency, email_types')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+      
+      return {
+        emailEnabled: data.email_notifications_enabled ?? true, // padrão habilitado
+        frequency: data.email_frequency || 'immediate',
+        types: data.email_types || ['training_required', 'training_reminder', 'news', 'system', 'feedback']
+      };
+    } catch (error) {
+      console.error('Erro ao buscar preferências de email:', error);
+      // Retornar padrões em caso de erro
+      return {
+        emailEnabled: true,
+        frequency: 'immediate',
+        types: ['training_required', 'training_reminder', 'news', 'system', 'feedback']
+      };
+    }
+  }
+
+  // Testar envio de email
+  async sendTestEmail(userId) {
+    try {
+      const { data: user, error: userError } = await supabase
+        .from('usuarios')
+        .select('email, nome')
+        .eq('id', userId)
+        .single();
+
+      if (userError || !user.email) {
+        throw new Error('Usuário não encontrado ou sem email cadastrado');
+      }
+
+      return await emailService.sendTestEmail(user.email, user.nome || 'Usuário');
+    } catch (error) {
+      console.error('Erro ao enviar email de teste:', error);
+      return { success: false, error: error.message };
     }
   }
 }

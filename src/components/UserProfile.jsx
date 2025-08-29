@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import EmailNotificationSettings from './EmailNotificationSettings';
 import { 
   User, 
   MessageCircle, 
@@ -13,7 +14,9 @@ import {
   CheckCircle,
   XCircle,
   MessageSquare,
-  Activity
+  Activity,
+  Mail,
+  Settings
 } from 'lucide-react';
 
 const UserProfile = ({ isOpen, onClose }) => {
@@ -131,7 +134,8 @@ const UserProfile = ({ isOpen, onClose }) => {
             {[
               { id: 'overview', label: 'Visão Geral', icon: TrendingUp },
               { id: 'feedbacks', label: 'Meus Feedbacks', icon: MessageSquare },
-              { id: 'activities', label: 'Atividades', icon: Activity }
+              { id: 'activities', label: 'Atividades', icon: Activity },
+              { id: 'notifications', label: 'Configurações', icon: Settings }
             ].map((tab) => {
               const IconComponent = tab.icon;
               return (
@@ -288,6 +292,23 @@ const UserProfile = ({ isOpen, onClose }) => {
                       ))}
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Notifications/Settings Tab */}
+              {activeTab === 'notifications' && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <Settings className="h-5 w-5" />
+                      Configurações do Usuário
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-6">
+                      Configure suas preferências de notificações e outras configurações pessoais.
+                    </p>
+                  </div>
+                  
+                  <EmailNotificationSettings />
                 </div>
               )}
             </>
