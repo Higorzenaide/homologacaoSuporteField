@@ -170,21 +170,6 @@ const NotificationSettings = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleTestNotification = async () => {
-    if (permissionStatus !== 'granted') {
-      const granted = await requestNotificationPermission();
-      if (!granted) {
-        alert('Permissão para notificações foi negada');
-        return;
-      }
-    }
-
-    notificationService.sendBrowserNotification('Teste de Notificação', {
-      body: 'Esta é uma notificação de teste do Suporte Field',
-      icon: '/logo.jpeg'
-    });
-  };
-
   const handleChange = (field, value) => {
     setSettings(prev => ({
       ...prev,
@@ -268,24 +253,6 @@ const NotificationSettings = ({ isOpen, onClose }) => {
                   </div>
                 </div>
               </div>
-
-              {/* Teste de Notificação */}
-              {permissionStatus === 'granted' && (
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium text-blue-900">Teste de Notificação</h4>
-                      <p className="text-sm text-blue-700">Teste se as notificações estão funcionando</p>
-                    </div>
-                    <button
-                      onClick={handleTestNotification}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                    >
-                      Enviar Teste
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>
