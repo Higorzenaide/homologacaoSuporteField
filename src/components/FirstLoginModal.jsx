@@ -18,7 +18,34 @@ const FirstLoginModal = ({ isOpen, onPasswordChanged, userEmail }) => {
   const [error, setError] = useState('');
 
   const validarSenha = (senha) => {
-    return firstLoginService.validatePassword(senha);
+    try {
+      const resultado = firstLoginService.validatePassword(senha);
+      // Se o serviço retornar undefined ou null, usar validação local
+      if (!resultado || typeof resultado !== 'object') {
+        console.warn('⚠️ firstLoginService.validatePassword retornou:', resultado);
+        // Fallback para validação local
+        const criterios = {
+          tamanho: senha.length >= 6,
+          maiuscula: /[A-Z]/.test(senha),
+          numero: /[0-9]/.test(senha),
+          especial: /[!@#$%^&*(),.?":{}|<>]/.test(senha)
+        };
+        const valida = Object.values(criterios).every(criterio => criterio);
+        return { valida, criterios };
+      }
+      return resultado;
+    } catch (error) {
+      console.error('❌ Erro na validação de senha:', error);
+      // Fallback para validação local
+      const criterios = {
+        tamanho: senha.length >= 6,
+        maiuscula: /[A-Z]/.test(senha),
+        numero: /[0-9]/.test(senha),
+        especial: /[!@#$%^&*(),.?":{}|<>]/.test(senha)
+      };
+      const valida = Object.values(criterios).every(criterio => criterio);
+      return { valida, criterios };
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -68,7 +95,17 @@ const FirstLoginModal = ({ isOpen, onPasswordChanged, userEmail }) => {
     }
   };
 
-  const { valida, criterios } = validarSenha(novaSenha);
+  const validacaoResult = validarSenha(novaSenha);
+  const { valida, criterios } = validacaoResult || { valida: false, criterios: {} };
+  
+  // Debug
+  if (novaSenha && (!validacaoResult || !validacaoResult.criterios)) {
+    console.log('🔍 DEBUG validação:', {
+      novaSenha: novaSenha.substring(0, 3) + '***',
+      validacaoResult,
+      firstLoginService: typeof firstLoginService
+    });
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
@@ -157,20 +194,20 @@ const FirstLoginModal = ({ isOpen, onPasswordChanged, userEmail }) => {
               <div className="bg-gray-50 border rounded-lg p-4">
                 <h4 className="font-medium text-gray-900 mb-3">Critérios de Segurança:</h4>
                 <div className="space-y-2 text-sm">
-                  <div className={`flex items-center ${criterios.tamanho ? 'text-green-600' : 'text-gray-500'}`}>
-                    <CheckCircle className={`h-4 w-4 mr-2 ${criterios.tamanho ? 'text-green-500' : 'text-gray-400'}`} />
+                  <div className={`flex items-center ${criterios?.tamanho ? 'text-green-600' : 'text-gray-500'}`}>
+                    <CheckCircle className={`h-4 w-4 mr-2 ${criterios?.tamanho ? 'text-green-500' : 'text-gray-400'}`} />
                     Mínimo de 6 caracteres
                   </div>
-                  <div className={`flex items-center ${criterios.maiuscula ? 'text-green-600' : 'text-gray-500'}`}>
-                    <CheckCircle className={`h-4 w-4 mr-2 ${criterios.maiuscula ? 'text-green-500' : 'text-gray-400'}`} />
+                  <div className={`flex items-center ${criterios?.maiuscula ? 'text-green-600' : 'text-gray-500'}`}>
+                    <CheckCircle className={`h-4 w-4 mr-2 ${criterios?.maiuscula ? 'text-green-500' : 'text-gray-400'}`} />
                     Pelo menos uma letra maiúscula
                   </div>
-                  <div className={`flex items-center ${criterios.numero ? 'text-green-600' : 'text-gray-500'}`}>
-                    <CheckCircle className={`h-4 w-4 mr-2 ${criterios.numero ? 'text-green-500' : 'text-gray-400'}`} />
+                  <div className={`flex items-center ${criterios?.numero ? 'text-green-600' : 'text-gray-500'}`}>
+                    <CheckCircle className={`h-4 w-4 mr-2 ${criterios?.numero ? 'text-green-500' : 'text-gray-400'}`} />
                     Pelo menos um número
                   </div>
-                  <div className={`flex items-center ${criterios.especial ? 'text-green-600' : 'text-gray-500'}`}>
-                    <CheckCircle className={`h-4 w-4 mr-2 ${criterios.especial ? 'text-green-500' : 'text-gray-400'}`} />
+                  <div className={`flex items-center ${criterios?.especial ? 'text-green-600' : 'text-gray-500'}`}>
+                    <CheckCircle className={`h-4 w-4 mr-2 ${criterios?.especial ? 'text-green-500' : 'text-gray-400'}`} />
                     Pelo menos um caractere especial (!@#$%^&*)
                   </div>
                 </div>

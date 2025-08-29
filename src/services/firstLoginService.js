@@ -75,15 +75,15 @@ class FirstLoginService {
 
   // Validar critérios de senha
   validatePassword(password) {
-    const criteria = {
+    const criterios = {
       tamanho: password.length >= 6,
       maiuscula: /[A-Z]/.test(password),
       numero: /[0-9]/.test(password),
       especial: /[!@#$%^&*(),.?":{}|<>]/.test(password)
     };
 
-    const valida = Object.values(criteria).every(criterio => criterio);
-    return { valida, criteria };
+    const valida = Object.values(criterios).every(criterio => criterio);
+    return { valida, criterios };
   }
 }
 
