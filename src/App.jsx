@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import FirstLoginModal from './components/FirstLoginModal';
+import SessionWarningModal from './components/SessionWarningModal';
+import SessionIndicator from './components/SessionIndicator';
 import Header from './components/Header';
 import CacheMonitor from './components/CacheMonitor';
 import PerformanceMonitor from './components/PerformanceMonitor';
@@ -19,7 +21,14 @@ import './App.css';
 
 // Componente interno que tem acesso ao AuthContext
 const AppContent = () => {
-  const { showFirstLoginModal, handleFirstLoginCompleted, user } = useAuth();
+  const { 
+    showFirstLoginModal, 
+    showSessionWarning,
+    handleFirstLoginCompleted,
+    extendSession,
+    logoutFromSession,
+    user 
+  } = useAuth();
   const [currentPage, setCurrentPage] = useState('home');
   const [pageParams, setPageParams] = useState(null);
 
@@ -111,6 +120,16 @@ const AppContent = () => {
         onPasswordChanged={handleFirstLoginCompleted}
         userEmail={user?.email}
       />
+
+      {/* Modal de Aviso de Sessão */}
+      <SessionWarningModal
+        isOpen={showSessionWarning}
+        onExtend={extendSession}
+        onLogout={logoutFromSession}
+      />
+      
+      {/* Indicador de Sessão - descomente para mostrar */}
+      {/* <SessionIndicator /> */}
       
       {/* Monitores de desenvolvimento - descomente para testar */}
       {/* <CacheMonitor /> */}

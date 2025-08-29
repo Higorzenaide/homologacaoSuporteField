@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../services/authService';
 import { preloadUserCurtidas } from '../services/curtidasOptimizedService';
+import sessionService from '../services/sessionService';
 
 const AuthContext = createContext({});
 
@@ -17,6 +18,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showFirstLoginModal, setShowFirstLoginModal] = useState(false);
+  const [showSessionWarning, setShowSessionWarning] = useState(false);
 
   // Verificar se usuário está logado ao carregar a aplicação
   useEffect(() => {
@@ -44,6 +46,9 @@ export const AuthProvider = ({ children }) => {
             
             // Pré-carregar curtidas do usuário
             preloadUserCurtidas(result.user.id).catch(console.error);
+            
+            // Iniciar monitoramento de sessão
+            startSessionMonitoring();
           } else {
             // Se falhou ao atualizar, fazer logout
             authService.logout();
@@ -92,6 +97,9 @@ export const AuthProvider = ({ children }) => {
         // Pré-carregar curtidas do usuário
         preloadUserCurtidas(result.user.id).catch(console.error);
         
+        // Iniciar monitoramento de sessão
+        startSessionMonitoring();
+        
         return { success: true, error: null };
       } else {
         setUser(null);
@@ -121,6 +129,9 @@ export const AuthProvider = ({ children }) => {
         delete window.supabaseSubscription;
       }
 
+      // Parar monitoramento de sessão
+      sessionService.stopSession();
+      
       // Executar logout do serviço
       authService.logout();
       
@@ -128,6 +139,7 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setIsAuthenticated(false);
       setShowFirstLoginModal(false);
+      setShowSessionWarning(false);
       setLoading(false);
 
       // Forçar redirecionamento para página inicial
@@ -154,6 +166,33 @@ export const AuthProvider = ({ children }) => {
     if (user) {
       setUser({ ...user, primeiro_login: false });
     }
+  };
+
+  // Função para iniciar monitoramento de sessão
+  const startSessionMonitoring = () => {
+    sessionService.startSession(
+      // Callback para mostrar aviso
+      () => {
+        setShowSessionWarning(true);
+      },
+      // Callback para timeout (logout automático)
+      () => {
+        console.log('🚪 Sessão expirada - fazendo logout automático');
+        logout();
+      }
+    );
+  };
+
+  // Função para estender sessão
+  const extendSession = () => {
+    sessionService.extendSession();
+    setShowSessionWarning(false);
+  };
+
+  // Função para logout via modal de sessão
+  const logoutFromSession = () => {
+    setShowSessionWarning(false);
+    logout();
   };
 
   // Função para alterar senha
@@ -202,12 +241,16 @@ export const AuthProvider = ({ children }) => {
     canEdit,
     canViewFeedbacks,
     showFirstLoginModal,
+    showSessionWarning,
     login,
     logout,
     signOut: logout, // Alias para logout
     changePassword,
     refreshUser,
-    handleFirstLoginCompleted
+    handleFirstLoginCompleted,
+    extendSession,
+    logoutFromSession,
+    sessionService // Exposar para outros componentes se necessário
   };
 
   return (
