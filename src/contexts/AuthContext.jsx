@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showFirstLoginModal, setShowFirstLoginModal] = useState(false);
 
   // Verificar se usuário está logado ao carregar a aplicação
   useEffect(() => {
@@ -30,6 +31,11 @@ export const AuthProvider = ({ children }) => {
           if (result.success) {
             setUser(result.user);
             setIsAuthenticated(true);
+            
+            // Verificar se é primeiro login
+            if (result.user.primeiro_login === true) {
+              setShowFirstLoginModal(true);
+            }
             
             // Pré-carregar curtidas do usuário
             preloadUserCurtidas(result.user.id).catch(console.error);
@@ -68,6 +74,11 @@ export const AuthProvider = ({ children }) => {
         setUser(result.user);
         setIsAuthenticated(true);
         
+        // Verificar se é primeiro login
+        if (result.user.primeiro_login === true) {
+          setShowFirstLoginModal(true);
+        }
+        
         // Pré-carregar curtidas do usuário
         preloadUserCurtidas(result.user.id).catch(console.error);
         
@@ -90,6 +101,15 @@ export const AuthProvider = ({ children }) => {
     authService.logout();
     setUser(null);
     setIsAuthenticated(false);
+  };
+
+  // Função para lidar com conclusão do primeiro login
+  const handleFirstLoginCompleted = () => {
+    setShowFirstLoginModal(false);
+    // Atualizar o status do usuário
+    if (user) {
+      setUser({ ...user, primeiro_login: false });
+    }
   };
 
   // Função para alterar senha
@@ -137,11 +157,13 @@ export const AuthProvider = ({ children }) => {
     isAdmin,
     canEdit,
     canViewFeedbacks,
+    showFirstLoginModal,
     login,
     logout,
     signOut: logout, // Alias para logout
     changePassword,
-    refreshUser
+    refreshUser,
+    handleFirstLoginCompleted
   };
 
   return (

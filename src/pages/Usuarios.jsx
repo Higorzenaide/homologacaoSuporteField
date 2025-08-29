@@ -26,6 +26,7 @@ import {
   EyeOff,
   Shuffle
 } from 'lucide-react';
+import EmailConfirmationModal from '../components/EmailConfirmationModal';
 
 const Usuarios = () => {
   const { isAdmin } = useAuth();
@@ -37,6 +38,8 @@ const Usuarios = () => {
   const [filtroTipo, setFiltroTipo] = useState('all');
   const [filtroStatus, setFiltroStatus] = useState('all');
   const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+  const [createdUserData, setCreatedUserData] = useState(null);
   
   const [formData, setFormData] = useState({
     email: '',
@@ -170,14 +173,26 @@ const Usuarios = () => {
       if (result.error) {
         setError(result.error);
       } else {
-        const successMessage = editingUser 
-          ? 'Usuário atualizado com sucesso!' 
-          : 'Usuário criado com sucesso! 📧 Email de boas-vindas enviado para o novo usuário.';
-        setSuccess(successMessage);
-        setShowModal(false);
-        setEditingUser(null);
-        resetForm();
-        carregarUsuarios();
+        if (editingUser) {
+          // Usuário atualizado
+          setSuccess('Usuário atualizado com sucesso!');
+          setShowModal(false);
+          setEditingUser(null);
+          resetForm();
+          carregarUsuarios();
+        } else {
+          // Novo usuário criado - mostrar modal de confirmação de email
+          setCreatedUserData({
+            email: formData.email,
+            nome: formData.nome,
+            tipo_usuario: formData.tipo_usuario
+          });
+          setShowModal(false);
+          setEditingUser(null);
+          resetForm();
+          carregarUsuarios();
+          setShowEmailConfirmation(true);
+        }
       }
     } catch (error) {
       setError('Erro interno do servidor');
@@ -722,6 +737,13 @@ const Usuarios = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Confirmação de Email */}
+      <EmailConfirmationModal
+        isOpen={showEmailConfirmation}
+        onClose={() => setShowEmailConfirmation(false)}
+        userData={createdUserData}
+      />
     </div>
   );
 };

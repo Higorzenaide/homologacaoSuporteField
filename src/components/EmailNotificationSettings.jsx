@@ -9,14 +9,14 @@ import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import notificationService from '../services/notificationService';
 import emailService from '../services/emailService';
-import { Mail, Send, Settings, Bell, Clock } from 'lucide-react';
+import { Mail, Settings, Bell, Clock } from 'lucide-react';
 
 export default function EmailNotificationSettings() {
   const { user } = useAuth();
   const { showSuccess, showError } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [testingEmail, setTestingEmail] = useState(false);
+
   
   const [preferences, setPreferences] = useState({
     emailEnabled: true,
@@ -105,26 +105,6 @@ export default function EmailNotificationSettings() {
       showError('Erro ao salvar preferências');
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleTestEmail = async () => {
-    if (!user?.id) return;
-    
-    try {
-      setTestingEmail(true);
-      const result = await notificationService.sendTestEmail(user.id);
-      
-      if (result.success) {
-        showSuccess('Email de teste enviado com sucesso!');
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (error) {
-      console.error('Erro ao enviar email de teste:', error);
-      showError(`Erro ao enviar email de teste: ${error.message}`);
-    } finally {
-      setTestingEmail(false);
     }
   };
 
@@ -265,21 +245,7 @@ export default function EmailNotificationSettings() {
               </div>
             </div>
 
-            {/* Botão de teste */}
-            <div className="pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={handleTestEmail}
-                disabled={testingEmail}
-                className="w-full sm:w-auto"
-              >
-                <Send className="h-4 w-4 mr-2" />
-                {testingEmail ? 'Enviando...' : 'Enviar Email de Teste'}
-              </Button>
-              <p className="text-xs text-muted-foreground mt-2">
-                Envie um email de teste para verificar se a configuração está funcionando
-              </p>
-            </div>
+
           </>
         )}
 

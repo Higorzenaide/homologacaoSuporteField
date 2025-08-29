@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
+import FirstLoginModal from './components/FirstLoginModal';
 import Header from './components/Header';
 import CacheMonitor from './components/CacheMonitor';
 import PerformanceMonitor from './components/PerformanceMonitor';
@@ -16,7 +17,9 @@ import VisualizarFeedbacks from './pages/VisualizarFeedbacks';
 import './utils/testRealtimeNotifications'; // Expor funções de teste globalmente
 import './App.css';
 
-function App() {
+// Componente interno que tem acesso ao AuthContext
+const AppContent = () => {
+  const { showFirstLoginModal, handleFirstLoginCompleted, user } = useAuth();
   const [currentPage, setCurrentPage] = useState('home');
   const [pageParams, setPageParams] = useState(null);
 
@@ -96,17 +99,32 @@ function App() {
   };
 
   return (
+    <div className="min-h-screen bg-gray-50">
+      <Header currentPage={currentPage} setCurrentPage={handlePageChange} />
+      <main>
+        {renderPage()}
+      </main>
+      
+      {/* Modal de Primeiro Login */}
+      <FirstLoginModal
+        isOpen={showFirstLoginModal}
+        onPasswordChanged={handleFirstLoginCompleted}
+        userEmail={user?.email}
+      />
+      
+      {/* Monitores de desenvolvimento - descomente para testar */}
+      {/* <CacheMonitor /> */}
+      {/* <PerformanceMonitor /> */}
+    </div>
+  );
+};
+
+// Componente principal App
+function App() {
+  return (
     <ToastProvider>
       <AuthProvider>
-        <div className="min-h-screen bg-gray-50">
-          <Header currentPage={currentPage} setCurrentPage={handlePageChange} />
-          <main>
-            {renderPage()}
-          </main>
-          {/* Monitores de desenvolvimento - descomente para testar */}
-          {/* <CacheMonitor /> */}
-          {/* <PerformanceMonitor /> */}
-        </div>
+        <AppContent />
       </AuthProvider>
     </ToastProvider>
   );
