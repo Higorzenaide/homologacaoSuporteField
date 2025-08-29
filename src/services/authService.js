@@ -73,7 +73,8 @@ export class AuthService {
             tipo_usuario: user.tipo_usuario,
             ativo: user.ativo,
             isAdmin: user.tipo_usuario === 'admin',
-            pode_ver_feedbacks: user.pode_ver_feedbacks, // Adicionado
+            pode_ver_feedbacks: user.pode_ver_feedbacks,
+            primeiro_login: user.primeiro_login, // Adicionado para controle do modal
             loginTime: new Date().toISOString()
           };
 
@@ -164,6 +165,7 @@ async refreshUserData() {
           ativo: user.ativo,
           isAdmin: user.tipo_usuario === 'admin',
           pode_ver_feedbacks: user.pode_ver_feedbacks,
+          primeiro_login: user.primeiro_login, // Adicionado para controle do modal
         };
 
         this.saveUserToStorage(userData);
@@ -185,7 +187,7 @@ async refreshUserData() {
       // Fallback: consulta direta à tabela usuarios
       const { data, error } = await supabase
         .from('usuarios')
-        .select('id, email, nome, cargo, tipo_usuario, ativo, pode_ver_feedbacks, setor')
+        .select('id, email, nome, cargo, tipo_usuario, ativo, pode_ver_feedbacks, setor, primeiro_login')
         .eq('id', this.currentUser.id)
         .eq('ativo', true)
         .single();
@@ -209,7 +211,8 @@ async refreshUserData() {
         ativo: data.ativo,
         isAdmin: data.tipo_usuario === 'admin',
         pode_ver_feedbacks: data.pode_ver_feedbacks,
-        setor: data.setor
+        setor: data.setor,
+        primeiro_login: data.primeiro_login // Adicionado para controle do modal
       };
 
       this.saveUserToStorage(userData);
