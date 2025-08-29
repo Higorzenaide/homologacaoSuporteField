@@ -1,9 +1,16 @@
 {
+  "functions": {
+    "api/send-email.js": {
+      "runtime": "nodejs18.x"
+    },
+    "api/test-config.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]
 }
-

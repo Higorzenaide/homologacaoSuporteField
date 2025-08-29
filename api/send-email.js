@@ -1,7 +1,7 @@
 // api/send-email.js - Vercel Serverless Function
-import nodemailer from 'nodemailer';
+const nodemailer = require('nodemailer');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Adicionar headers CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -63,7 +63,7 @@ export default async function handler(req, res) {
     console.log('Configurando transporter para:', emailUser);
 
     // Configurar transporter do Gmail usando suas variáveis existentes
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 587,
       secure: false, // true para 465, false para outras portas
@@ -120,4 +120,4 @@ export default async function handler(req, res) {
       details: error.code || 'UNKNOWN_ERROR'
     });
   }
-}
+};
