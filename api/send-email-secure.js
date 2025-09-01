@@ -105,18 +105,13 @@ export default async function handler(req, res) {
       to: to ? `${to.substring(0, 10)}...` : 'não fornecido',
       subject: subject ? `${subject.substring(0, 20)}...` : 'não fornecido',
       hasHtml: !!html,
-      hasText: !!text,
-      bodyKeys: Object.keys(req.body || {})
+      hasText: !!text
     });
 
     // Validações básicas
     console.log('🔧 Passo 3: Validando dados obrigatórios...');
     if (!to || !subject || (!html && !text)) {
-      console.log('❌ Dados obrigatórios faltando:', {
-        hasTo: !!to,
-        hasSubject: !!subject,
-        hasContent: !!(html || text)
-      });
+      console.log('❌ Dados obrigatórios faltando');
       return res.status(400).json({ 
         error: 'Dados obrigatórios: destinatário, assunto e conteúdo' 
       });
@@ -133,8 +128,7 @@ export default async function handler(req, res) {
       hasUser: !!emailUser,
       hasPassword: !!emailPassword,
       hasFrom: !!emailFrom,
-      user: emailUser ? `${emailUser.substring(0, 3)}...` : 'não configurado',
-      passwordLength: emailPassword ? emailPassword.length : 0
+      user: emailUser ? `${emailUser.substring(0, 3)}...` : 'não configurado'
     });
     
     if (!emailUser || !emailPassword) {
@@ -146,14 +140,14 @@ export default async function handler(req, res) {
     }
     console.log('✅ Configurações de email OK');
 
-    console.log('🔧 Passo 5: Carregando Nodemailer dinamicamente...');
+    console.log('🔧 Passo 5: Carregando Nodemailer...');
     
     // Carregar Nodemailer dinamicamente
     if (!nodemailer) {
       try {
         const nodemailerModule = await import('nodemailer');
         nodemailer = nodemailerModule.default;
-        console.log('✅ Nodemailer carregado dinamicamente');
+        console.log('✅ Nodemailer carregado');
       } catch (importError) {
         console.error('❌ Erro ao importar Nodemailer:', importError);
         return res.status(500).json({
@@ -164,34 +158,23 @@ export default async function handler(req, res) {
       }
     }
 
-    console.log('📦 Nodemailer disponível:', !!nodemailer);
-    console.log('📦 Nodemailer:', typeof nodemailer);
-    console.log('📦 createTransporter:', typeof nodemailer?.createTransporter);
-
-    if (!nodemailer || typeof nodemailer.createTransporter !== 'function') {
-      console.log('❌ Nodemailer não está disponível ou createTransporter não é uma função');
-      return res.status(500).json({
-        success: false,
-        error: 'Nodemailer não está disponível no servidor'
-      });
-    }
-
-    console.log('🔧 Passo 6: Configurando transporter Nodemailer...');
+    console.log('🔧 Passo 6: Configurando transporter SMTP Gmail...');
     
-    // Configurar transporter Nodemailer
+    // Configurar transporter SMTP Gmail (porta 587 para TLS)
     const transporter = nodemailer.createTransporter({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // true para 465, false para outras portas
       auth: {
         user: emailUser,
         pass: emailPassword
       },
-      secure: true,
       tls: {
         rejectUnauthorized: false
       }
     });
 
-    console.log('✅ Transporter configurado');
+    console.log('✅ Transporter SMTP configurado');
 
     console.log('🔧 Passo 7: Verificando conexão SMTP...');
     
@@ -216,11 +199,7 @@ export default async function handler(req, res) {
       to: to,
       subject: subject,
       html: html,
-      text: text || html?.replace(/<[^>]*>/g, ''),
-      headers: {
-        'X-Mailer': 'Suporte Field System',
-        'X-Priority': '3'
-      }
+      text: text || html?.replace(/<[^>]*>/g, '')
     };
 
     console.log('📧 Email preparado:', {
@@ -231,12 +210,12 @@ export default async function handler(req, res) {
       hasText: !!mailOptions.text
     });
 
-    console.log('🔧 Passo 9: Enviando email real...');
+    console.log('🔧 Passo 9: Enviando email via SMTP Gmail...');
     
-    // Enviar email real
+    // Enviar email via SMTP Gmail
     const info = await transporter.sendMail(mailOptions);
     
-    console.log('✅ Email real enviado com sucesso:', {
+    console.log('✅ Email enviado com sucesso via SMTP Gmail:', {
       messageId: info.messageId,
       response: info.response,
       accepted: info.accepted,
@@ -248,7 +227,7 @@ export default async function handler(req, res) {
       success: true,
       messageId: info.messageId,
       timestamp: new Date().toISOString(),
-      note: 'Email real enviado com sucesso!',
+      note: 'Email enviado com sucesso via SMTP Gmail!',
       details: {
         accepted: info.accepted,
         response: info.response
