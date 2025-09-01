@@ -1,5 +1,5 @@
-// Import do Nodemailer para Vercel com ES6 modules
-import nodemailer from 'nodemailer';
+// Importação dinâmica do Nodemailer para Vercel
+let nodemailer = null;
 
 // Rate limiting simples
 const rateLimitMap = new Map();
@@ -80,7 +80,6 @@ export default async function handler(req, res) {
   console.log('📋 Método:', req.method);
   console.log('🌐 URL:', req.url);
   console.log('📦 Headers:', Object.keys(req.headers));
-  console.log('📦 Nodemailer disponível:', !!nodemailer);
   
   try {
     console.log('🔧 Passo 1: Configurando headers de segurança...');
@@ -147,9 +146,37 @@ export default async function handler(req, res) {
     }
     console.log('✅ Configurações de email OK');
 
-    console.log('🔧 Passo 5: Configurando transporter Nodemailer...');
+    console.log('🔧 Passo 5: Carregando Nodemailer dinamicamente...');
+    
+    // Carregar Nodemailer dinamicamente
+    if (!nodemailer) {
+      try {
+        const nodemailerModule = await import('nodemailer');
+        nodemailer = nodemailerModule.default;
+        console.log('✅ Nodemailer carregado dinamicamente');
+      } catch (importError) {
+        console.error('❌ Erro ao importar Nodemailer:', importError);
+        return res.status(500).json({
+          success: false,
+          error: 'Erro ao carregar Nodemailer',
+          details: importError.message
+        });
+      }
+    }
+
+    console.log('📦 Nodemailer disponível:', !!nodemailer);
     console.log('📦 Nodemailer:', typeof nodemailer);
-    console.log('📦 createTransporter:', typeof nodemailer.createTransporter);
+    console.log('📦 createTransporter:', typeof nodemailer?.createTransporter);
+
+    if (!nodemailer || typeof nodemailer.createTransporter !== 'function') {
+      console.log('❌ Nodemailer não está disponível ou createTransporter não é uma função');
+      return res.status(500).json({
+        success: false,
+        error: 'Nodemailer não está disponível no servidor'
+      });
+    }
+
+    console.log('🔧 Passo 6: Configurando transporter Nodemailer...');
     
     // Configurar transporter Nodemailer
     const transporter = nodemailer.createTransporter({
@@ -166,7 +193,7 @@ export default async function handler(req, res) {
 
     console.log('✅ Transporter configurado');
 
-    console.log('🔧 Passo 6: Verificando conexão SMTP...');
+    console.log('🔧 Passo 7: Verificando conexão SMTP...');
     
     // Verificar conexão
     try {
@@ -181,7 +208,7 @@ export default async function handler(req, res) {
       });
     }
 
-    console.log('🔧 Passo 7: Preparando email para envio...');
+    console.log('🔧 Passo 8: Preparando email para envio...');
     
     // Configurar email
     const mailOptions = {
@@ -204,7 +231,7 @@ export default async function handler(req, res) {
       hasText: !!mailOptions.text
     });
 
-    console.log('🔧 Passo 8: Enviando email real...');
+    console.log('🔧 Passo 9: Enviando email real...');
     
     // Enviar email real
     const info = await transporter.sendMail(mailOptions);
@@ -216,7 +243,7 @@ export default async function handler(req, res) {
       rejected: info.rejected
     });
     
-    console.log('🔧 Passo 9: Preparando resposta de sucesso...');
+    console.log('🔧 Passo 10: Preparando resposta de sucesso...');
     const response = {
       success: true,
       messageId: info.messageId,
