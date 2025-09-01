@@ -181,13 +181,19 @@ class EmailService {
       if (!response.ok) {
         let errorData;
         try {
-          errorData = await response.json();
-          console.error('❌ Erro detalhado da API:', errorData);
-        } catch (parseError) {
           const errorText = await response.text();
           console.error('❌ Erro raw da API:', errorText);
-          errorData = { error: `HTTP ${response.status}: ${errorText}` };
+          
+          try {
+            errorData = JSON.parse(errorText);
+            console.error('❌ Erro detalhado da API:', errorData);
+          } catch (parseError) {
+            errorData = { error: `HTTP ${response.status}: ${errorText}` };
+          }
+        } catch (textError) {
+          errorData = { error: `HTTP error! status: ${response.status}` };
         }
+        
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
 
