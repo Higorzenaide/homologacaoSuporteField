@@ -1,4 +1,4 @@
-// Importação dinâmica do Nodemailer para Vercel
+// Importação simples do Nodemailer
 let nodemailer = null;
 
 // Rate limiting simples
@@ -22,64 +22,10 @@ function setSecurityHeaders(res, req) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
 
-function checkRateLimit(ip, maxAttempts = 10, windowMs = 15 * 60 * 1000) {
-  const now = Date.now();
-  const userAttempts = rateLimitMap.get(ip) || { count: 0, resetTime: now + windowMs };
-  
-  if (now > userAttempts.resetTime) {
-    userAttempts.count = 0;
-    userAttempts.resetTime = now + windowMs;
-  }
-  
-  userAttempts.count++;
-  rateLimitMap.set(ip, userAttempts);
-  
-  return {
-    allowed: userAttempts.count <= maxAttempts,
-    count: userAttempts.count,
-    resetTime: userAttempts.resetTime
-  };
-}
-
-function sanitizeInput(input) {
-  if (typeof input !== 'string') return input;
-  
-  return input
-    .replace(/[<>]/g, '')
-    .replace(/javascript:/gi, '')
-    .replace(/on\w+=/gi, '')
-    .replace(/data:/gi, '')
-    .trim();
-}
-
-function isValidEmail(email) {
-  const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  return regex.test(email) && email.length <= 254;
-}
-
-function getClientIP(req) {
-  return req.headers['x-forwarded-for']?.split(',')[0] || 
-         req.headers['x-real-ip'] || 
-         req.connection.remoteAddress || 
-         'unknown';
-}
-
-function logSecurityEvent(event, details) {
-  const logEntry = {
-    timestamp: new Date().toISOString(),
-    event,
-    details,
-    severity: event.includes('ERROR') ? 'ERROR' : 'INFO'
-  };
-  
-  console.log('SECURITY_EVENT:', JSON.stringify(logEntry));
-}
-
 export default async function handler(req, res) {
   console.log('🚀 === INÍCIO DA API DE EMAIL SEGURA ===');
   console.log('📋 Método:', req.method);
   console.log('🌐 URL:', req.url);
-  console.log('📦 Headers:', Object.keys(req.headers));
   
   try {
     console.log('🔧 Passo 1: Configurando headers de segurança...');
@@ -142,20 +88,40 @@ export default async function handler(req, res) {
 
     console.log('🔧 Passo 5: Carregando Nodemailer...');
     
-    // Carregar Nodemailer dinamicamente
+    // Carregar Nodemailer de forma mais simples
     if (!nodemailer) {
       try {
+        // Tentar import dinâmico primeiro
         const nodemailerModule = await import('nodemailer');
         nodemailer = nodemailerModule.default;
-        console.log('✅ Nodemailer carregado');
+        console.log('✅ Nodemailer carregado via import dinâmico');
       } catch (importError) {
-        console.error('❌ Erro ao importar Nodemailer:', importError);
-        return res.status(500).json({
-          success: false,
-          error: 'Erro ao carregar Nodemailer',
-          details: importError.message
-        });
+        console.log('⚠️ Import dinâmico falhou, tentando require...');
+        try {
+          // Fallback para require (pode funcionar em alguns ambientes)
+          nodemailer = require('nodemailer');
+          console.log('✅ Nodemailer carregado via require');
+        } catch (requireError) {
+          console.error('❌ Erro ao carregar Nodemailer:', requireError);
+          return res.status(500).json({
+            success: false,
+            error: 'Erro ao carregar Nodemailer',
+            details: requireError.message
+          });
+        }
       }
+    }
+
+    console.log('📦 Nodemailer carregado:', !!nodemailer);
+    console.log('📦 Tipo do Nodemailer:', typeof nodemailer);
+    console.log('📦 createTransporter disponível:', typeof nodemailer?.createTransporter);
+
+    if (!nodemailer || typeof nodemailer.createTransporter !== 'function') {
+      console.log('❌ Nodemailer não está disponível ou createTransporter não é uma função');
+      return res.status(500).json({
+        success: false,
+        error: 'Nodemailer não está disponível no servidor'
+      });
     }
 
     console.log('🔧 Passo 6: Configurando transporter SMTP Gmail...');
