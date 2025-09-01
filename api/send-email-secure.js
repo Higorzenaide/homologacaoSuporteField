@@ -1,4 +1,4 @@
-// 🔒 API Segura de Envio de Email
+// Import do Nodemailer para Vercel com ES6 modules
 import nodemailer from 'nodemailer';
 
 // Rate limiting simples
@@ -80,6 +80,7 @@ export default async function handler(req, res) {
   console.log('📋 Método:', req.method);
   console.log('🌐 URL:', req.url);
   console.log('📦 Headers:', Object.keys(req.headers));
+  console.log('📦 Nodemailer disponível:', !!nodemailer);
   
   try {
     console.log('🔧 Passo 1: Configurando headers de segurança...');
@@ -147,6 +148,8 @@ export default async function handler(req, res) {
     console.log('✅ Configurações de email OK');
 
     console.log('🔧 Passo 5: Configurando transporter Nodemailer...');
+    console.log('📦 Nodemailer:', typeof nodemailer);
+    console.log('📦 createTransporter:', typeof nodemailer.createTransporter);
     
     // Configurar transporter Nodemailer
     const transporter = nodemailer.createTransporter({
