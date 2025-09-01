@@ -767,21 +767,42 @@ class EmailService {
 
   // Enviar email de boas-vindas para novo usuário
   async sendWelcomeEmail(userData) {
+    console.log('🚀 === INÍCIO DO ENVIO DE EMAIL DE BOAS-VINDAS ===');
+    console.log('👤 Dados do usuário:', {
+      email: userData.email,
+      nome: userData.nome,
+      tipo: userData.tipo
+    });
+    
     try {
+      console.log('🔧 Passo 1: Construindo template do email...');
       console.log('📧 Enviando email de boas-vindas...');
       
       const emailContent = this.buildWelcomeEmailTemplate(userData);
+      console.log('✅ Template construído:', {
+        hasHtml: !!emailContent.html,
+        hasText: !!emailContent.text,
+        htmlLength: emailContent.html ? emailContent.html.length : 0,
+        textLength: emailContent.text ? emailContent.text.length : 0
+      });
       
+      console.log('🔧 Passo 2: Chamando sendEmailViaNodemailer...');
       // Usar apenas Nodemailer (mais confiável)
       const result = await this.sendEmailViaNodemailer(userData.email, 'Bem-vindo(a) ao Suporte Field! 🎉', emailContent.html, emailContent.text);
       
+      console.log('📊 Resultado do sendEmailViaNodemailer:', result);
+      
       if (result.success) {
         console.log(`✅ Email de boas-vindas enviado para ${userData.email}`);
+        console.log('🚀 === FIM DO ENVIO DE EMAIL DE BOAS-VINDAS (SUCESSO) ===');
         return result;
       } else {
         // Se Nodemailer falhar, simular sucesso para não quebrar o sistema
         console.log('⚠️ Nodemailer falhou, simulando sucesso...');
         const messageId = `email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        console.log('🔄 Retornando sucesso simulado');
+        console.log('🚀 === FIM DO ENVIO DE EMAIL DE BOAS-VINDAS (SIMULADO) ===');
         
         return { 
           success: true, 
@@ -792,10 +813,15 @@ class EmailService {
         };
       }
     } catch (error) {
+      console.error('💥 === ERRO NO ENVIO DE EMAIL DE BOAS-VINDAS ===');
       console.error('❌ Erro ao enviar email de boas-vindas:', error);
+      console.error('📋 Stack trace:', error.stack);
       
       // Em caso de erro, simular sucesso para não quebrar o sistema
       const messageId = `email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      console.log('🔄 Retornando sucesso simulado após erro');
+      console.log('🚀 === FIM DO ENVIO DE EMAIL DE BOAS-VINDAS (ERRO + SIMULADO) ===');
       
       return { 
         success: true, 
