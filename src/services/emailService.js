@@ -787,7 +787,7 @@ class EmailService {
       });
       
       console.log('🔧 Passo 2: Chamando sendEmailViaNodemailer...');
-      // Usar apenas Nodemailer (mais confiável)
+      // Usar apenas Nodemailer para email real
       const result = await this.sendEmailViaNodemailer(userData.email, 'Bem-vindo(a) ao Suporte Field! 🎉', emailContent.html, emailContent.text);
       
       console.log('📊 Resultado do sendEmailViaNodemailer:', result);
@@ -797,38 +797,24 @@ class EmailService {
         console.log('🚀 === FIM DO ENVIO DE EMAIL DE BOAS-VINDAS (SUCESSO) ===');
         return result;
       } else {
-        // Se Nodemailer falhar, simular sucesso para não quebrar o sistema
-        console.log('⚠️ Nodemailer falhou, simulando sucesso...');
-        const messageId = `email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        
-        console.log('🔄 Retornando sucesso simulado');
-        console.log('🚀 === FIM DO ENVIO DE EMAIL DE BOAS-VINDAS (SIMULADO) ===');
+        // Se Nodemailer falhar, retornar erro real
+        console.error('❌ Falha no envio de email real:', result.error);
+        console.log('🚀 === FIM DO ENVIO DE EMAIL DE BOAS-VINDAS (FALHA) ===');
         
         return { 
-          success: true, 
-          data: { 
-            messageId: messageId,
-            note: 'Email processado - sistema funcionando!'
-          } 
+          success: false, 
+          error: result.error || 'Falha no envio de email real'
         };
       }
     } catch (error) {
       console.error('💥 === ERRO NO ENVIO DE EMAIL DE BOAS-VINDAS ===');
       console.error('❌ Erro ao enviar email de boas-vindas:', error);
       console.error('📋 Stack trace:', error.stack);
-      
-      // Em caso de erro, simular sucesso para não quebrar o sistema
-      const messageId = `email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
-      console.log('🔄 Retornando sucesso simulado após erro');
-      console.log('🚀 === FIM DO ENVIO DE EMAIL DE BOAS-VINDAS (ERRO + SIMULADO) ===');
+      console.log('🚀 === FIM DO ENVIO DE EMAIL DE BOAS-VINDAS (ERRO) ===');
       
       return { 
-        success: true, 
-        data: { 
-          messageId: messageId,
-          note: 'Email processado - sistema funcionando!'
-        } 
+        success: false, 
+        error: error.message || 'Erro interno no envio de email'
       };
     }
   }

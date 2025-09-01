@@ -4,6 +4,11 @@ import nodemailer from 'nodemailer';
 // Rate limiting simples
 const rateLimitMap = new Map();
 
+// Limpar rate limit a cada 30 minutos
+setInterval(() => {
+  rateLimitMap.clear();
+}, 30 * 60 * 1000);
+
 function setSecurityHeaders(res, req) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -122,10 +127,12 @@ export default async function handler(req, res) {
     console.log('🔧 Passo 4: Verificando configurações de email...');
     const emailUser = process.env.VITE_EMAIL_USER;
     const emailPassword = process.env.VITE_EMAIL_APP_PASSWORD;
+    const emailFrom = process.env.VITE_EMAIL_FROM || emailUser;
     
     console.log('🔧 Configurações de email:', {
       hasUser: !!emailUser,
       hasPassword: !!emailPassword,
+      hasFrom: !!emailFrom,
       user: emailUser ? `${emailUser.substring(0, 3)}...` : 'não configurado',
       passwordLength: emailPassword ? emailPassword.length : 0
     });
@@ -139,28 +146,83 @@ export default async function handler(req, res) {
     }
     console.log('✅ Configurações de email OK');
 
-    console.log('🔧 Passo 5: Simulando envio de email...');
-    console.log('📤 Simulando envio de email para:', to);
+    console.log('🔧 Passo 5: Configurando transporter Nodemailer...');
     
-    // Simular envio de email (funciona perfeitamente)
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Configurar transporter Nodemailer
+    const transporter = nodemailer.createTransporter({
+      service: 'gmail',
+      auth: {
+        user: emailUser,
+        pass: emailPassword
+      },
+      secure: true,
+      tls: {
+        rejectUnauthorized: false
+      }
+    });
+
+    console.log('✅ Transporter configurado');
+
+    console.log('🔧 Passo 6: Verificando conexão SMTP...');
     
-    // Gerar ID único para o email
-    const messageId = `email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // Verificar conexão
+    try {
+      await transporter.verify();
+      console.log('✅ Conexão SMTP verificada com sucesso');
+    } catch (verifyError) {
+      console.error('❌ Erro na verificação SMTP:', verifyError);
+      return res.status(500).json({
+        success: false,
+        error: 'Erro na configuração do servidor de email',
+        details: verifyError.message
+      });
+    }
+
+    console.log('🔧 Passo 7: Preparando email para envio...');
     
-    console.log('✅ Email simulado enviado com sucesso:', {
-      messageId: messageId,
+    // Configurar email
+    const mailOptions = {
+      from: `"Suporte Field" <${emailFrom}>`,
       to: to,
       subject: subject,
-      from: emailUser
+      html: html,
+      text: text || html?.replace(/<[^>]*>/g, ''),
+      headers: {
+        'X-Mailer': 'Suporte Field System',
+        'X-Priority': '3'
+      }
+    };
+
+    console.log('📧 Email preparado:', {
+      from: mailOptions.from,
+      to: mailOptions.to,
+      subject: mailOptions.subject,
+      hasHtml: !!mailOptions.html,
+      hasText: !!mailOptions.text
+    });
+
+    console.log('🔧 Passo 8: Enviando email real...');
+    
+    // Enviar email real
+    const info = await transporter.sendMail(mailOptions);
+    
+    console.log('✅ Email real enviado com sucesso:', {
+      messageId: info.messageId,
+      response: info.response,
+      accepted: info.accepted,
+      rejected: info.rejected
     });
     
-    console.log('🔧 Passo 6: Preparando resposta de sucesso...');
+    console.log('🔧 Passo 9: Preparando resposta de sucesso...');
     const response = {
       success: true,
-      messageId: messageId,
+      messageId: info.messageId,
       timestamp: new Date().toISOString(),
-      note: 'Email processado - sistema funcionando!'
+      note: 'Email real enviado com sucesso!',
+      details: {
+        accepted: info.accepted,
+        response: info.response
+      }
     };
     
     console.log('📤 Resposta final:', response);
@@ -181,13 +243,3 @@ export default async function handler(req, res) {
     });
   }
 }
-
-// Limpeza periódica do rate limit (a cada 30 minutos)
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, data] of rateLimitMap.entries()) {
-    if (now > data.resetTime) {
-      rateLimitMap.delete(ip);
-    }
-  }
-}, 30 * 60 * 1000);
