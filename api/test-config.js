@@ -1,5 +1,5 @@
 // 🔒 API de Teste de Configuração
-// Verifica se as variáveis de ambiente estão configuradas
+// Verifica se as variáveis de ambiente estão configuradas (sem expor valores)
 
 export default async function handler(req, res) {
   console.log('🧪 API de teste de configuração chamada');
@@ -20,12 +20,12 @@ export default async function handler(req, res) {
   }
   
   try {
-    // Verificar configurações de email
+    // Verificar configurações de email (sem expor valores)
     const emailUser = process.env.VITE_EMAIL_USER;
     const emailPassword = process.env.VITE_EMAIL_APP_PASSWORD;
     const emailFrom = process.env.VITE_EMAIL_FROM;
     
-    // Verificar outras configurações
+    // Verificar outras configurações (sem expor valores)
     const web3formsKey = process.env.VITE_WEB3FORMS_ACCESS_KEY;
     const formspreeEndpoint = process.env.VITE_FORMSPREE_ENDPOINT;
     const emailjsPublicKey = process.env.VITE_EMAILJS_PUBLIC_KEY;
@@ -37,7 +37,7 @@ export default async function handler(req, res) {
         hasEmailUser: !!emailUser,
         hasEmailPassword: !!emailPassword,
         hasEmailFrom: !!emailFrom,
-        user: emailUser ? `${emailUser.substring(0, 3)}...` : 'não configurado'
+        configured: !!(emailUser && emailPassword && emailFrom)
       },
       web3forms: {
         hasAccessKey: !!web3formsKey,
@@ -55,11 +55,17 @@ export default async function handler(req, res) {
       }
     };
     
-    console.log('📊 Configuração verificada:', config);
+    console.log('📊 Configuração verificada (valores ocultos)');
     
     return res.status(200).json({
       success: true,
       config: config,
+      summary: {
+        emailConfigured: config.email.configured,
+        web3formsConfigured: config.web3forms.configured,
+        formspreeConfigured: config.formspree.configured,
+        emailjsConfigured: config.emailjs.configured
+      },
       timestamp: new Date().toISOString()
     });
     

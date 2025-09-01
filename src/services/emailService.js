@@ -151,7 +151,7 @@ class EmailService {
       
       // Testar configuração primeiro
       const config = await this.testAPIConfig();
-      if (!config || !config.config.hasEmailUser || !config.config.hasEmailPassword) {
+      if (!config || !config.config.email.configured) {
         throw new Error('Configurações de email não encontradas na API. Verifique as variáveis de ambiente na Vercel.');
       }
 
