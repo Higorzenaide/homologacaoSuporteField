@@ -66,7 +66,8 @@ export const usuariosService = {
           };
 
           // Criar configurações de notificação para o novo usuário
-          await this.criarConfiguracaoNotificacao(result.id);
+          // await this.criarConfiguracaoNotificacao(result.id);
+          console.log('🔔 Configurações de notificação desabilitadas temporariamente');
 
           // Enviar email de boas-vindas de forma assíncrona (não bloquear a criação do usuário)
           this.enviarEmailBoasVindas(userData);
