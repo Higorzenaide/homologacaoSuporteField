@@ -29,7 +29,7 @@ import {
   Shuffle,
   Trash2
 } from 'lucide-react';
-import EmailConfirmationModal from '../components/EmailConfirmationModal';
+import UserCreatedModal from '../components/UserCreatedModal';
 import securityService from '../services/securityService';
 
 const Usuarios = () => {
@@ -42,7 +42,7 @@ const Usuarios = () => {
   const [filtroTipo, setFiltroTipo] = useState('all');
   const [filtroStatus, setFiltroStatus] = useState('all');
   const [mostrarSenha, setMostrarSenha] = useState(false);
-  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+  const [showUserCreatedModal, setShowUserCreatedModal] = useState(false);
   const [createdUserData, setCreatedUserData] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
@@ -188,7 +188,7 @@ const Usuarios = () => {
           resetForm();
           carregarUsuarios();
         } else {
-          // Novo usuário criado - mostrar modal de confirmação de email
+          // Novo usuário criado - mostrar modal de confirmação
           setCreatedUserData({
             email: formData.email,
             nome: formData.nome,
@@ -198,7 +198,7 @@ const Usuarios = () => {
           setEditingUser(null);
           resetForm();
           carregarUsuarios();
-          setShowEmailConfirmation(true);
+          setShowUserCreatedModal(true);
         }
       }
     } catch (error) {
@@ -863,10 +863,10 @@ const Usuarios = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Confirmação de Email */}
-      <EmailConfirmationModal
-        isOpen={showEmailConfirmation}
-        onClose={() => setShowEmailConfirmation(false)}
+      {/* Modal de Confirmação de Usuário Criado */}
+      <UserCreatedModal
+        isOpen={showUserCreatedModal}
+        onClose={() => setShowUserCreatedModal(false)}
         userData={createdUserData}
       />
 

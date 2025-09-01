@@ -1,9 +1,9 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Button } from './ui/button';
-import { X, Mail, CheckCircle, ExternalLink } from 'lucide-react';
+import { X, CheckCircle, User, Shield } from 'lucide-react';
 
-const EmailConfirmationModal = ({ isOpen, onClose, userData }) => {
+const UserCreatedModal = ({ isOpen, onClose, userData }) => {
   if (!userData) return null;
 
   return (
@@ -24,60 +24,64 @@ const EmailConfirmationModal = ({ isOpen, onClose, userData }) => {
                 <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
             </div>
-            Usuário Criado com Sucesso!
+            Usuário Criado com Sucesso! 🎉
           </DialogTitle>
         </DialogHeader>
         
         <div className="py-6 text-center space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-center justify-center mb-3">
-              <Mail className="h-12 w-12 text-blue-600" />
+              <User className="h-12 w-12 text-blue-600" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">
-              📧 Email de Boas-vindas Enviado!
+              🎉 Bem-vindo(a) ao Suporte Field!
             </h3>
             <p className="text-sm text-gray-600 mb-3">
-              Um email com as credenciais de acesso e instruções foi enviado para:
+              O usuário foi cadastrado com sucesso no sistema:
             </p>
             <div className="bg-white border rounded-md p-3">
               <p className="font-mono text-sm font-medium text-blue-700">
                 {userData.email}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Nome: {userData.nome}
               </p>
             </div>
           </div>
           
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
             <h4 className="font-medium text-amber-800 mb-2">
-              📋 O que o usuário recebeu:
+              📋 Dados do Usuário:
             </h4>
             <ul className="text-sm text-amber-700 space-y-1 text-left">
-              <li>✅ Email e senha de acesso</li>
-              <li>✅ Link direto para o sistema</li>
-              <li>✅ Instruções de primeiro login</li>
-              <li>✅ Orientações de segurança</li>
+              <li>✅ Cadastro realizado com sucesso</li>
+              <li>✅ Acesso ao sistema liberado</li>
+              <li>✅ Perfil configurado</li>
+              <li>✅ Pronto para uso</li>
             </ul>
           </div>
           
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <h4 className="font-medium text-red-800 mb-2">
-              🔒 Próximos Passos:
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <h4 className="font-medium text-green-800 mb-2">
+              🚀 Próximos Passos:
             </h4>
-            <ul className="text-sm text-red-700 space-y-1 text-left">
-              <li>• O usuário receberá o email em alguns minutos</li>
-              <li>• No primeiro login, será obrigatório alterar a senha</li>
-              <li>• Oriente o usuário a verificar a caixa de spam</li>
+            <ul className="text-sm text-green-700 space-y-1 text-left">
+              <li>• O usuário pode fazer login no sistema</li>
+              <li>• Explore as funcionalidades disponíveis</li>
+              <li>• Configure preferências se necessário</li>
+              <li>• Entre em contato se precisar de ajuda</li>
             </ul>
           </div>
           
           <div className="pt-4 border-t">
             <p className="text-xs text-gray-500 mb-3">
-              💡 <strong>Dica:</strong> O usuário <strong>{userData.nome}</strong> pode entrar em contato
-              se não receber o email em alguns minutos.
+              💡 <strong>Dica:</strong> O usuário <strong>{userData.nome}</strong> já pode acessar
+              o sistema com as credenciais fornecidas.
             </p>
             
-            <div className="flex items-center justify-center gap-2 text-sm text-blue-600">
-              <ExternalLink className="h-4 w-4" />
-              <span>O email contém um botão direto para acessar o sistema</span>
+            <div className="flex items-center justify-center gap-2 text-sm text-green-600">
+              <Shield className="h-4 w-4" />
+              <span>Sistema seguro e pronto para uso</span>
             </div>
           </div>
         </div>
@@ -86,4 +90,4 @@ const EmailConfirmationModal = ({ isOpen, onClose, userData }) => {
   );
 };
 
-export default EmailConfirmationModal;
+export default UserCreatedModal;
