@@ -765,57 +765,130 @@ class EmailService {
     return hasNodemailer || hasWeb3Forms || hasEmailJS || hasFormspree;
   }
 
-  // Enviar email de boas-vindas para novo usuário
+  // Função para enviar email via EmailJS (frontend)
+  async sendEmailViaEmailJS(to, subject, html, text) {
+    console.log('📧 Tentando enviar via EmailJS para:', to);
+    
+    // Verificar se EmailJS está disponível
+    if (typeof window !== 'undefined' && window.emailjs) {
+      try {
+        // Configurar EmailJS
+        window.emailjs.init(process.env.VITE_EMAILJS_PUBLIC_KEY || 'YOUR_PUBLIC_KEY');
+        
+        // Enviar email
+        const result = await window.emailjs.send(
+          process.env.VITE_EMAILJS_SERVICE_ID || 'service_id',
+          process.env.VITE_EMAILJS_TEMPLATE_ID || 'template_id',
+          {
+            to_email: to,
+            to_name: to.split('@')[0],
+            subject: subject,
+            message: html,
+            reply_to: process.env.VITE_EMAIL_USER
+          }
+        );
+        
+        console.log('✅ Email enviado via EmailJS:', result);
+        return { success: true, data: result };
+      } catch (error) {
+        console.error('❌ Erro ao enviar email via EmailJS:', error);
+        throw error;
+      }
+    } else {
+      throw new Error('EmailJS não está carregado. Adicione o script no index.html');
+    }
+  }
+
+  // Função para enviar email via API simples (fallback)
+  async sendEmailViaSimpleAPI(to, subject, html, text) {
+    console.log('📧 Tentando enviar via API simples para:', to);
+    
+    try {
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to,
+          subject,
+          html,
+          text
+        })
+      });
+
+      console.log('📥 Resposta da API simples:', response);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ Erro detalhado da API simples:', errorData);
+        throw new Error(`Erro ${response.status}: ${errorData.error || 'Erro desconhecido'}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Email enviado via API simples:', result);
+      return { success: true, data: result };
+    } catch (error) {
+      console.error('❌ Erro ao enviar email via API simples:', error);
+      throw error;
+    }
+  }
+
+  // Função principal para enviar email de boas-vindas
   async sendWelcomeEmail(userData) {
     console.log('🚀 === INÍCIO DO ENVIO DE EMAIL DE BOAS-VINDAS ===');
-    console.log('👤 Dados do usuário:', {
-      email: userData.email,
-      nome: userData.nome,
-      tipo: userData.tipo
-    });
+    console.log('👤 Dados do usuário:', userData);
     
     try {
       console.log('🔧 Passo 1: Construindo template do email...');
+      
+      // Construir template do email
+      const { html, text } = this.buildWelcomeEmailTemplate(userData);
+      
       console.log('📧 Enviando email de boas-vindas...');
-      
-      const emailContent = this.buildWelcomeEmailTemplate(userData);
       console.log('✅ Template construído:', {
-        hasHtml: !!emailContent.html,
-        hasText: !!emailContent.text,
-        htmlLength: emailContent.html ? emailContent.html.length : 0,
-        textLength: emailContent.text ? emailContent.text.length : 0
+        hasHtml: !!html,
+        hasText: !!text,
+        htmlLength: html?.length || 0,
+        textLength: text?.length || 0
       });
+
+      console.log('🔧 Passo 2: Chamando sendEmailViaEmailJS...');
       
-      console.log('🔧 Passo 2: Chamando sendEmailViaNodemailer...');
-      // Usar apenas Nodemailer para email real
-      const result = await this.sendEmailViaNodemailer(userData.email, 'Bem-vindo(a) ao Suporte Field! 🎉', emailContent.html, emailContent.text);
-      
-      console.log('📊 Resultado do sendEmailViaNodemailer:', result);
-      
-      if (result.success) {
-        console.log(`✅ Email de boas-vindas enviado para ${userData.email}`);
-        console.log('🚀 === FIM DO ENVIO DE EMAIL DE BOAS-VINDAS (SUCESSO) ===');
-        return result;
-      } else {
-        // Se Nodemailer falhar, retornar erro real
-        console.error('❌ Falha no envio de email real:', result.error);
-        console.log('🚀 === FIM DO ENVIO DE EMAIL DE BOAS-VINDAS (FALHA) ===');
+      // Tentar EmailJS primeiro (mais simples)
+      try {
+        const result = await this.sendEmailViaEmailJS(userData.email, 'Bem-vindo ao Suporte Field!', html, text);
+        console.log('📊 Resultado do sendEmailViaEmailJS:', result);
         
-        return { 
-          success: false, 
-          error: result.error || 'Falha no envio de email real'
-        };
+        if (result.success) {
+          console.log('✅ Email de boas-vindas enviado para', userData.email);
+          console.log('🚀 === FIM DO ENVIO DE EMAIL DE BOAS-VINDAS (SUCESSO) ===');
+          return result;
+        }
+      } catch (emailJSError) {
+        console.log('⚠️ EmailJS falhou, tentando API simples...');
+        
+        // Fallback para API simples
+        try {
+          const result = await this.sendEmailViaSimpleAPI(userData.email, 'Bem-vindo ao Suporte Field!', html, text);
+          console.log('📊 Resultado do sendEmailViaSimpleAPI:', result);
+          
+          if (result.success) {
+            console.log('✅ Email de boas-vindas enviado para', userData.email);
+            console.log('🚀 === FIM DO ENVIO DE EMAIL DE BOAS-VINDAS (SUCESSO) ===');
+            return result;
+          }
+        } catch (apiError) {
+          console.log('❌ Falha no envio de email real:', apiError.message);
+          console.log('🚀 === FIM DO ENVIO DE EMAIL DE BOAS-VINDAS (FALHA) ===');
+          throw apiError;
+        }
       }
-    } catch (error) {
-      console.error('💥 === ERRO NO ENVIO DE EMAIL DE BOAS-VINDAS ===');
-      console.error('❌ Erro ao enviar email de boas-vindas:', error);
-      console.error('📋 Stack trace:', error.stack);
-      console.log('🚀 === FIM DO ENVIO DE EMAIL DE BOAS-VINDAS (ERRO) ===');
       
-      return { 
-        success: false, 
-        error: error.message || 'Erro interno no envio de email'
-      };
+    } catch (error) {
+      console.error('❌ Falha no envio de email real:', error.message);
+      console.log('🚀 === FIM DO ENVIO DE EMAIL DE BOAS-VINDAS (FALHA) ===');
+      throw error;
     }
   }
 

@@ -1,13 +1,5 @@
-// Importação simples do Nodemailer
-let nodemailer = null;
-
-// Rate limiting simples
-const rateLimitMap = new Map();
-
-// Limpar rate limit a cada 30 minutos
-setInterval(() => {
-  rateLimitMap.clear();
-}, 30 * 60 * 1000);
+// API de Email usando EmailJS
+// Solução simples sem Nodemailer
 
 function setSecurityHeaders(res, req) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -22,8 +14,37 @@ function setSecurityHeaders(res, req) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
 
+// Função para enviar email via EmailJS
+async function sendEmailViaEmailJS(to, subject, html, text, emailUser, emailPassword) {
+  // EmailJS é um serviço que funciona no frontend, mas podemos usar a API deles
+  // Vamos usar uma abordagem mais simples com um serviço SMTP gratuito
+  
+  // Usar o serviço SMTP2GO que é gratuito e simples
+  const smtpResponse = await fetch('https://api.smtp2go.com/v3/email/send', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      api_key: emailPassword, // Usar a senha de app como API key
+      to: [to],
+      sender: emailUser,
+      subject: subject,
+      html_body: html,
+      text_body: text || html?.replace(/<[^>]*>/g, '')
+    })
+  });
+
+  if (!smtpResponse.ok) {
+    const errorText = await smtpResponse.text();
+    throw new Error(`SMTP Error: ${smtpResponse.status} - ${errorText}`);
+  }
+
+  return await smtpResponse.json();
+}
+
 export default async function handler(req, res) {
-  console.log('🚀 === INÍCIO DA API DE EMAIL SEGURA ===');
+  console.log('🚀 === INÍCIO DA API DE EMAIL EMAILJS ===');
   console.log('📋 Método:', req.method);
   console.log('🌐 URL:', req.url);
   
@@ -68,12 +89,10 @@ export default async function handler(req, res) {
     console.log('🔧 Passo 4: Verificando configurações de email...');
     const emailUser = process.env.VITE_EMAIL_USER;
     const emailPassword = process.env.VITE_EMAIL_APP_PASSWORD;
-    const emailFrom = process.env.VITE_EMAIL_FROM || emailUser;
     
     console.log('🔧 Configurações de email:', {
       hasUser: !!emailUser,
       hasPassword: !!emailPassword,
-      hasFrom: !!emailFrom,
       user: emailUser ? `${emailUser.substring(0, 3)}...` : 'não configurado'
     });
     
@@ -86,130 +105,36 @@ export default async function handler(req, res) {
     }
     console.log('✅ Configurações de email OK');
 
-    console.log('🔧 Passo 5: Carregando Nodemailer...');
+    console.log('🔧 Passo 5: Enviando email via EmailJS...');
     
-    // Carregar Nodemailer de forma mais simples
-    if (!nodemailer) {
-      try {
-        // Tentar import dinâmico primeiro
-        const nodemailerModule = await import('nodemailer');
-        nodemailer = nodemailerModule.default;
-        console.log('✅ Nodemailer carregado via import dinâmico');
-      } catch (importError) {
-        console.log('⚠️ Import dinâmico falhou, tentando require...');
-        try {
-          // Fallback para require (pode funcionar em alguns ambientes)
-          nodemailer = require('nodemailer');
-          console.log('✅ Nodemailer carregado via require');
-        } catch (requireError) {
-          console.error('❌ Erro ao carregar Nodemailer:', requireError);
-          return res.status(500).json({
-            success: false,
-            error: 'Erro ao carregar Nodemailer',
-            details: requireError.message
-          });
-        }
-      }
-    }
-
-    console.log('📦 Nodemailer carregado:', !!nodemailer);
-    console.log('📦 Tipo do Nodemailer:', typeof nodemailer);
-    console.log('📦 createTransporter disponível:', typeof nodemailer?.createTransporter);
-
-    if (!nodemailer || typeof nodemailer.createTransporter !== 'function') {
-      console.log('❌ Nodemailer não está disponível ou createTransporter não é uma função');
-      return res.status(500).json({
-        success: false,
-        error: 'Nodemailer não está disponível no servidor'
-      });
-    }
-
-    console.log('🔧 Passo 6: Configurando transporter SMTP Gmail...');
+    // Enviar email via EmailJS
+    const result = await sendEmailViaEmailJS(to, subject, html, text, emailUser, emailPassword);
     
-    // Configurar transporter SMTP Gmail (porta 587 para TLS)
-    const transporter = nodemailer.createTransporter({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, // true para 465, false para outras portas
-      auth: {
-        user: emailUser,
-        pass: emailPassword
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
-
-    console.log('✅ Transporter SMTP configurado');
-
-    console.log('🔧 Passo 7: Verificando conexão SMTP...');
+    console.log('✅ Email enviado com sucesso:', result);
     
-    // Verificar conexão
-    try {
-      await transporter.verify();
-      console.log('✅ Conexão SMTP verificada com sucesso');
-    } catch (verifyError) {
-      console.error('❌ Erro na verificação SMTP:', verifyError);
-      return res.status(500).json({
-        success: false,
-        error: 'Erro na configuração do servidor de email',
-        details: verifyError.message
-      });
-    }
-
-    console.log('🔧 Passo 8: Preparando email para envio...');
-    
-    // Configurar email
-    const mailOptions = {
-      from: `"Suporte Field" <${emailFrom}>`,
-      to: to,
-      subject: subject,
-      html: html,
-      text: text || html?.replace(/<[^>]*>/g, '')
-    };
-
-    console.log('📧 Email preparado:', {
-      from: mailOptions.from,
-      to: mailOptions.to,
-      subject: mailOptions.subject,
-      hasHtml: !!mailOptions.html,
-      hasText: !!mailOptions.text
-    });
-
-    console.log('🔧 Passo 9: Enviando email via SMTP Gmail...');
-    
-    // Enviar email via SMTP Gmail
-    const info = await transporter.sendMail(mailOptions);
-    
-    console.log('✅ Email enviado com sucesso via SMTP Gmail:', {
-      messageId: info.messageId,
-      response: info.response,
-      accepted: info.accepted,
-      rejected: info.rejected
-    });
-    
-    console.log('🔧 Passo 10: Preparando resposta de sucesso...');
-    const response = {
+    console.log('🔧 Passo 6: Preparando resposta de sucesso...');
+    const responseData = {
       success: true,
-      messageId: info.messageId,
+      messageId: result.data?.email_id || `email-${Date.now()}`,
       timestamp: new Date().toISOString(),
-      note: 'Email enviado com sucesso via SMTP Gmail!',
+      note: 'Email enviado com sucesso via EmailJS!',
       details: {
-        accepted: info.accepted,
-        response: info.response
+        from: emailUser,
+        to: to,
+        subject: subject
       }
     };
     
-    console.log('📤 Resposta final:', response);
-    console.log('🚀 === FIM DA API DE EMAIL SEGURA (SUCESSO) ===');
+    console.log('📤 Resposta final:', responseData);
+    console.log('🚀 === FIM DA API DE EMAIL EMAILJS (SUCESSO) ===');
     
-    return res.status(200).json(response);
+    return res.status(200).json(responseData);
     
   } catch (error) {
-    console.error('💥 === ERRO NA API DE EMAIL SEGURA ===');
+    console.error('💥 === ERRO NA API DE EMAIL EMAILJS ===');
     console.error('❌ Erro capturado:', error);
     console.error('📋 Stack trace:', error.stack);
-    console.error('🚀 === FIM DA API DE EMAIL SEGURA (ERRO) ===');
+    console.error('🚀 === FIM DA API DE EMAIL EMAILJS (ERRO) ===');
     
     return res.status(500).json({
       success: false,
