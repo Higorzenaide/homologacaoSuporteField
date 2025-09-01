@@ -53,9 +53,9 @@ export const usuariosService = {
       if (data && data.length > 0) {
         const result = data[0];
         
-        // Se o usuário foi criado com sucesso, configurar dados iniciais
+        // Se o usuário foi criado com sucesso, mostrar mensagem amigável
         if (result.success) {
-          console.log('👤 Usuário criado com sucesso, configurando dados iniciais...');
+          console.log('👤 Usuário criado com sucesso, exibindo mensagem amigável...');
           
           const userData = {
             email: dadosUsuario.email,
@@ -65,12 +65,8 @@ export const usuariosService = {
             cargo: dadosUsuario.cargo || null
           };
 
-          // Criar configurações de notificação para o novo usuário
-          // await this.criarConfiguracaoNotificacao(result.id);
-          console.log('🔔 Configurações de notificação desabilitadas temporariamente');
-
-          // Enviar email de boas-vindas de forma assíncrona (não bloquear a criação do usuário)
-          this.enviarEmailBoasVindas(userData);
+          // Exibir mensagem de boas-vindas amigável
+          this.exibirMensagemBoasVindas(userData);
         }
         
         return {
@@ -86,20 +82,21 @@ export const usuariosService = {
     }
   },
 
-  // Enviar email de boas-vindas (método auxiliar)
-  async enviarEmailBoasVindas(userData) {
+  // Exibir mensagem de boas-vindas amigável (método auxiliar)
+  async exibirMensagemBoasVindas(userData) {
     try {
-      console.log(`📧 Enviando email de boas-vindas para ${userData.email}...`);
+      console.log(`🎉 Exibindo mensagem de boas-vindas para ${userData.email}...`);
       
       const resultado = await emailService.sendWelcomeEmail(userData);
       
       if (resultado.success) {
-        console.log(`✅ Email de boas-vindas enviado com sucesso para ${userData.email}`);
+        console.log(`✅ Mensagem de boas-vindas exibida com sucesso para ${userData.email}`);
+        console.log(`📝 Mensagem: ${resultado.details.welcomeMessage}`);
       } else {
-        console.warn(`⚠️ Falha ao enviar email de boas-vindas para ${userData.email}:`, resultado.error);
+        console.warn(`⚠️ Falha ao exibir mensagem de boas-vindas para ${userData.email}:`, resultado.error);
       }
     } catch (error) {
-      console.error(`❌ Erro ao enviar email de boas-vindas para ${userData.email}:`, error);
+      console.error(`❌ Erro ao exibir mensagem de boas-vindas para ${userData.email}:`, error);
     }
   },
 
