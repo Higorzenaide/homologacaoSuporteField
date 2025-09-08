@@ -265,8 +265,11 @@ const NotificationBadge = () => {
 
   const clearAllNotifications = async () => {
     try {
+      console.log('🧹 Iniciando limpeza de todas as notificações...');
+      
       // Verificar se há notificações não lidas
       const unreadCount = notifications.filter(n => !n.read).length;
+      console.log('📊 Notificações não lidas:', unreadCount);
       
       if (unreadCount > 0) {
         showError(`Você tem ${unreadCount} notificação(ões) não lida(s). Leia todas antes de limpar.`);
@@ -275,37 +278,43 @@ const NotificationBadge = () => {
 
       // Confirmar ação
       if (!confirm('Tem certeza que deseja remover todas as notificações? Esta ação não pode ser desfeita.')) {
+        console.log('❌ Usuário cancelou a operação');
         return;
       }
 
-      // Tentar limpar no servidor com retry
-      await executeWithRetry(
-        async () => {
-          const { error } = await supabase
-            .from('notifications')
-            .delete()
-            .eq('user_id', user.id);
+      console.log('✅ Usuário confirmou, executando limpeza...');
 
-          if (error) throw error;
-        },
-        {
-          onSuccess: () => {
-            // Atualizar UI após sucesso
-            setNotifications([]);
-            setUnreadCount(0);
-            showSuccess('Todas as notificações foram removidas com sucesso!');
-            
-            // Recarregar notificações para garantir sincronização
-            loadNotifications();
-          },
-          onError: (error) => {
-            showError('Erro ao limpar notificações. Verifique sua conexão.');
-          }
-        }
-      );
+      // Atualizar UI otimisticamente primeiro
+      setNotifications([]);
+      setUnreadCount(0);
+      console.log('🔄 UI atualizada otimisticamente');
+
+      // Executar limpeza no servidor
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('❌ Erro ao limpar notificações:', error);
+        showError('Erro ao limpar notificações. Verifique sua conexão.');
+        // Recarregar para reverter mudanças otimistas
+        loadNotifications();
+        return;
+      }
+
+      console.log('✅ Notificações removidas com sucesso do servidor');
+      showSuccess('Todas as notificações foram removidas com sucesso!');
+      
+      // Recarregar notificações para garantir sincronização
+      await loadNotifications();
+      console.log('🔄 Notificações recarregadas');
       
     } catch (error) {
-      console.error('Erro ao limpar todas as notificações:', error);
+      console.error('❌ Erro ao limpar todas as notificações:', error);
+      showError('Erro inesperado ao limpar notificações. Tente novamente.');
+      // Recarregar para reverter mudanças otimistas
+      loadNotifications();
     }
   };
 
