@@ -1,33 +1,12 @@
 import { supabase } from '../lib/supabase';
-import emailService from './emailService';
 
 class NotificationService {
   constructor() {
-    // Configurações anti-spam
-    this.emailConfig = {
-      maxEmailsPerMinute: 20,      // Máximo de emails por minuto
-      maxEmailsPerHour: 100,       // Máximo de emails por hora
-      minDelayBetweenEmails: 1500, // Delay mínimo (1.5 segundos)
-      maxDelayBetweenEmails: 10000 // Delay máximo (10 segundos)
-    };
-    
-    // Controle de rate limiting
-    this.emailsSentThisMinute = 0;
-    this.emailsSentThisHour = 0;
-    this.lastEmailSentAt = 0;
-    
-    // Reset contadores a cada minuto/hora
-    setInterval(() => {
-      this.emailsSentThisMinute = 0;
-    }, 60000); // 1 minuto
-    
-    setInterval(() => {
-      this.emailsSentThisHour = 0;
-    }, 3600000); // 1 hora
+    // Configurações básicas do serviço
   }
 
   // Criar uma nova notificação
-  async createNotification(notificationData, sendEmail = true) {
+  async createNotification(notificationData) {
     try {
       const { data, error } = await supabase
         .from('notifications')
@@ -36,14 +15,6 @@ class NotificationService {
         .single();
 
       if (error) throw error;
-
-      // Enviar email se habilitado e solicitado
-      if (sendEmail && emailService.isEmailEnabled()) {
-        this.sendEmailNotification(data).catch(emailError => {
-          console.error('Erro ao enviar email de notificação:', emailError);
-          // Não falhar a criação da notificação se o email falhar
-        });
-      }
 
       return data;
     } catch (error) {
@@ -417,7 +388,7 @@ class NotificationService {
   }
 
   // Notificar sobre nova notícia (com seleção de usuários)
-  async notifyNewNoticia(noticiaData, selectedUserIds = null, sendEmail = true) {
+  async notifyNewNoticia(noticiaData, selectedUserIds = null) {
     try {
       let userIds = selectedUserIds;
       
@@ -453,14 +424,6 @@ class NotificationService {
 
       if (error) throw error;
       
-      // Enviar emails se solicitado e serviço habilitado
-      if (sendEmail && emailService.isEmailEnabled()) {
-
-        this.sendBatchEmailNotifications(data).catch(emailError => {
-          console.error('Erro ao enviar emails em lote:', emailError);
-        });
-      }
-      
 
       return data;
     } catch (error) {
@@ -470,7 +433,7 @@ class NotificationService {
   }
 
   // Notificar sobre novo treinamento (não obrigatório, com seleção de usuários)
-  async notifyNewTreinamento(treinamentoData, selectedUserIds = null, sendEmail = true) {
+  async notifyNewTreinamento(treinamentoData, selectedUserIds = null) {
     try {
       let userIds = selectedUserIds;
       
@@ -505,14 +468,6 @@ class NotificationService {
         .select();
 
       if (error) throw error;
-      
-      // Enviar emails se solicitado e serviço habilitado
-      if (sendEmail && emailService.isEmailEnabled()) {
-
-        this.sendBatchEmailNotifications(data).catch(emailError => {
-          console.error('Erro ao enviar emails em lote:', emailError);
-        });
-      }
       
 
       return data;
