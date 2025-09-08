@@ -501,17 +501,33 @@ class NotificationService {
 
       console.log('📝 Criando notificações para usuários:', userIds);
 
+      // Determinar se é obrigatório para ajustar prioridade e mensagem
+      const isObrigatorio = treinamentoData.obrigatorio === true;
+      const notificationType = isObrigatorio ? 'training_required' : 'training_new';
+      const title = isObrigatorio ? 'Novo Treinamento Obrigatório' : 'Novo Treinamento Disponível';
+      const message = isObrigatorio 
+        ? `Foi adicionado um novo treinamento obrigatório: "${treinamentoData.titulo}"`
+        : `Foi adicionado um novo treinamento: "${treinamentoData.titulo}"`;
+      const priority = isObrigatorio ? 'high' : 'low';
+
+      console.log('📋 Configuração da notificação:', { 
+        isObrigatorio, 
+        notificationType, 
+        title, 
+        priority 
+      });
+
       const notifications = userIds.map(userId => ({
         user_id: userId,
-        type: 'training_new',
-        title: 'Novo Treinamento Disponível',
-        message: `Foi adicionado um novo treinamento: "${treinamentoData.titulo}"`,
+        type: notificationType,
+        title: title,
+        message: message,
         data: {
           treinamento_id: treinamentoData.id,
           treinamento_title: treinamentoData.titulo,
           action_url: `/treinamentos/${treinamentoData.id}`
         },
-        priority: 'low'
+        priority: priority
       }));
 
       console.log('💾 Inserindo notificações no banco:', notifications.length);
