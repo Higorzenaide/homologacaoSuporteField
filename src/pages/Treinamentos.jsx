@@ -100,8 +100,8 @@ const Treinamentos = ({ pageParams }) => {
       const { incrementVisualizacoes } = await import('../services/treinamentosService');
       await incrementVisualizacoes(treinamento.id);
       
-      // Atualizar o estado local para refletir a mudança imediatamente
-      setTreinamentos(prev => 
+      // Atualizar o cache local para refletir a mudança imediatamente
+      mutateTreinamentos(prev => 
         (prev || []).map(t => 
           t.id === treinamento.id 
             ? { ...t, visualizacoes: (t.visualizacoes || 0) + 1 }
