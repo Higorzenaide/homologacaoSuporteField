@@ -263,6 +263,49 @@ const NotificationBadge = () => {
     }
   };
 
+  const clearAllNotifications = async () => {
+    try {
+      // Verificar se há notificações não lidas
+      const unreadCount = notifications.filter(n => !n.read).length;
+      
+      if (unreadCount > 0) {
+        showError(`Você tem ${unreadCount} notificação(ões) não lida(s). Leia todas antes de limpar.`);
+        return;
+      }
+
+      // Confirmar ação
+      if (!confirm('Tem certeza que deseja remover todas as notificações? Esta ação não pode ser desfeita.')) {
+        return;
+      }
+
+      // Tentar limpar no servidor com retry
+      await executeWithRetry(
+        async () => {
+          const { error } = await supabase
+            .from('notifications')
+            .delete()
+            .eq('user_id', user.id);
+
+          if (error) throw error;
+        },
+        {
+          onSuccess: () => {
+            // Atualizar UI após sucesso
+            setNotifications([]);
+            setUnreadCount(0);
+            showSuccess('Todas as notificações foram removidas com sucesso!');
+          },
+          onError: (error) => {
+            showError('Erro ao limpar notificações. Verifique sua conexão.');
+          }
+        }
+      );
+      
+    } catch (error) {
+      console.error('Erro ao limpar todas as notificações:', error);
+    }
+  };
+
   const deleteNotification = async (notificationId) => {
     try {
       // Primeiro, otimisticamente remove da UI
@@ -479,6 +522,15 @@ const NotificationBadge = () => {
                       className="text-white/80 hover:text-white text-sm transition-colors"
                     >
                       Marcar todas como lidas
+                    </button>
+                  )}
+                  {notifications.length > 0 && unreadCount === 0 && (
+                    <button
+                      onClick={clearAllNotifications}
+                      className="text-white/80 hover:text-white text-sm transition-colors"
+                      title="Remover todas as notificações"
+                    >
+                      Limpar todas
                     </button>
                   )}
                   <button

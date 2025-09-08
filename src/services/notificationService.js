@@ -90,6 +90,47 @@ class NotificationService {
     }
   }
 
+  // Limpar todas as notificações (apenas se todas estiverem lidas)
+  async clearAllNotifications(userId) {
+    try {
+      // Primeiro, verificar se há notificações não lidas
+      const { count: unreadCount, error: countError } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('read', false);
+
+      if (countError) throw countError;
+
+      // Se há notificações não lidas, não permitir limpeza
+      if (unreadCount > 0) {
+        return { 
+          success: false, 
+          error: `Você tem ${unreadCount} notificação(ões) não lida(s). Leia todas antes de limpar.` 
+        };
+      }
+
+      // Se todas estão lidas, deletar todas
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      return { 
+        success: true, 
+        message: 'Todas as notificações foram removidas com sucesso!' 
+      };
+    } catch (error) {
+      console.error('Erro ao limpar todas as notificações:', error);
+      return { 
+        success: false, 
+        error: 'Erro ao limpar notificações. Tente novamente.' 
+      };
+    }
+  }
+
   // Contar notificações não lidas
   async getUnreadCount(userId) {
     try {
