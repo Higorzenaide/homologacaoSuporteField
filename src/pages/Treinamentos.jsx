@@ -210,7 +210,7 @@ const Treinamentos = ({ pageParams }) => {
       
       // Recarregar dados
       await carregarDados();
-      return true;
+      return treinamentoResult;
     } catch (error) {
       console.error('Erro ao salvar treinamento:', error);
       setError('Erro ao salvar treinamento');

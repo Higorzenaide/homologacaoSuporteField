@@ -232,12 +232,15 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('🚀 handleSubmit iniciado:', { type, formData, file: !!file, editingItem });
     
     if (type === 'treinamento' && !file && !editingItem) {
+      console.log('❌ Arquivo obrigatório não fornecido');
       alert('Por favor, selecione um arquivo para o treinamento.');
       return;
     }
 
+    console.log('📝 Iniciando salvamento...');
     setIsSubmitting(true);
     
     try {
@@ -286,9 +289,11 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
         onClose();
       }
     } catch (error) {
-      console.error('Erro ao salvar:', error);
+      console.error('❌ Erro ao salvar:', error);
+      console.error('❌ Stack trace:', error.stack);
       alert('Erro ao salvar. Tente novamente.');
     } finally {
+      console.log('🏁 Finalizando handleSubmit');
       setIsSubmitting(false);
     }
   };
