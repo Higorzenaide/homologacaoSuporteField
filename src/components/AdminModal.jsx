@@ -201,9 +201,13 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
           return; // Não enviar notificações
       }
 
+      console.log('🔔 Iniciando envio de notificações:', { type, userIds: userIds?.length || 0 });
+      
       if (type === 'treinamento') {
+        console.log('📚 Chamando notifyNewTreinamento...');
         await notificationService.notifyNewTreinamento(savedData, userIds);
       } else if (type === 'noticia') {
+        console.log('📰 Chamando notifyNewNoticia...');
         await notificationService.notifyNewNoticia(savedData, userIds);
       }
       

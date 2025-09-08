@@ -476,19 +476,30 @@ class NotificationService {
   // Notificar sobre novo treinamento (não obrigatório, com seleção de usuários)
   async notifyNewTreinamento(treinamentoData, selectedUserIds = null) {
     try {
+      console.log('🔔 notifyNewTreinamento chamado:', { treinamentoData, selectedUserIds });
+      
       let userIds = selectedUserIds;
       
       // Se não foram especificados usuários, usar todos os ativos (comportamento antigo)
       if (!userIds) {
+        console.log('📋 Buscando todos os usuários ativos...');
         const { data: users } = await supabase
           .from('usuarios')
           .select('id')
           .eq('ativo', true);
 
         userIds = users?.map(user => user.id) || [];
+        console.log('👥 Usuários encontrados:', userIds.length);
+      } else {
+        console.log('👥 Usuários selecionados:', userIds.length);
       }
 
-      if (userIds.length === 0) return [];
+      if (userIds.length === 0) {
+        console.log('❌ Nenhum usuário para notificar');
+        return [];
+      }
+
+      console.log('📝 Criando notificações para usuários:', userIds);
 
       const notifications = userIds.map(userId => ({
         user_id: userId,
@@ -503,17 +514,22 @@ class NotificationService {
         priority: 'low'
       }));
 
+      console.log('💾 Inserindo notificações no banco:', notifications.length);
+      
       const { data, error } = await supabase
         .from('notifications')
         .insert(notifications)
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao inserir notificações:', error);
+        throw error;
+      }
       
-
+      console.log('✅ Notificações inseridas com sucesso:', data?.length || 0);
       return data;
     } catch (error) {
-      console.error('Erro ao notificar sobre novo treinamento:', error);
+      console.error('❌ Erro ao notificar sobre novo treinamento:', error);
       throw error;
     }
   }
