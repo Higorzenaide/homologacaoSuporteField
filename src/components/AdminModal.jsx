@@ -245,9 +245,21 @@ const AdminModal = ({ isOpen, onClose, type, onSave, editingItem, categorias = [
       const success = await onSave(formData, file, questionarioData);
       
       if (success && success.data) {
+        console.log('✅ Item salvo com sucesso:', success.data);
+        console.log('🔔 Verificando notificações:', { 
+          enviarNotificacao: formData.enviarNotificacao, 
+          tipoNotificacao: formData.tipoNotificacao 
+        });
+        
         // Enviar notificações se solicitado
         if (formData.enviarNotificacao && formData.tipoNotificacao !== 'none') {
+          console.log('📤 Enviando notificações...');
           await handleNotifications(success.data);
+        } else {
+          console.log('❌ Notificações não enviadas:', { 
+            enviarNotificacao: formData.enviarNotificacao, 
+            tipoNotificacao: formData.tipoNotificacao 
+          });
         }
         // Reset form
         setFormData({
