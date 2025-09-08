@@ -60,23 +60,7 @@ export const useCachedUsuarios = () => {
 
       const startTime = Date.now();
       
-      try {
-        // Tentar usar função RPC primeiro (garante estrutura correta)
-
-        const { data: rpcData, error: rpcError } = await supabase
-          .rpc('get_usuarios_for_notifications');
-        
-        if (!rpcError && rpcData) {
-          const duration = Date.now() - startTime;
-
-          return Array.isArray(rpcData) ? rpcData : [];
-        }
-
-      } catch (e) {
-
-      }
-      
-      // Fallback: consulta direta para garantir que usa ultimo_acesso
+      // Consulta direta para buscar usuários
 
       const { data, error } = await supabase
         .from('usuarios')
