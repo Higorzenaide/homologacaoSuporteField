@@ -294,6 +294,9 @@ const NotificationBadge = () => {
             setNotifications([]);
             setUnreadCount(0);
             showSuccess('Todas as notificações foram removidas com sucesso!');
+            
+            // Recarregar notificações para garantir sincronização
+            loadNotifications();
           },
           onError: (error) => {
             showError('Erro ao limpar notificações. Verifique sua conexão.');
